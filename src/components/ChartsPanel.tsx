@@ -20,12 +20,12 @@ export default function ChartsPanel() {
   const playerOnChart = chart.filter((e) => e.isPlayerSong).length;
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-2 sm:p-4 space-y-4 sm:space-y-6">
 
       {/* Live Chart */}
-      <section className="bg-white border border-gray-200 rounded-md p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-gray-900 font-semibold text-sm">Industry Chart — Top 20</h2>
+      <section className="bg-white border border-gray-200 rounded-md p-3 sm:p-5">
+        <div className="flex items-center justify-between mb-2 sm:mb-4">
+          <h2 className="text-gray-900 font-semibold text-xs sm:text-sm">Industry Chart — Top 20</h2>
           {chart.length > 0 && (
             <span className="text-xs text-gray-400">
               {playerOnChart > 0
@@ -42,7 +42,7 @@ export default function ChartsPanel() {
             {chart.map((entry, idx) => (
               <div
                 key={entry.isPlayerSong ? entry.songId : `${entry.title}-${entry.artistName}`}
-                className={`flex items-center gap-3 px-3 py-2.5 border-b border-gray-100 last:border-b-0 ${
+                className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 border-b border-gray-100 last:border-b-0 ${
                   entry.isPlayerSong && entry.position === 1
                     ? "bg-amber-50"
                     : entry.isPlayerSong && entry.position <= 3
@@ -55,7 +55,7 @@ export default function ChartsPanel() {
                 }`}
               >
                 <span
-                  className={`text-sm font-semibold w-7 text-center shrink-0 ${
+                  className={`text-xs sm:text-sm font-semibold w-7 text-center shrink-0 ${
                     entry.isPlayerSong && entry.position === 1
                       ? "text-amber-600"
                       : entry.isPlayerSong && entry.position <= 3
@@ -101,39 +101,41 @@ export default function ChartsPanel() {
       </section>
 
       {/* Player Catalog */}
-      <section className="bg-white border border-gray-200 rounded-md p-5">
-        <h2 className="text-gray-900 font-semibold text-sm mb-4">Your Catalog</h2>
+      <section className="bg-white border border-gray-200 rounded-md p-3 sm:p-5">
+        <h2 className="text-gray-900 font-semibold text-xs sm:text-sm mb-2 sm:mb-4">Your Catalog</h2>
         {allReleased.length === 0 ? (
           <p className="text-gray-400 text-sm">No released songs yet.</p>
         ) : (
-          <div className="space-y-0">
-            {allReleased.map((s, idx) => {
-              const artist = artists.find((a) => a.id === s.artistId);
-              return (
-                <div key={s.id} className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
-                  <div className="min-w-0">
-                    <span className="text-gray-900 text-sm font-medium truncate block">{s.title}</span>
-                    <span className="text-gray-500 text-xs">{artist?.name} &middot; {s.genre}</span>
-                  </div>
-                  <div className="text-right ml-4 shrink-0">
-                    <div className="text-gray-600 text-xs">
-                      {s.streamsTotal >= 1_000_000
-                        ? `${(s.streamsTotal / 1_000_000).toFixed(1)}M`
-                        : `${(s.streamsTotal / 1000).toFixed(0)}K`}{" "}
-                      streams
+          <div className="overflow-x-auto">
+            <div className="space-y-0">
+              {allReleased.map((s, idx) => {
+                const artist = artists.find((a) => a.id === s.artistId);
+                return (
+                  <div key={s.id} className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                    <div className="min-w-0">
+                      <span className="text-gray-900 text-sm font-medium truncate block">{s.title}</span>
+                      <span className="text-gray-500 text-xs">{artist?.name} &middot; {s.genre}</span>
                     </div>
-                    <div className="text-green-700 text-xs">
-                      ${s.revenue >= 1000 ? `${(s.revenue / 1000).toFixed(1)}K` : s.revenue} earned
+                    <div className="text-right ml-4 shrink-0">
+                      <div className="text-gray-600 text-xs">
+                        {s.streamsTotal >= 1_000_000
+                          ? `${(s.streamsTotal / 1_000_000).toFixed(1)}M`
+                          : `${(s.streamsTotal / 1000).toFixed(0)}K`}{" "}
+                        streams
+                      </div>
+                      <div className="text-green-700 text-xs">
+                        ${s.revenue >= 1000 ? `${(s.revenue / 1000).toFixed(1)}K` : s.revenue} earned
+                      </div>
+                      {s.chartPosition ? (
+                        <div className="text-amber-600 text-xs">#{s.chartPosition} this week</div>
+                      ) : (
+                        <div className="text-gray-400 text-xs">Off chart</div>
+                      )}
                     </div>
-                    {s.chartPosition ? (
-                      <div className="text-amber-600 text-xs">#{s.chartPosition} this week</div>
-                    ) : (
-                      <div className="text-gray-400 text-xs">Off chart</div>
-                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </section>

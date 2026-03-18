@@ -41,7 +41,7 @@ function deltaTag(value: number, prefix: string, suffix: string) {
   return <span className={`text-[10px] font-semibold ${color}`}>{sign}{prefix}{value.toLocaleString()}{suffix}</span>;
 }
 
-export default function ReputationBell() {
+export default function ReputationBell({ onSeeAll }: { onSeeAll?: () => void } = {}) {
   const recentEvents = useGameStore((s) => s.recentEvents);
   const [open, setOpen] = useState(false);
   const [seenCount, setSeenCount] = useState(0);
@@ -79,7 +79,7 @@ export default function ReputationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-md z-50 overflow-hidden">
+        <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto bottom-16 sm:bottom-auto sm:right-0 sm:mt-2 sm:w-80 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
             <span className="text-gray-900 font-semibold text-sm">Notifications</span>
             <span className="text-gray-400 text-xs">{recentEvents.length} events</span>
@@ -90,8 +90,8 @@ export default function ReputationBell() {
               No events yet -- advance a week to see activity.
             </div>
           ) : (
-            <ul className="max-h-96 overflow-y-auto divide-y divide-gray-100">
-              {recentEvents.map((event) => (
+            <ul className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+              {recentEvents.slice(0, 15).map((event) => (
                 <li key={event.id} className="px-4 py-3 flex gap-3 items-start hover:bg-gray-50 transition">
                   <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${eventDot(event.type)}`} />
                   <div className="flex-1 min-w-0">
@@ -109,6 +109,16 @@ export default function ReputationBell() {
                 </li>
               ))}
             </ul>
+          )}
+          {recentEvents.length > 0 && onSeeAll && (
+            <div className="border-t border-gray-200 px-4 py-2">
+              <button
+                onClick={() => { onSeeAll(); setOpen(false); }}
+                className="w-full text-center text-xs text-blue-600 hover:text-blue-500 font-medium py-1 transition"
+              >
+                See All Notifications ({recentEvents.length})
+              </button>
+            </div>
           )}
         </div>
       )}

@@ -546,6 +546,9 @@ export interface HallOfFameEntry {
   inductionYear: number;
   tier: HoFTier;
   score: number;
+  labelName?: string;
+  genre?: Genre;
+  spriteIndex?: number;
   stats: {
     awards: number;
     numberOneSongs: number;
@@ -554,6 +557,36 @@ export interface HallOfFameEntry {
     careerYears: number;
     overallRating: number;
   };
+}
+
+// ── Transaction Log ──────────────────────────────────────────────────────────
+
+export type TransactionType =
+  | "signing"
+  | "release"
+  | "recording"
+  | "single_release"
+  | "album_release"
+  | "feature_deal"
+  | "tour_booking"
+  | "upgrade"
+  | "mall_purchase"
+  | "revenue"
+  | "renegotiation"
+  | "contract_risk"
+  | "scout_refresh"
+  | "artist_dropped"
+  | "overhead";
+
+export interface Transaction {
+  id: string;
+  turn: number;
+  type: TransactionType;
+  description: string;
+  amount: number;           // positive = income, negative = expense
+  category: "income" | "expense" | "action";
+  artistName?: string;
+  details?: string;
 }
 
 export interface GameState {
@@ -598,6 +631,9 @@ export interface GameState {
   achievements: AchievementProgress[];
   // ── Hall of Fame ────────────────────────────────────────────────────────
   hallOfFame: HallOfFameEntry[];
+  globalHallOfFame: HallOfFameEntry[];  // rival label retirees
+  // ── Transaction log ────────────────────────────────────────────────────
+  transactions: Transaction[];
   // ── Dynasty tracking ────────────────────────────────────────────────────
   dynastyYears: number;                         // consecutive years as #1 label
   // ── History ───────────────────────────────────────────────────────────────

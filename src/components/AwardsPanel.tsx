@@ -27,7 +27,7 @@ export default function AwardsPanel() {
   const weeksUntil = nextCeremonyTurn - turn;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
 
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded-md p-5">
@@ -116,12 +116,12 @@ function CeremonyCard({ ceremony, labelName }: { ceremony: AwardCeremony; labelN
 export function CeremonyModal({ ceremony, labelName, onClose }: { ceremony: AwardCeremony; labelName: string; onClose: () => void }) {
   const categories: AwardCategory[] = ["song_of_year", "album_of_year", "artist_of_year", "best_new_artist", "label_of_year"];
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
       <div
-        className="bg-white border border-gray-200 rounded-md shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-white border border-gray-200 sm:rounded-md rounded-t-xl shadow-lg w-full sm:max-w-lg h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-5">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-3 sm:p-5">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-gray-900 font-semibold text-lg">Year {ceremony.year} Awards</h2>

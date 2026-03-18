@@ -16,8 +16,7 @@ export default function StudioPanel() {
   const store = useGameStore();
   const { artists, producers, songs, albums, money, reputation, fanbase, turn, studioLevel,
           recordNewSong, releaseTrack, bookTour, startNewAlbum, releaseAlbumProject,
-          addSongToAlbum, removeSongFromAlbum, setSongAlbumStatus, scrapSong,
-          restArtistWeek } = store;
+          addSongToAlbum, removeSongFromAlbum, setSongAlbumStatus, scrapSong } = store;
   const gameState = store as unknown as GameState;
   const [selectedArtist, setSelectedArtist] = useState("");
   const [selectedProducer, setSelectedProducer] = useState("");
@@ -26,12 +25,12 @@ export default function StudioPanel() {
   const [tourSize, setTourSize] = useState<TourSize>("club_tour");
   const [error, setError] = useState("");
   const [tourError, setTourError] = useState("");
-  // Feature collab state
-  const [featArtist, setFeatArtist] = useState("");
-  const [featProducer, setFeatProducer] = useState("");
+  // Feature collab state (merged into recording)
+  const [addFeature, setAddFeature] = useState(false);
   const [featTarget, setFeatTarget] = useState("");
-  const [featStandalone, setFeatStandalone] = useState(false);
-  const [featError, setFeatError] = useState("");
+  const [featSearch, setFeatSearch] = useState("");
+  const [featSort, setFeatSort] = useState<"ovr" | "price" | "pop" | "name">("ovr");
+  const [featGenreFilter, setFeatGenreFilter] = useState<string>("all");
   const [albumDashboard, setAlbumDashboard] = useState<Album | null>(null);
   const [releaseModal, setReleaseModal] = useState<Album | null>(null);
 
@@ -39,35 +38,56 @@ export default function StudioPanel() {
   const unreleased = songs.filter((s) => !s.released && !s.albumId);
   const inProgressAlbums = albums.filter((al) => al.status === "recording");
 
-  function handleRecord() {
-    if (!selectedArtist || !selectedProducer) return;
-    const hasActiveAlbum = albums.some((al) => al.artistId === selectedArtist && al.status === "recording");
-    const isStandalone = standaloneMode || !hasActiveAlbum;
-    const err = recordNewSong(selectedArtist, selectedProducer, isStandalone);
-    if (err) setError(err);
-    else setError("");
-  }
-
-  // Feature collab recording
-  const featArtistObj = artists.find((a) => a.id === featArtist);
-  const featTargetObj = featTarget ? [...artists, ...(gameState.freeAgentPool || [])].find((a) => a.id === featTarget) : null;
-  const availableFeatsRaw = featArtist ? getAvailableFeatureArtists(gameState, featArtist) : null;
+  // Feature artist data (depends on selectedArtist)
+  const selectedArtistObj = artists.find((a) => a.id === selectedArtist);
+  const availableFeatsRaw = selectedArtist ? getAvailableFeatureArtists(gameState, selectedArtist) : null;
   const availableFeats = availableFeatsRaw
     ? [
         ...availableFeatsRaw.sameLabel.map((a) => ({ artist: a, label: "Your Label" })),
         ...availableFeatsRaw.rivalArtists.map((r) => ({ artist: r.artist, label: r.labelName })),
       ]
     : [];
-  const featFee = featArtistObj && featTargetObj ? computeFeatureFee(featTargetObj, featArtistObj, gameState) : 0;
-  const featAcceptance = featArtistObj && featTargetObj ? evaluateFeatureAcceptance(gameState, featArtistObj, featTargetObj, featFee) : null;
+  const featTargetObj = featTarget ? [...artists, ...(gameState.freeAgentPool || []), ...gameState.rivalLabels.flatMap((l) => l.rosterArtists)].find((a) => a.id === featTarget) : null;
+  const featFee = selectedArtistObj && featTargetObj ? computeFeatureFee(featTargetObj, selectedArtistObj, gameState) : 0;
+  const featAcceptance = selectedArtistObj && featTargetObj ? evaluateFeatureAcceptance(gameState, selectedArtistObj, featTargetObj, featFee) : null;
 
-  function handleFeatureRecord() {
-    if (!featArtist || !featProducer || !featTarget) return;
-    const hasActiveAlbum = albums.some((al) => al.artistId === featArtist && al.status === "recording");
-    const isStandalone = featStandalone || !hasActiveAlbum;
-    const err = store.recordFeatureSong(featArtist, featProducer, featTarget, featFee, isStandalone);
-    if (err) setFeatError(err);
-    else { setFeatError(""); setFeatTarget(""); }
+  // Feature genre list for filter
+  const featGenres = [...new Set(availableFeats.map((f) => f.artist.genre))].sort();
+
+  // Filtered + sorted feature artists
+  const filteredFeats = availableFeats
+    .filter((f) => {
+      if (featGenreFilter !== "all" && f.artist.genre !== featGenreFilter) return false;
+      if (featSearch && !f.artist.name.toLowerCase().includes(featSearch.toLowerCase())) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      switch (featSort) {
+        case "ovr": return b.artist.overallRating - a.artist.overallRating;
+        case "price": {
+          const feeA = selectedArtistObj ? computeFeatureFee(a.artist, selectedArtistObj, gameState) : 0;
+          const feeB = selectedArtistObj ? computeFeatureFee(b.artist, selectedArtistObj, gameState) : 0;
+          return feeA - feeB;
+        }
+        case "pop": return b.artist.popularity - a.artist.popularity;
+        case "name": return a.artist.name.localeCompare(b.artist.name);
+        default: return 0;
+      }
+    });
+
+  function handleRecord() {
+    if (!selectedArtist || !selectedProducer) return;
+    const hasActiveAlbum = albums.some((al) => al.artistId === selectedArtist && al.status === "recording");
+    const isStandalone = standaloneMode || !hasActiveAlbum;
+    if (addFeature && featTarget) {
+      const err = store.recordFeatureSong(selectedArtist, selectedProducer, featTarget, featFee, isStandalone);
+      if (err) setError(err);
+      else { setError(""); setFeatTarget(""); setAddFeature(false); }
+    } else {
+      const err = recordNewSong(selectedArtist, selectedProducer, isStandalone);
+      if (err) setError(err);
+      else setError("");
+    }
   }
 
   function handleTour() {
@@ -84,7 +104,6 @@ export default function StudioPanel() {
   }
 
   // Selected artist album status info
-  const selectedArtistObj = artists.find((a) => a.id === selectedArtist);
   const activeAlbumForSelected = selectedArtist ? albums.find((al) => al.artistId === selectedArtist && al.status === "recording") : null;
 
   return (
@@ -126,7 +145,7 @@ export default function StudioPanel() {
           <select
             value={selectedArtist}
             onChange={(e) => setSelectedArtist(e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-[140px]"
+            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
           >
             <option value="">Artist...</option>
             {signedArtists.map((a) => {
@@ -142,24 +161,24 @@ export default function StudioPanel() {
           <select
             value={selectedProducer}
             onChange={(e) => setSelectedProducer(e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-[160px]"
+            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[160px]"
           >
             <option value="">Producer...</option>
             {producers.map((p) => {
               const unlocked = isProducerUnlocked(p, { studioLevel });
               return (
                 <option key={p.id} value={p.id} disabled={!unlocked}>
-                  {unlocked ? "" : "[LOCKED] "}{p.name} — ${(p.costPerSong / 1000).toFixed(0)}K · Q{p.quality} [{p.tier}]
+                  {unlocked ? "" : "[LOCKED] "}{p.name} — {p.specialty} · ${(p.costPerSong / 1000).toFixed(0)}K · Q{p.quality} [{p.tier}]
                 </option>
               );
             })}
           </select>
           <button
             onClick={handleRecord}
-            disabled={!selectedArtist || !selectedProducer}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-3 py-1 rounded text-xs transition"
+            disabled={!selectedArtist || !selectedProducer || (addFeature && !featTarget)}
+            className={`${addFeature ? "bg-purple-600 hover:bg-purple-500" : "bg-blue-600 hover:bg-blue-500"} disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-3 py-1 rounded text-xs transition`}
           >
-            Record
+            {addFeature ? "Record (feat.)" : "Record"}
           </button>
         </div>
 
@@ -202,83 +221,128 @@ export default function StudioPanel() {
           const compatible = !!artist && artist.genre === p.specialty;
           return (
             <div className="mt-1 text-xs text-gray-500">
-              {p.name}: {p.specialty}, Q{p.quality}, ${(p.costPerSong / 1000).toFixed(0)}K/song
+              {p.name}: <span className="font-medium text-gray-700">{p.specialty}</span>, Q{p.quality}, ${(p.costPerSong / 1000).toFixed(0)}K/song
               {compatible && <span className="text-green-600 font-bold ml-1">Genre Match</span>}
               {!unlocked && <span className="text-red-500 ml-1">LOCKED (Studio Lv{PRODUCER_TIER_MIN_STUDIO[p.studioTierRequired]}+)</span>}
             </div>
           );
         })()}
 
+        {/* Add Feature toggle */}
+        {selectedArtist && selectedProducer && (
+          <div className="mt-1.5">
+            <label className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={addFeature}
+                onChange={(e) => { setAddFeature(e.target.checked); if (!e.target.checked) setFeatTarget(""); }}
+                className="accent-purple-500"
+              />
+              <span className="text-xs text-purple-600 font-medium">Add Feature Artist</span>
+            </label>
+          </div>
+        )}
+
+        {/* Feature cost preview */}
+        {addFeature && featTarget && featTargetObj && featAcceptance && (
+          <div className="mt-1 text-xs text-gray-500 flex items-center gap-3 flex-wrap bg-purple-50 border border-purple-200 rounded px-2 py-1">
+            <span>Fee: <span className="text-gray-900 font-semibold">${featFee.toLocaleString()}</span></span>
+            <span>Acceptance: <span className={`font-semibold ${featAcceptance.accepted ? "text-green-600" : "text-red-500"}`}>
+              {featAcceptance.accepted ? "Likely" : "Unlikely"} ({Math.round(featAcceptance.chance)}%)
+            </span></span>
+            <span>Genre: <span className="text-gray-700">{featTargetObj.genre}</span></span>
+            <span>OVR: <span className="text-gray-700">{featTargetObj.overallRating}</span></span>
+          </div>
+        )}
+
         {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
       </section>
 
-      {/* ── Feature Collaboration ── */}
-      <section>
-        <h2 className="text-gray-900 font-bold text-sm mb-1">Feature Collaboration</h2>
-        <div className="flex items-end gap-2 flex-wrap">
-          <select
-            value={featArtist}
-            onChange={(e) => { setFeatArtist(e.target.value); setFeatTarget(""); }}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-[140px]"
-          >
-            <option value="">Your artist...</option>
-            {signedArtists.map((a) => (
-              <option key={a.id} value={a.id}>{a.name} ({a.genre})</option>
-            ))}
-          </select>
-          <select
-            value={featProducer}
-            onChange={(e) => setFeatProducer(e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-[160px]"
-          >
-            <option value="">Producer...</option>
-            {producers.map((p) => {
-              const unlocked = isProducerUnlocked(p, { studioLevel });
-              return (
-                <option key={p.id} value={p.id} disabled={!unlocked}>
-                  {unlocked ? "" : "[LOCKED] "}{p.name} — ${(p.costPerSong / 1000).toFixed(0)}K [{p.tier}]
-                </option>
-              );
-            })}
-          </select>
-          <select
-            value={featTarget}
-            onChange={(e) => setFeatTarget(e.target.value)}
-            disabled={!featArtist}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-[160px]"
-          >
-            <option value="">Featured artist...</option>
-            {availableFeats.map(({ artist: a, label }) => (
-              <option key={a.id} value={a.id}>
-                {a.name} ({a.genre}, OVR {a.overallRating}) — {label}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleFeatureRecord}
-            disabled={!featArtist || !featProducer || !featTarget}
-            className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-3 py-1 rounded text-xs transition"
-          >
-            Record Feature
-          </button>
-        </div>
-        {/* Feature info line */}
-        {featTarget && featTargetObj && featAcceptance && (
-          <div className="mt-1 text-xs text-gray-500 flex items-center gap-3 flex-wrap">
-            <span>Fee: <span className="text-gray-900 font-medium">${featFee.toLocaleString()}</span></span>
-            <span>Acceptance: <span className={`font-medium ${featAcceptance.accepted ? "text-green-600" : "text-red-500"}`}>
-              {featAcceptance.accepted ? "Likely" : "Unlikely"} ({Math.round(featAcceptance.chance)}%)
-            </span></span>
-            {featTargetObj.genre && <span>Genre: {featTargetObj.genre}</span>}
+      {/* ── Feature Artist Browser (shown when Add Feature is on) ── */}
+      {addFeature && selectedArtist && (
+        <section>
+          <h2 className="text-gray-900 font-bold text-sm mb-1">Select Feature Artist</h2>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1.5">
+            <input
+              type="text"
+              value={featSearch}
+              onChange={(e) => setFeatSearch(e.target.value)}
+              placeholder="Search name..."
+              className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-purple-400 w-36"
+            />
+            <select
+              value={featGenreFilter}
+              onChange={(e) => setFeatGenreFilter(e.target.value)}
+              className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-purple-400"
+            >
+              <option value="all">All Genres</option>
+              {featGenres.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <select
+              value={featSort}
+              onChange={(e) => setFeatSort(e.target.value as typeof featSort)}
+              className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-purple-400"
+            >
+              <option value="ovr">Sort: OVR</option>
+              <option value="price">Sort: Price</option>
+              <option value="pop">Sort: Popularity</option>
+              <option value="name">Sort: Name</option>
+            </select>
+            <span className="text-gray-400 text-xs ml-auto">{filteredFeats.length} available</span>
           </div>
-        )}
-        {featError && <p className="text-red-500 text-xs mt-1">{featError}</p>}
-      </section>
+          <div className="max-h-48 overflow-y-auto overflow-x-auto border border-gray-200 rounded bg-white">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-gray-400 border-b border-gray-200 sticky top-0 bg-white">
+                  <th className="py-1 px-2 font-medium">Name</th>
+                  <th className="py-1 px-2 font-medium">Genre</th>
+                  <th className="py-1 px-2 font-medium">OVR</th>
+                  <th className="py-1 px-2 font-medium">Pop</th>
+                  <th className="py-1 px-2 font-medium">Price</th>
+                  <th className="py-1 px-2 font-medium">Label</th>
+                  <th className="py-1 px-2 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredFeats.length === 0 ? (
+                  <tr><td colSpan={7} className="py-4 text-center text-gray-400">No feature artists available.</td></tr>
+                ) : filteredFeats.map(({ artist: a, label }, idx) => {
+                  const fee = selectedArtistObj ? computeFeatureFee(a, selectedArtistObj, gameState) : 0;
+                  const acceptance = selectedArtistObj ? evaluateFeatureAcceptance(gameState, selectedArtistObj, a, fee) : null;
+                  const isSelected = featTarget === a.id;
+                  return (
+                    <tr
+                      key={a.id}
+                      className={`${isSelected ? "bg-purple-50" : idx % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-purple-50 cursor-pointer transition`}
+                      onClick={() => setFeatTarget(isSelected ? "" : a.id)}
+                    >
+                      <td className="py-1 px-2 text-gray-900 font-medium">{a.name}</td>
+                      <td className="py-1 px-2 text-gray-600">{a.genre}</td>
+                      <td className="py-1 px-2 text-gray-700 font-semibold">{a.overallRating}</td>
+                      <td className="py-1 px-2 text-gray-600">{a.popularity}</td>
+                      <td className="py-1 px-2 text-gray-700 font-medium">${(fee / 1000).toFixed(0)}K</td>
+                      <td className="py-1 px-2 text-gray-500">{label}</td>
+                      <td className="py-1 px-2 text-right">
+                        {acceptance && (
+                          <span className={`text-[10px] font-semibold ${acceptance.accepted ? "text-green-600" : "text-red-500"}`}>
+                            {Math.round(acceptance.chance)}%
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* ── Albums in Progress ── */}
       {inProgressAlbums.length > 0 && (
         <section>
           <h2 className="text-gray-900 font-bold text-sm mb-1">Albums in Progress</h2>
+          <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="text-left text-gray-400 border-b border-gray-200">
@@ -327,6 +391,7 @@ export default function StudioPanel() {
               })}
             </tbody>
           </table>
+          </div>
           {/* Track listings per album — simple numbered lists */}
           {inProgressAlbums.map((al) => {
             const albumSongs = songs.filter((s) => al.songIds.includes(s.id));
@@ -349,6 +414,7 @@ export default function StudioPanel() {
       {unreleased.length > 0 && (
         <section>
           <h2 className="text-gray-900 font-bold text-sm mb-1">Unreleased Tracks</h2>
+          <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="text-left text-gray-400 border-b border-gray-200">
@@ -387,47 +453,14 @@ export default function StudioPanel() {
               })}
             </tbody>
           </table>
-        </section>
-      )}
-
-      {/* ── Artist Activity (Rest only — no promo) ── */}
-      {signedArtists.length > 0 && (
-        <section>
-          <h2 className="text-gray-900 font-bold text-sm mb-1">Artist Activity</h2>
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-200">
-                <th className="py-1 pr-2 font-medium">Name</th>
-                <th className="py-1 pr-2 font-medium">Fatigue</th>
-                <th className="py-1 pr-2 font-medium">Morale</th>
-                <th className="py-1 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {signedArtists.map((a, idx) => (
-                <tr key={a.id} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                  <td className="py-1 pr-2 text-gray-900 font-medium">{a.name}</td>
-                  <td className={`py-1 pr-2 ${a.fatigue > 70 ? "text-red-500 font-bold" : "text-gray-600"}`}>{a.fatigue}/100</td>
-                  <td className="py-1 pr-2 text-gray-600">{a.morale}</td>
-                  <td className="py-1 text-right">
-                    <button
-                      onClick={() => { const err = restArtistWeek(a.id); if (err) setError(err); }}
-                      className="text-xs text-blue-600 hover:text-blue-500 px-1.5 py-0.5 rounded border border-blue-200 hover:border-blue-400 transition"
-                      title="Rest: -20 fatigue, +10 morale"
-                    >
-                      Rest
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          </div>
         </section>
       )}
 
       {/* ── Producer Roster ── */}
       <section>
         <h2 className="text-gray-900 font-bold text-sm mb-1">Producer Roster</h2>
+        <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="text-left text-gray-400 border-b border-gray-200">
@@ -461,6 +494,7 @@ export default function StudioPanel() {
             })}
           </tbody>
         </table>
+        </div>
       </section>
 
       {/* ── Tour Booking ── */}
@@ -470,7 +504,7 @@ export default function StudioPanel() {
           <select
             value={tourArtist}
             onChange={(e) => setTourArtist(e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-[140px]"
+            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
           >
             <option value="">Artist...</option>
             {signedArtists.filter((a) => !a.onTour).map((a) => (
@@ -482,7 +516,7 @@ export default function StudioPanel() {
           <select
             value={tourSize}
             onChange={(e) => setTourSize(e.target.value as TourSize)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-[140px]"
+            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
           >
             {(["club_tour", "regional_tour", "national_tour", "major_tour", "world_tour"] as TourSize[]).map((t) => (
               <option key={t} value={t}>
@@ -595,8 +629,8 @@ function AlbumReleaseModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-3 border-b border-gray-200">
           <div>
             <h3 className="text-gray-900 font-bold text-sm">Drop &quot;{album.title}&quot;</h3>
@@ -867,9 +901,9 @@ function AlbumDashboardModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
       <div
-        className="bg-white border border-gray-200 rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col"
+        className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-2xl h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

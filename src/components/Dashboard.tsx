@@ -1,7 +1,8 @@
 "use client";
 import { useGameStore } from "@/store/gameStore";
 import { ACHIEVEMENT_DEFS } from "@/lib/achievements";
-import { MallCategory, RevenueHistory, AchievementCategory, HoFTier } from "@/lib/types";
+import { MallCategory, RevenueHistory, AchievementCategory, HoFTier, Artist } from "@/lib/types";
+import ArtistSprite from "./ArtistSprite";
 
 const CATEGORY_LABELS: Record<MallCategory, string> = {
   jewelry:     "Jewelry",
@@ -104,7 +105,7 @@ export default function Dashboard() {
   const totalUnlocked = unlockedSet.size;
 
   return (
-    <div className="p-3 space-y-3">
+    <div className="p-2 sm:p-3 space-y-2 sm:space-y-3">
       {/* Stat cards — tighter padding */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <Card label="Signed Artists" value={signedArtists.length} sub={`of ${artists.length} on roster`} />
@@ -116,6 +117,69 @@ export default function Dashboard() {
         />
         <Card label="Award Wins" value={totalAwardWins} sub={`${awardHistory.length} ceremonies`} />
       </div>
+
+      {/* Signed Artists */}
+      {signedArtists.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
+          <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Signed Artists ({signedArtists.length})</h3>
+          <div className="border border-gray-200 rounded overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-gray-100 text-gray-500 border-b border-gray-200">
+                  <th className="text-left py-1 px-2 font-semibold">Name</th>
+                  <th className="text-center py-1 px-1 font-semibold">Age</th>
+                  <th className="text-left py-1 px-1 font-semibold">Genre</th>
+                  <th className="text-center py-1 px-1 font-semibold">OVR</th>
+                  <th className="text-center py-1 px-1 font-semibold">POP</th>
+                  <th className="text-center py-1 px-1 font-semibold">MOM</th>
+                  <th className="text-center py-1 px-1 font-semibold">MRL</th>
+                  <th className="text-center py-1 px-1 font-semibold">FTG</th>
+                  <th className="text-right py-1 px-2 font-semibold">Fans</th>
+                  <th className="text-center py-1 px-1 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {signedArtists.map((a: Artist, i: number) => {
+                  const status = a.onTour
+                    ? { text: "Touring", color: "text-yellow-600" }
+                    : a.contractAlbumsLeft === 0
+                    ? { text: "Expired", color: "text-red-500" }
+                    : a.fatigue > 70
+                    ? { text: "Fatigued", color: "text-orange-500" }
+                    : { text: "Active", color: "text-green-600" };
+                  return (
+                    <tr key={a.id} className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} border-b border-gray-100`}>
+                      <td className="py-1 px-2">
+                        <div className="flex items-center gap-1.5">
+                          <ArtistSprite spriteIndex={a.spriteIndex} size={18} />
+                          <span className="font-medium text-gray-900 truncate max-w-[120px]">{a.name}</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-1 px-1 text-gray-600">{a.age}</td>
+                      <td className="py-1 px-1 text-gray-600">{a.genre}</td>
+                      <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}</td>
+                      <td className="text-center py-1 px-1 text-gray-600">{a.popularity}</td>
+                      <td className="text-center py-1 px-1">
+                        <span className={`font-semibold ${(a.momentum ?? 0) >= 60 ? "text-green-600" : (a.momentum ?? 0) >= 40 ? "text-yellow-600" : "text-red-500"}`}>
+                          {a.momentum ?? 0}
+                        </span>
+                      </td>
+                      <td className="text-center py-1 px-1 text-gray-600">{a.morale}</td>
+                      <td className={`text-center py-1 px-1 ${a.fatigue > 70 ? "text-red-500 font-semibold" : "text-gray-600"}`}>{a.fatigue}</td>
+                      <td className="text-right py-1 px-2 text-gray-600">
+                        {a.fanbase >= 1000 ? `${(a.fanbase / 1000).toFixed(0)}K` : a.fanbase}
+                      </td>
+                      <td className="text-center py-1 px-1">
+                        <span className={`text-[10px] font-semibold ${status.color}`}>{status.text}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Dynasty Tracker */}
       {(dynastyYears ?? 0) > 0 && (

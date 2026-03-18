@@ -47,8 +47,8 @@ export default function MallPanel() {
   }, {});
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
+      <div className="flex items-center justify-between gap-2">
         <div>
           <h2 className="text-gray-900 font-semibold text-sm">The Mall</h2>
           <p className="text-gray-400 text-xs mt-0.5">Spend your earnings. Items appear in the Vault on your dashboard.</p>

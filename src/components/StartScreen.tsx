@@ -8,7 +8,7 @@ export default function StartScreen() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white border border-gray-200 rounded-md p-10 w-full max-w-md shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-md p-6 sm:p-10 w-full max-w-md shadow-sm">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2 tracking-tight">Wrap Label GM</h1>
         <p className="text-gray-500 mb-8 text-sm">
           Build a rap empire. Sign artists, record heat, top the charts.

@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { STUDIO_DATA, SCOUTING_DATA, ARTIST_DEV_DATA, TOURING_DEPT_DATA, MARKETING_DATA, PR_DATA, MERCH_DATA } from "@/lib/data";
 
@@ -13,6 +14,20 @@ function fmt(n: number) {
   return n >= 1000 ? `$${(n / 1000).toFixed(0)}K` : `$${n}`;
 }
 
+function LevelBar({ level, max = 10, affordable }: { level: number; max?: number; affordable: boolean | null }) {
+  const pct = (level / max) * 100;
+  const barColor = level >= max
+    ? "bg-emerald-500"
+    : affordable
+      ? "bg-emerald-500"
+      : "bg-red-400";
+  return (
+    <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+      <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 export default function UpgradesPanel() {
   const {
     money, studioLevel, scoutingLevel, artistDevLevel, touringLevel,
@@ -20,6 +35,8 @@ export default function UpgradesPanel() {
     upgradeStudio, upgradeScouting, upgradeArtistDev, upgradeTouringDept,
     upgradeMarketing, upgradePR, upgradeMerch,
   } = useGameStore();
+
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const studio = STUDIO_DATA[studioLevel];
   const nextStudio = studioLevel < 10 ? STUDIO_DATA[studioLevel + 1] : null;
@@ -36,422 +53,309 @@ export default function UpgradesPanel() {
   const merch = MERCH_DATA[merchLevel];
   const nextMerch = merchLevel < 10 ? MERCH_DATA[merchLevel + 1] : null;
 
-  function handleStudio() {
-    const err = upgradeStudio();
+  function handle(fn: () => string | null | undefined) {
+    const err = fn();
     if (err) alert(err);
   }
-  function handleScouting() {
-    const err = upgradeScouting();
-    if (err) alert(err);
-  }
-  function handleArtistDev() {
-    const err = upgradeArtistDev();
-    if (err) alert(err);
-  }
-  function handleTouring() {
-    const err = upgradeTouringDept();
-    if (err) alert(err);
-  }
-  function handleMarketing() {
-    const err = upgradeMarketing();
-    if (err) alert(err);
-  }
-  function handlePR() {
-    const err = upgradePR();
-    if (err) alert(err);
-  }
-  function handleMerch() {
-    const err = upgradeMerch();
-    if (err) alert(err);
-  }
+
+  const departments = [
+    {
+      id: "studio",
+      name: "Studio",
+      level: studioLevel,
+      keyStat: `+${studio.qualityBonusFlat} quality`,
+      weeklyCost: studio.weeklyOperatingCost,
+      nextCost: nextStudio?.unlockCost ?? null,
+      affordable: nextStudio ? money >= nextStudio.unlockCost : null,
+      onUpgrade: () => handle(upgradeStudio),
+      detail: {
+        current: [
+          ["Quality Bonus", `+${studio.qualityBonusFlat}`],
+          ["Roster Cap", `${studio.rosterCap}`],
+          ["Tokens/Wk", `${studio.tokensPerWeek}`],
+          ["Token Pool", `${recordingTokens}`],
+          ["Producer", STUDIO_TIER_LABEL[studio.producerTierUnlocked]],
+        ],
+        next: nextStudio ? [
+          ["Quality", `+${nextStudio.qualityBonusFlat}`],
+          ["Roster", `${nextStudio.rosterCap}`],
+          ["Tokens/Wk", `${nextStudio.tokensPerWeek}`],
+          ["Producer", STUDIO_TIER_LABEL[nextStudio.producerTierUnlocked]],
+          ["Op Cost", `${fmt(nextStudio.weeklyOperatingCost)}/wk`],
+        ] : null,
+      },
+    },
+    {
+      id: "scouting",
+      name: "Scouting",
+      level: scoutingLevel,
+      keyStat: `${scouting.visibilityPct}% vis`,
+      weeklyCost: scouting.weeklyOperatingCost,
+      nextCost: nextScouting?.unlockCost ?? null,
+      affordable: nextScouting ? money >= nextScouting.unlockCost : null,
+      onUpgrade: () => handle(upgradeScouting),
+      detail: {
+        current: [
+          ["Visibility", `${scouting.visibilityPct}%`],
+          ["Scouted", `${scouting.scoutedPct}%`],
+          ["Agents Shown", `${Math.round(4 + (scouting.visibilityPct / 100) * 4)}`],
+          ["Traits", scouting.revealedTraits.length > 0 ? scouting.revealedTraits.join(", ") : "none"],
+        ],
+        next: nextScouting ? [
+          ["Visibility", `${nextScouting.visibilityPct}%`],
+          ["Scouted", `${nextScouting.scoutedPct}%`],
+          ...(nextScouting.revealedTraits.length > scouting.revealedTraits.length
+            ? [["New Traits", nextScouting.revealedTraits.filter(t => !scouting.revealedTraits.includes(t)).join(", ")]]
+            : []),
+          ["Op Cost", `${fmt(nextScouting.weeklyOperatingCost)}/wk`],
+        ] : null,
+      },
+    },
+    {
+      id: "artistdev",
+      name: "Artist Dev",
+      level: artistDevLevel,
+      keyStat: artistDevLevel > 0 ? `+${Math.round(artistDev.improveProbBonus * 100)}% imp` : "--",
+      weeklyCost: artistDev.weeklyOperatingCost,
+      nextCost: nextArtistDev?.unlockCost ?? null,
+      affordable: nextArtistDev ? money >= nextArtistDev.unlockCost : null,
+      onUpgrade: () => handle(upgradeArtistDev),
+      detail: {
+        current: [
+          ["Program", artistDevLevel > 0 ? artistDev.name : "None"],
+          ["Improve Prob", artistDevLevel > 0 ? `+${Math.round(artistDev.improveProbBonus * 100)}%` : "--"],
+          ["Regress Risk", artistDevLevel > 0 ? `-${Math.round(artistDev.regressReduction * 100)}%` : "--"],
+          ["Age Decline", artistDevLevel > 0 ? `-${Math.round(artistDev.ageDeclineReduction * 100)}%` : "--"],
+        ],
+        next: nextArtistDev ? [
+          ["Program", nextArtistDev.name],
+          ["Improve", `+${Math.round(nextArtistDev.improveProbBonus * 100)}%`],
+          ["Regress", `-${Math.round(nextArtistDev.regressReduction * 100)}%`],
+          ["Age Decline", `-${Math.round(nextArtistDev.ageDeclineReduction * 100)}%`],
+          ["Op Cost", `${fmt(nextArtistDev.weeklyOperatingCost)}/wk`],
+        ] : null,
+      },
+    },
+    {
+      id: "touring",
+      name: "Touring",
+      level: touringLevel,
+      keyStat: touringLevel > 0 ? `+${touring.revenueBonusPct}% rev` : "--",
+      weeklyCost: touring.weeklyOperatingCost,
+      nextCost: nextTouring?.unlockCost ?? null,
+      affordable: nextTouring ? money >= nextTouring.unlockCost : null,
+      onUpgrade: () => handle(upgradeTouringDept),
+      detail: {
+        current: [
+          ["Program", touringLevel > 0 ? touring.name : "None"],
+          ["Revenue", touringLevel > 0 ? `+${touring.revenueBonusPct}%` : "--"],
+          ["Fan Growth", touringLevel > 0 ? `+${touring.fanBonusPct}%` : "--"],
+          ["Fatigue Red.", touringLevel > 0 ? `-${Math.round(touring.fatigueMitigation * 100)}%` : "--"],
+        ],
+        next: nextTouring ? [
+          ["Program", nextTouring.name],
+          ["Revenue", `+${nextTouring.revenueBonusPct}%`],
+          ["Fans", `+${nextTouring.fanBonusPct}%`],
+          ["Fatigue", `-${Math.round(nextTouring.fatigueMitigation * 100)}%`],
+          ["Op Cost", `${fmt(nextTouring.weeklyOperatingCost)}/wk`],
+        ] : null,
+      },
+    },
+    {
+      id: "marketing",
+      name: "Marketing",
+      level: marketingLevel,
+      keyStat: marketingLevel > 0 ? `+${marketing.revenuePct}% rev` : "--",
+      weeklyCost: marketing.weeklyOperatingCost,
+      nextCost: nextMarketing?.unlockCost ?? null,
+      affordable: nextMarketing ? money >= nextMarketing.unlockCost : null,
+      onUpgrade: () => handle(upgradeMarketing),
+      detail: {
+        current: [
+          ["Program", marketingLevel > 0 ? marketing.name : "None"],
+          ["Stream Revenue", marketingLevel > 0 ? `+${marketing.revenuePct}%` : "--"],
+          ["Fan Growth", marketingLevel > 0 ? `+${marketing.fanGrowthPct}%` : "--"],
+        ],
+        next: nextMarketing ? [
+          ["Program", nextMarketing.name],
+          ["Revenue", `+${nextMarketing.revenuePct}%`],
+          ["Fan Growth", `+${nextMarketing.fanGrowthPct}%`],
+          ["Op Cost", `${fmt(nextMarketing.weeklyOperatingCost)}/wk`],
+        ] : null,
+      },
+    },
+    {
+      id: "pr",
+      name: "PR",
+      level: prLevel,
+      keyStat: prLevel > 0 ? `-${Math.round(pr.scandalDamageReduction * 100)}% dmg` : "--",
+      weeklyCost: pr.weeklyOperatingCost,
+      nextCost: nextPR?.unlockCost ?? null,
+      affordable: nextPR ? money >= nextPR.unlockCost : null,
+      onUpgrade: () => handle(upgradePR),
+      detail: {
+        current: [
+          ["Program", prLevel > 0 ? pr.name : "None"],
+          ["Scandal Freq", prLevel > 0 ? `-${Math.round(pr.scandalFreqReduction * 100)}%` : "--"],
+          ["Scandal Dmg", prLevel > 0 ? `-${Math.round(pr.scandalDamageReduction * 100)}%` : "--"],
+        ],
+        next: nextPR ? [
+          ["Program", nextPR.name],
+          ["Frequency", `-${Math.round(nextPR.scandalFreqReduction * 100)}%`],
+          ["Damage", `-${Math.round(nextPR.scandalDamageReduction * 100)}%`],
+          ["Op Cost", `${fmt(nextPR.weeklyOperatingCost)}/wk`],
+        ] : null,
+      },
+    },
+    {
+      id: "merch",
+      name: "Merch",
+      level: merchLevel,
+      keyStat: merchLevel > 0 ? `$${merch.revenuePerFan.toFixed(3)}/fan` : "--",
+      weeklyCost: merch.weeklyOperatingCost,
+      nextCost: nextMerch?.unlockCost ?? null,
+      affordable: nextMerch ? money >= nextMerch.unlockCost : null,
+      onUpgrade: () => handle(upgradeMerch),
+      detail: {
+        current: [
+          ["Program", merchLevel > 0 ? merch.name : "None"],
+          ["$/Fan/Wk", merchLevel > 0 ? `$${merch.revenuePerFan.toFixed(3)}` : "--"],
+        ],
+        next: nextMerch ? [
+          ["Program", nextMerch.name],
+          ["$/Fan/Wk", `$${nextMerch.revenuePerFan.toFixed(3)}`],
+          ["Op Cost", `${fmt(nextMerch.weeklyOperatingCost)}/wk`],
+        ] : null,
+      },
+    },
+  ];
+
+  const totalWeeklyCost = departments.reduce((sum, d) => sum + d.weeklyCost, 0);
 
   return (
-    <div className="p-4 space-y-8">
+    <div className="p-2 sm:p-3">
+      {/* Total overhead banner */}
+      <div className="flex items-center justify-between mb-3 px-2">
+        <h2 className="text-sm font-semibold text-gray-800">Department Upgrades</h2>
+        <div className="text-xs text-gray-500">
+          Weekly overhead: <span className="font-semibold text-gray-900">{fmt(totalWeeklyCost)}</span>/wk
+        </div>
+      </div>
 
-      {/* ── Studio Ladder ── */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-gray-900 font-semibold text-sm">Studio</h2>
-          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
-            Level {studioLevel} / 10
-          </span>
+      {/* Department table */}
+      <div className="border border-gray-200 rounded-md overflow-hidden overflow-x-auto bg-white">
+        {/* Header row */}
+        <div className="grid grid-cols-[1fr_80px_90px_70px_70px_72px] gap-0 px-3 py-1.5 bg-gray-100 border-b border-gray-200">
+          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Department</div>
+          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-center">Level</div>
+          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-right">Key Stat</div>
+          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-right">Cost/Wk</div>
+          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-right">Next</div>
+          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-center"></div>
         </div>
 
-        {/* Progress bar */}
-        <div className="w-full h-2 bg-gray-200 rounded mb-4">
-          <div
-            className="h-2 bg-blue-600 rounded transition-all"
-            style={{ width: `${studioLevel * 10}%` }}
-          />
-        </div>
+        {departments.map((dept, idx) => {
+          const isExpanded = expanded === dept.id;
+          const isMaxed = dept.level >= 10;
+          const rowBg = idx % 2 === 0 ? "bg-white" : "bg-gray-50/60";
 
-        {/* Current stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
-          {[
-            ["Quality Bonus", `+${studio.qualityBonusFlat}`],
-            ["Roster Cap", `${studio.rosterCap} artists`],
-            ["Tokens/Week", studio.tokensPerWeek],
-            ["Token Pool", recordingTokens],
-            ["Weekly Cost", fmt(studio.weeklyOperatingCost)],
-          ].map(([label, value]) => (
-            <div key={label as string} className="bg-gray-50 border border-gray-200 rounded p-2 text-center">
-              <div className="text-gray-400 text-[10px] uppercase tracking-wider">{label}</div>
-              <div className="text-gray-900 font-semibold text-sm mt-0.5">{value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Producer access */}
-        <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4 text-xs text-gray-600">
-          Producer access: <span className="text-gray-900 font-semibold">{STUDIO_TIER_LABEL[studio.producerTierUnlocked]} and below</span>
-          {studioLevel < 10 && nextStudio && (
-            <> &nbsp;→&nbsp; next unlock: <span className="text-blue-600 font-semibold">{STUDIO_TIER_LABEL[nextStudio.producerTierUnlocked]}</span></>
-          )}
-        </div>
-
-        {/* Upgrade button */}
-        {nextStudio ? (
-          <div className="bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-gray-900 font-semibold text-sm">Upgrade to Level {studioLevel + 1}</div>
-              <div className="text-gray-600 text-xs mt-1 space-y-0.5">
-                <div>+{nextStudio.qualityBonusFlat} quality · {nextStudio.tokensPerWeek} tokens/week · {nextStudio.rosterCap} roster cap</div>
-                <div>Weekly cost: {fmt(nextStudio.weeklyOperatingCost)}/wk</div>
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className={`font-semibold text-sm mb-1 ${money >= nextStudio.unlockCost ? "text-green-700" : "text-red-600"}`}>
-                {fmt(nextStudio.unlockCost)}
-              </div>
-              <button
-                onClick={handleStudio}
-                disabled={money < nextStudio.unlockCost}
-                className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded transition"
+          return (
+            <div key={dept.id} className={`border-b border-gray-100 last:border-b-0 ${rowBg}`}>
+              {/* Main row */}
+              <div
+                className="grid grid-cols-[1fr_80px_90px_70px_70px_72px] gap-0 px-3 py-2 items-center cursor-pointer hover:bg-blue-50/40 transition-colors"
+                onClick={() => setExpanded(isExpanded ? null : dept.id)}
               >
-                Upgrade
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-green-700 text-sm font-semibold text-center py-3">Studio at max level</div>
-        )}
-      </section>
+                {/* Department name + expand indicator */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-gray-400 select-none">{isExpanded ? "\u25BC" : "\u25B6"}</span>
+                  <span className="text-xs font-medium text-gray-800">{dept.name}</span>
+                </div>
 
-      {/* ── Scouting Ladder ── */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-gray-900 font-semibold text-sm">Scouting Department</h2>
-          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
-            Level {scoutingLevel} / 10
-          </span>
-        </div>
+                {/* Level bar + label */}
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[10px] text-gray-600 tabular-nums">{dept.level}/10</span>
+                  <LevelBar level={dept.level} affordable={dept.affordable} />
+                </div>
 
-        {/* Progress bar */}
-        <div className="w-full h-2 bg-gray-200 rounded mb-4">
-          <div
-            className="h-2 bg-blue-600 rounded transition-all"
-            style={{ width: `${scoutingLevel * 10}%` }}
-          />
-        </div>
+                {/* Key stat */}
+                <div className="text-xs text-gray-700 text-right tabular-nums">{dept.keyStat}</div>
 
-        {/* Current stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-          {[
-            ["Visibility", `${scouting.visibilityPct}%`],
-            ["Scouted", `${scouting.scoutedPct}%`],
-            ["Agents Shown", `${Math.round(4 + (scouting.visibilityPct / 100) * 4)}`],
-            ["Weekly Cost", fmt(scouting.weeklyOperatingCost)],
-          ].map(([label, value]) => (
-            <div key={label as string} className="bg-gray-50 border border-gray-200 rounded p-2 text-center">
-              <div className="text-gray-400 text-[10px] uppercase tracking-wider">{label}</div>
-              <div className="text-gray-900 font-semibold text-sm mt-0.5">{value}</div>
-            </div>
-          ))}
-        </div>
+                {/* Weekly cost */}
+                <div className="text-xs text-gray-600 text-right tabular-nums">{fmt(dept.weeklyCost)}</div>
 
-        {/* Revealed traits */}
-        {scouting.revealedTraits.length > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4 text-xs text-gray-600">
-            Revealed traits: <span className="text-gray-900 font-semibold">{scouting.revealedTraits.join(", ")}</span>
-          </div>
-        )}
-        {nextScouting && nextScouting.revealedTraits.length > scouting.revealedTraits.length && (
-          <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4 text-xs text-gray-600">
-            Next unlock reveals: <span className="text-blue-600 font-semibold">
-              {nextScouting.revealedTraits.filter((t) => !scouting.revealedTraits.includes(t)).join(", ")}
-            </span>
-          </div>
-        )}
+                {/* Next upgrade cost */}
+                <div className={`text-xs text-right tabular-nums font-medium ${
+                  isMaxed ? "text-gray-300" : dept.affordable ? "text-emerald-600" : "text-red-500"
+                }`}>
+                  {isMaxed ? "--" : fmt(dept.nextCost!)}
+                </div>
 
-        {/* Upgrade button */}
-        {nextScouting ? (
-          <div className="bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-gray-900 font-semibold text-sm">Upgrade to Level {scoutingLevel + 1}</div>
-              <div className="text-gray-600 text-xs mt-1 space-y-0.5">
-                <div>{nextScouting.visibilityPct}% visibility · {nextScouting.scoutedPct}% scouted</div>
-                <div>Weekly cost: {fmt(nextScouting.weeklyOperatingCost)}/wk</div>
+                {/* Upgrade button */}
+                <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+                  {isMaxed ? (
+                    <span className="text-[10px] text-emerald-600 font-medium">MAX</span>
+                  ) : (
+                    <button
+                      onClick={dept.onUpgrade}
+                      disabled={!dept.affordable}
+                      className={`text-[10px] font-semibold px-2.5 py-0.5 rounded transition
+                        ${dept.affordable
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        }`}
+                    >
+                      Upgrade
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className={`font-semibold text-sm mb-1 ${money >= nextScouting.unlockCost ? "text-green-700" : "text-red-600"}`}>
-                {fmt(nextScouting.unlockCost)}
-              </div>
-              <button
-                onClick={handleScouting}
-                disabled={money < nextScouting.unlockCost}
-                className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded transition"
-              >
-                Upgrade
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-green-700 text-sm font-semibold text-center py-3">Scouting at max level</div>
-        )}
-      </section>
 
-      {/* ── Artist Development ── */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-gray-900 font-semibold text-sm">Artist Development</h2>
-          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
-            Level {artistDevLevel} / 10
-          </span>
-        </div>
+              {/* Expanded detail row */}
+              {isExpanded && (
+                <div className="px-4 pb-2.5 pt-0.5">
+                  <div className="bg-gray-50 border border-gray-200 rounded p-2.5 grid grid-cols-2 gap-x-6 gap-y-0.5">
+                    {/* Current stats column */}
+                    <div>
+                      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Current (Lv {dept.level})</div>
+                      {dept.detail.current.map(([label, value]) => (
+                        <div key={label} className="flex justify-between text-xs py-0.5">
+                          <span className="text-gray-500">{label}</span>
+                          <span className="text-gray-800 font-medium tabular-nums">{value}</span>
+                        </div>
+                      ))}
+                    </div>
 
-        <div className="w-full h-2 bg-gray-200 rounded mb-4">
-          <div
-            className="h-2 bg-blue-600 rounded transition-all"
-            style={{ width: `${artistDevLevel * 10}%` }}
-          />
-        </div>
-
-        {artistDevLevel > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4 text-xs text-gray-400 italic">
-            {artistDev.name}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-          {[
-            ["Improve Prob", artistDevLevel > 0 ? `+${Math.round(artistDev.improveProbBonus * 100)}%` : "—"],
-            ["Regress Risk", artistDevLevel > 0 ? `-${Math.round(artistDev.regressReduction * 100)}%` : "—"],
-            ["Age Decline", artistDevLevel > 0 ? `-${Math.round(artistDev.ageDeclineReduction * 100)}%` : "—"],
-            ["Weekly Cost", fmt(artistDev.weeklyOperatingCost)],
-          ].map(([label, value]) => (
-            <div key={label as string} className="bg-gray-50 border border-gray-200 rounded p-2 text-center">
-              <div className="text-gray-400 text-[10px] uppercase tracking-wider">{label}</div>
-              <div className="text-gray-900 font-semibold text-sm mt-0.5">{value}</div>
+                    {/* Next level column */}
+                    <div>
+                      {dept.detail.next ? (
+                        <>
+                          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                            Next (Lv {dept.level + 1})
+                            <span className={`ml-1.5 ${dept.affordable ? "text-emerald-600" : "text-red-500"}`}>
+                              {fmt(dept.nextCost!)}
+                            </span>
+                          </div>
+                          {dept.detail.next.map(([label, value]) => (
+                            <div key={label} className="flex justify-between text-xs py-0.5">
+                              <span className="text-gray-500">{label}</span>
+                              <span className="text-blue-700 font-medium tabular-nums">{value}</span>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider mt-0.5">
+                          Department at max level
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-
-        {nextArtistDev ? (
-          <div className="bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-gray-900 font-semibold text-sm">{nextArtistDev.name}</div>
-              <div className="text-gray-600 text-xs mt-1 space-y-0.5">
-                <div>+{Math.round(nextArtistDev.improveProbBonus * 100)}% improve · -{Math.round(nextArtistDev.regressReduction * 100)}% regress · -{Math.round(nextArtistDev.ageDeclineReduction * 100)}% age decline</div>
-                <div>Weekly cost: {fmt(nextArtistDev.weeklyOperatingCost)}/wk</div>
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className={`font-semibold text-sm mb-1 ${money >= nextArtistDev.unlockCost ? "text-green-700" : "text-red-600"}`}>
-                {fmt(nextArtistDev.unlockCost)}
-              </div>
-              <button
-                onClick={handleArtistDev}
-                disabled={money < nextArtistDev.unlockCost}
-                className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded transition"
-              >
-                Upgrade
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-green-700 text-sm font-semibold text-center py-3">Artist Development at max level</div>
-        )}
-      </section>
-
-      {/* ── Touring Department ── */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-gray-900 font-semibold text-sm">Touring Department</h2>
-          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
-            Level {touringLevel} / 10
-          </span>
-        </div>
-
-        <div className="w-full h-2 bg-gray-200 rounded mb-4">
-          <div
-            className="h-2 bg-blue-600 rounded transition-all"
-            style={{ width: `${touringLevel * 10}%` }}
-          />
-        </div>
-
-        {touringLevel > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4 text-xs text-gray-400 italic">
-            {touring.name}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-          {[
-            ["Revenue Boost", touringLevel > 0 ? `+${touring.revenueBonusPct}%` : "—"],
-            ["Fan Growth", touringLevel > 0 ? `+${touring.fanBonusPct}%` : "—"],
-            ["Fatigue Reduction", touringLevel > 0 ? `-${Math.round(touring.fatigueMitigation * 100)}%` : "—"],
-            ["Weekly Cost", fmt(touring.weeklyOperatingCost)],
-          ].map(([label, value]) => (
-            <div key={label as string} className="bg-gray-50 border border-gray-200 rounded p-2 text-center">
-              <div className="text-gray-400 text-[10px] uppercase tracking-wider">{label}</div>
-              <div className="text-gray-900 font-semibold text-sm mt-0.5">{value}</div>
-            </div>
-          ))}
-        </div>
-
-        {nextTouring ? (
-          <div className="bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-gray-900 font-semibold text-sm">{nextTouring.name}</div>
-              <div className="text-gray-600 text-xs mt-1 space-y-0.5">
-                <div>+{nextTouring.revenueBonusPct}% revenue · +{nextTouring.fanBonusPct}% fans · -{Math.round(nextTouring.fatigueMitigation * 100)}% fatigue</div>
-                <div>Weekly cost: {fmt(nextTouring.weeklyOperatingCost)}/wk</div>
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className={`font-semibold text-sm mb-1 ${money >= nextTouring.unlockCost ? "text-green-700" : "text-red-600"}`}>
-                {fmt(nextTouring.unlockCost)}
-              </div>
-              <button
-                onClick={handleTouring}
-                disabled={money < nextTouring.unlockCost}
-                className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded transition"
-              >
-                Upgrade
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-green-700 text-sm font-semibold text-center py-3">Touring Department at max level</div>
-        )}
-      </section>
-
-      {/* ── Marketing Department ── */}
-      {([
-        { label: "Marketing Department", level: marketingLevel, data: MARKETING_DATA, next: nextMarketing, color: "sky", handle: handleMarketing,
-          stats: (d: typeof marketing) => [
-            ["Stream Revenue", marketingLevel > 0 ? `+${d.revenuePct}%` : "—"],
-            ["Fan Growth", marketingLevel > 0 ? `+${d.fanGrowthPct}%` : "—"],
-            ["Weekly Cost", fmt(d.weeklyOperatingCost)],
-          ],
-          nextDesc: (n: typeof nextMarketing) => n ? `+${n!.revenuePct}% revenue · +${n!.fanGrowthPct}% fan growth` : "",
-        },
-      ] as const).map(() => (
-        <section key="marketing">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-gray-900 font-semibold text-sm">Marketing Department</h2>
-            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">Level {marketingLevel} / 10</span>
-          </div>
-          <div className="w-full h-2 bg-gray-200 rounded mb-4">
-            <div className="h-2 bg-blue-600 rounded transition-all" style={{ width: `${marketingLevel * 10}%` }} />
-          </div>
-          {marketingLevel > 0 && <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4 text-xs text-gray-400 italic">{marketing.name}</div>}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {[["Stream Revenue", marketingLevel > 0 ? `+${marketing.revenuePct}%` : "—"],["Fan Growth", marketingLevel > 0 ? `+${marketing.fanGrowthPct}%` : "—"],["Weekly Cost", fmt(marketing.weeklyOperatingCost)]].map(([l,v]) => (
-              <div key={l as string} className="bg-gray-50 border border-gray-200 rounded p-2 text-center">
-                <div className="text-gray-400 text-[10px] uppercase tracking-wider">{l}</div>
-                <div className="text-gray-900 font-semibold text-sm mt-0.5">{v}</div>
-              </div>
-            ))}
-          </div>
-          {nextMarketing ? (
-            <div className="bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between gap-4">
-              <div>
-                <div className="text-gray-900 font-semibold text-sm">{nextMarketing.name}</div>
-                <div className="text-gray-600 text-xs mt-1">+{nextMarketing.revenuePct}% revenue · +{nextMarketing.fanGrowthPct}% fan growth · {fmt(nextMarketing.weeklyOperatingCost)}/wk</div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className={`font-semibold text-sm mb-1 ${money >= nextMarketing.unlockCost ? "text-green-700" : "text-red-600"}`}>{fmt(nextMarketing.unlockCost)}</div>
-                <button onClick={handleMarketing} disabled={money < nextMarketing.unlockCost} className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded transition">Upgrade</button>
-              </div>
-            </div>
-          ) : <div className="text-green-700 text-sm font-semibold text-center py-3">Marketing at max level</div>}
-        </section>
-      ))}
-
-      {/* ── PR Department ── */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-gray-900 font-semibold text-sm">PR Department</h2>
-          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">Level {prLevel} / 10</span>
-        </div>
-        <div className="w-full h-2 bg-gray-200 rounded mb-4">
-          <div className="h-2 bg-blue-600 rounded transition-all" style={{ width: `${prLevel * 10}%` }} />
-        </div>
-        {prLevel > 0 && <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4 text-xs text-gray-400 italic">{pr.name}</div>}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {[
-            ["Scandal Freq", prLevel > 0 ? `-${Math.round(pr.scandalFreqReduction * 100)}%` : "—"],
-            ["Scandal Damage", prLevel > 0 ? `-${Math.round(pr.scandalDamageReduction * 100)}%` : "—"],
-            ["Weekly Cost", fmt(pr.weeklyOperatingCost)],
-          ].map(([l,v]) => (
-            <div key={l as string} className="bg-gray-50 border border-gray-200 rounded p-2 text-center">
-              <div className="text-gray-400 text-[10px] uppercase tracking-wider">{l}</div>
-              <div className="text-gray-900 font-semibold text-sm mt-0.5">{v}</div>
-            </div>
-          ))}
-        </div>
-        {nextPR ? (
-          <div className="bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-gray-900 font-semibold text-sm">{nextPR.name}</div>
-              <div className="text-gray-600 text-xs mt-1">-{Math.round(nextPR.scandalFreqReduction * 100)}% frequency · -{Math.round(nextPR.scandalDamageReduction * 100)}% damage · {fmt(nextPR.weeklyOperatingCost)}/wk</div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className={`font-semibold text-sm mb-1 ${money >= nextPR.unlockCost ? "text-green-700" : "text-red-600"}`}>{fmt(nextPR.unlockCost)}</div>
-              <button onClick={handlePR} disabled={money < nextPR.unlockCost} className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded transition">Upgrade</button>
-            </div>
-          </div>
-        ) : <div className="text-green-700 text-sm font-semibold text-center py-3">PR Department at max level</div>}
-      </section>
-
-      {/* ── Merchandising Department ── */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-gray-900 font-semibold text-sm">Merchandising</h2>
-          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">Level {merchLevel} / 10</span>
-        </div>
-        <div className="w-full h-2 bg-gray-200 rounded mb-4">
-          <div className="h-2 bg-blue-600 rounded transition-all" style={{ width: `${merchLevel * 10}%` }} />
-        </div>
-        {merchLevel > 0 && <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4 text-xs text-gray-400 italic">{merch.name}</div>}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {[
-            ["$/Fan/Week", merchLevel > 0 ? `$${merch.revenuePerFan.toFixed(3)}` : "—"],
-            ["Est. Revenue", merchLevel > 0 ? "Scales with fans" : "—"],
-            ["Weekly Cost", fmt(merch.weeklyOperatingCost)],
-          ].map(([l,v]) => (
-            <div key={l as string} className="bg-gray-50 border border-gray-200 rounded p-2 text-center">
-              <div className="text-gray-400 text-[10px] uppercase tracking-wider">{l}</div>
-              <div className="text-gray-900 font-semibold text-sm mt-0.5">{v}</div>
-            </div>
-          ))}
-        </div>
-        {nextMerch ? (
-          <div className="bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-gray-900 font-semibold text-sm">{nextMerch.name}</div>
-              <div className="text-gray-600 text-xs mt-1">${nextMerch.revenuePerFan.toFixed(3)}/fan · {fmt(nextMerch.weeklyOperatingCost)}/wk</div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className={`font-semibold text-sm mb-1 ${money >= nextMerch.unlockCost ? "text-green-700" : "text-red-600"}`}>{fmt(nextMerch.unlockCost)}</div>
-              <button onClick={handleMerch} disabled={money < nextMerch.unlockCost} className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded transition">Upgrade</button>
-            </div>
-          </div>
-        ) : <div className="text-green-700 text-sm font-semibold text-center py-3">Merchandising at max level</div>}
-      </section>
-
+          );
+        })}
+      </div>
     </div>
   );
 }

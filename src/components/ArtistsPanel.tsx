@@ -1,20 +1,19 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { useGameStore, computeSigningFee, computeRenegotiationFee } from "@/store/gameStore";
+import { useGameStore, computeRenegotiationFee } from "@/store/gameStore";
 import { Artist, Song, Producer, Album, GameState, ATTRIBUTE_GROUPS, ATTRIBUTE_LABELS } from "@/lib/types";
-import { ALBUM_CYCLE_TURNS, computeWillingness, getProspectTier, MIN_SIGNING_WILLINGNESS } from "@/lib/engine";
+import { ALBUM_CYCLE_TURNS } from "@/lib/engine";
 import { STUDIO_DATA } from "@/lib/data";
 import ArtistSprite from "./ArtistSprite";
 
 export default function ArtistsPanel() {
   const store = useGameStore();
   const { artists, money, songs, albums, producers, turn, reputation, fanbase,
-          signNewArtist, dropArtist, renegotiateArtistContract, riskRetainingArtist,
-          renameArtist, getVisibleFreeAgents, scoutingLevel, studioLevel } = store;
+          dropArtist, renegotiateArtistContract, riskRetainingArtist,
+          renameArtist, studioLevel } = store;
   const gameState = store as unknown as GameState;
 
   const signed = artists.filter((a) => a.signed);
-  const freeAgents = getVisibleFreeAgents();
   const expiredContracts = signed.filter(
     (a) => a.contractAlbumsLeft === 0 &&
       (a.lastAlbumReleaseTurn === 0 || turn - a.lastAlbumReleaseTurn >= ALBUM_CYCLE_TURNS)
@@ -26,46 +25,8 @@ export default function ArtistsPanel() {
 
   const [profileArtistId, setProfileArtistId] = useState<string | null>(null);
   const profileArtist = profileArtistId ? artists.find((a) => a.id === profileArtistId) ?? null : null;
-  const [signingArtist, setSigningArtist] = useState<Artist | null>(null);
   const [renegArtist, setRenegArtist] = useState<Artist | null>(null);
   const [riskResult, setRiskResult] = useState<{ name: string; stayed: boolean } | null>(null);
-  const [signingError, setSigningError] = useState<string | null>(null);
-
-  // Free agent filters + pagination
-  const [faGenreFilter, setFaGenreFilter] = useState<string>("all");
-  const [faMinOvr, setFaMinOvr] = useState<number>(0);
-  const [faMaxAge, setFaMaxAge] = useState<number>(99);
-  const [faSortBy, setFaSortBy] = useState<"ovr" | "age" | "potential" | "popularity">("ovr");
-  const [faPage, setFaPage] = useState(0);
-  const FA_PER_PAGE = 40;
-
-  const filteredFreeAgents = (() => {
-    const scouted = freeAgents.filter((a) => a.scouted);
-    const unscouted = freeAgents.filter((a) => !a.scouted);
-
-    const filteredScouted = scouted
-      .filter((a) => faGenreFilter === "all" || a.genre === faGenreFilter)
-      .filter((a) => a.overallRating >= faMinOvr)
-      .filter((a) => a.age <= faMaxAge)
-      .sort((a, b) => {
-        if (faSortBy === "ovr") return b.overallRating - a.overallRating;
-        if (faSortBy === "age") return a.age - b.age;
-        if (faSortBy === "potential") return b.potential - a.potential;
-        return b.popularity - a.popularity;
-      });
-
-    const filteredUnscouted = unscouted
-      .filter((a) => faGenreFilter === "all" || a.genre === faGenreFilter)
-      .filter((a) => a.age <= faMaxAge);
-
-    return [...filteredScouted, ...filteredUnscouted];
-  })();
-
-  const totalFaPages = Math.max(1, Math.ceil(filteredFreeAgents.length / FA_PER_PAGE));
-  const clampedPage = Math.min(faPage, totalFaPages - 1);
-  const pagedFreeAgents = filteredFreeAgents.slice(clampedPage * FA_PER_PAGE, (clampedPage + 1) * FA_PER_PAGE);
-
-  useEffect(() => { setFaPage(0); }, [faGenreFilter, faMinOvr, faMaxAge, faSortBy]);
 
   function handleRisk(artist: Artist) {
     const stayed = riskRetainingArtist(artist.id);
@@ -92,38 +53,6 @@ export default function ArtistsPanel() {
         />
       )}
 
-      {signingArtist && (
-        <SigningModal
-          artist={signingArtist}
-          money={money}
-          onSign={(albumCount, fee) => {
-            const err = signNewArtist(signingArtist.id, fee, albumCount);
-            if (err) {
-              setSigningError(err);
-              setSigningArtist(null);
-            } else {
-              setSigningArtist(null);
-            }
-          }}
-          onClose={() => setSigningArtist(null)}
-        />
-      )}
-
-      {signingError && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-5 max-w-sm w-full text-center shadow-lg">
-            <h3 className="text-gray-900 font-bold text-sm mb-1">Signing Failed</h3>
-            <p className="text-gray-500 text-xs mb-4">{signingError}</p>
-            <button
-              onClick={() => setSigningError(null)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-1.5 rounded transition"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
       {renegArtist && (
         <RenegotiationModal
           artist={renegArtist}
@@ -137,8 +66,8 @@ export default function ArtistsPanel() {
       )}
 
       {riskResult && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-5 max-w-sm w-full text-center shadow-lg">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
+          <div className="bg-white border border-gray-200 rounded-t-xl sm:rounded-lg p-5 max-w-sm w-full text-center shadow-lg">
             <h3 className="text-gray-900 font-bold text-sm mb-1">
               {riskResult.stayed ? `${riskResult.name} Stays!` : `${riskResult.name} Walked`}
             </h3>
@@ -253,158 +182,46 @@ export default function ArtistsPanel() {
         )}
       </section>
 
-      {/* Free Agents — compact table */}
-      <section>
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <h2 className="text-gray-900 font-bold text-sm">Free Agents ({filteredFreeAgents.length})</h2>
-            <p className="text-gray-400 text-[11px]">
-              Scouting Lv.{scoutingLevel} · {freeAgents.filter(a => a.scouted).length}/{freeAgents.length} scouted
-            </p>
-          </div>
-        </div>
-
-        {/* Filters — inline single row */}
-        <div className="flex items-center gap-1 mb-1.5 flex-wrap">
-          <select
-            value={faGenreFilter}
-            onChange={(e) => setFaGenreFilter(e.target.value)}
-            className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
-          >
-            <option value="all">All Genres</option>
-            <option value="trap">Trap</option>
-            <option value="boom-bap">Boom Bap</option>
-            <option value="drill">Drill</option>
-            <option value="r-and-b">R&B</option>
-            <option value="pop-rap">Pop Rap</option>
-            <option value="experimental">Experimental</option>
-          </select>
-          <select
-            value={faMinOvr}
-            onChange={(e) => setFaMinOvr(Number(e.target.value))}
-            className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
-          >
-            <option value={0}>OVR: Any</option>
-            <option value={30}>OVR: 30+</option>
-            <option value={40}>OVR: 40+</option>
-            <option value={50}>OVR: 50+</option>
-            <option value={60}>OVR: 60+</option>
-            <option value={70}>OVR: 70+</option>
-            <option value={80}>OVR: 80+</option>
-          </select>
-          <select
-            value={faMaxAge}
-            onChange={(e) => setFaMaxAge(Number(e.target.value))}
-            className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
-          >
-            <option value={99}>Age: Any</option>
-            <option value={21}>Age: &le;21</option>
-            <option value={25}>Age: &le;25</option>
-            <option value={28}>Age: &le;28</option>
-            <option value={30}>Age: &le;30</option>
-            <option value={35}>Age: &le;35</option>
-          </select>
-          <select
-            value={faSortBy}
-            onChange={(e) => setFaSortBy(e.target.value as typeof faSortBy)}
-            className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
-          >
-            <option value="ovr">Sort: OVR</option>
-            <option value="potential">Sort: POT</option>
-            <option value="age">Sort: Youngest</option>
-            <option value="popularity">Sort: Pop</option>
-          </select>
-        </div>
-
-        {filteredFreeAgents.length === 0 && <p className="text-gray-400 text-xs">No free agents match your filters.</p>}
-
-        {pagedFreeAgents.length > 0 && (
-          <div className="border border-gray-200 rounded overflow-x-auto max-h-[60vh] overflow-y-auto">
+      {/* Quick Actions — Recording & Rest */}
+      {signed.length > 0 && (
+        <section>
+          <h2 className="text-gray-900 font-bold text-sm mb-1">Quick Actions</h2>
+          <div className="border border-gray-200 rounded overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="sticky top-0 z-10">
+              <thead>
                 <tr className="bg-gray-100 text-gray-500 border-b border-gray-200">
-                  <th className="text-left py-1 px-2 font-semibold">Name</th>
-                  <th className="text-center py-1 px-1 font-semibold">Age</th>
-                  <th className="text-left py-1 px-1 font-semibold">Genre</th>
-                  <th className="text-center py-1 px-1 font-semibold">OVR</th>
-                  <th className="text-center py-1 px-1 font-semibold">POT</th>
-                  <th className="text-center py-1 px-1 font-semibold">Phase</th>
-                  <th className="text-right py-1 px-1 font-semibold">Ask Fee</th>
-                  <th className="text-center py-1 px-1 font-semibold">Willing</th>
-                  <th className="text-right py-1 px-2 font-semibold"></th>
+                  <th className="text-left py-1 px-2 font-semibold">Artist</th>
+                  <th className="text-center py-1 px-1 font-semibold">FTG</th>
+                  <th className="text-center py-1 px-1 font-semibold">MRL</th>
+                  <th className="text-center py-1 px-1 font-semibold">Status</th>
+                  <th className="text-right py-1 px-2 font-semibold">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {pagedFreeAgents.map((a, i) => {
-                  if (!a.scouted) {
-                    const prospect = getProspectTier(a);
-                    const ps = a.careerPhase ? phaseStyle(a.careerPhase) : null;
-                    return (
-                      <tr key={a.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="py-1 px-2">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-5 h-5 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-[10px] font-bold shrink-0">?</div>
-                            <span className="text-gray-400 font-medium">Unscouted</span>
-                          </div>
-                        </td>
-                        <td className="text-center py-1 px-1 text-gray-500">{a.age}</td>
-                        <td className="py-1 px-1 text-gray-500">{a.genre}</td>
-                        <td className="text-center py-1 px-1 text-gray-300">--</td>
-                        <td className="text-center py-1 px-1 text-gray-300">--</td>
-                        <td className="text-center py-1 px-1">
-                          {ps && <span className={`${phaseStyleLight(a.careerPhase)} text-[10px] font-semibold`}>{ps.label}</span>}
-                        </td>
-                        <td className="text-right py-1 px-1 text-gray-300">--</td>
-                        <td className="text-center py-1 px-1">
-                          <span className={`text-[10px] font-semibold ${prospect.color}`}>{prospect.label}</span>
-                        </td>
-                        <td className="text-right py-1 px-2"></td>
-                      </tr>
-                    );
-                  }
-                  const willingness = computeWillingness(a, reputation);
-                  const tooUnwilling = willingness < MIN_SIGNING_WILLINGNESS;
-                  const willingnessColor = tooUnwilling ? "text-gray-300" : willingness >= 70 ? "text-green-600" : willingness >= 45 ? "text-yellow-600" : "text-red-500";
-                  const fee1 = computeSigningFee(a, 1);
-                  const ps = a.careerPhase ? phaseStyle(a.careerPhase) : null;
+                {signed.filter((a) => !a.onTour).map((a, i) => {
+                  const weekLimit = a.traits.workEthic >= 75 ? 3 : a.traits.workEthic >= 50 ? 2 : 1;
+                  const recordedThisTurn = songs.filter((s) => s.artistId === a.id && s.turnRecorded === turn).length;
+                  const canRecord = recordedThisTurn < weekLimit && a.fatigue < 90;
                   return (
-                    <tr
-                      key={a.id}
-                      className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} ${tooUnwilling ? "opacity-50" : "hover:bg-blue-50"}`}
-                    >
-                      <td className="py-1 px-2">
-                        <div className="flex items-center gap-1.5">
-                          <div className="shrink-0"><ArtistSprite spriteIndex={a.spriteIndex} size={20} /></div>
-                          <button
-                            onClick={tooUnwilling ? undefined : () => setProfileArtistId(a.id)}
-                            className={`font-medium text-gray-900 truncate max-w-[120px] ${!tooUnwilling ? "hover:text-indigo-600 cursor-pointer" : ""}`}
-                          >
-                            {a.name}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="text-center py-1 px-1 text-gray-600">{a.age}</td>
-                      <td className="py-1 px-1 text-gray-600">{a.genre}</td>
-                      <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}</td>
-                      <td className="text-center py-1 px-1 text-gray-600">{a.potential}</td>
+                    <tr key={a.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <td className="py-1 px-2 font-medium text-gray-900">{a.name}</td>
+                      <td className={`text-center py-1 px-1 ${a.fatigue > 70 ? "text-red-500" : "text-gray-600"}`}>{a.fatigue}</td>
+                      <td className="text-center py-1 px-1 text-gray-600">{a.morale}</td>
                       <td className="text-center py-1 px-1">
-                        {ps && <span className={`${phaseStyleLight(a.careerPhase)} text-[10px] font-semibold`}>{ps.label}</span>}
-                      </td>
-                      <td className="text-right py-1 px-1 text-gray-600">${(fee1 / 1000).toFixed(0)}K</td>
-                      <td className="text-center py-1 px-1">
-                        <span className={`text-[10px] font-semibold ${willingnessColor}`}>
-                          {tooUnwilling ? "No" : `${willingness}%`}
-                        </span>
+                        <span className="text-[10px] text-gray-500">{recordedThisTurn}/{weekLimit} this week</span>
                       </td>
                       <td className="text-right py-1 px-2">
-                        {!tooUnwilling && (
-                          <button
-                            onClick={() => setSigningArtist(a)}
-                            className="text-[11px] text-green-600 hover:text-green-500 font-semibold"
-                          >
-                            Sign
-                          </button>
-                        )}
+                        <span className="inline-flex gap-1">
+                          {canRecord && (
+                            <span className="text-[10px] text-green-600 font-medium">Ready</span>
+                          )}
+                          {!canRecord && a.fatigue >= 90 && (
+                            <span className="text-[10px] text-red-500 font-medium">Exhausted</span>
+                          )}
+                          {!canRecord && recordedThisTurn >= weekLimit && a.fatigue < 90 && (
+                            <span className="text-[10px] text-gray-400 font-medium">Done</span>
+                          )}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -412,31 +229,8 @@ export default function ArtistsPanel() {
               </tbody>
             </table>
           </div>
-        )}
-
-        {/* Pagination */}
-        {totalFaPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-1.5">
-            <button
-              onClick={() => setFaPage(Math.max(0, clampedPage - 1))}
-              disabled={clampedPage === 0}
-              className="text-[11px] text-gray-500 hover:text-gray-900 border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed px-2 py-0.5 rounded transition"
-            >
-              Prev
-            </button>
-            <span className="text-gray-400 text-[11px]">
-              {clampedPage + 1} / {totalFaPages}
-            </span>
-            <button
-              onClick={() => setFaPage(Math.min(totalFaPages - 1, clampedPage + 1))}
-              disabled={clampedPage >= totalFaPages - 1}
-              className="text-[11px] text-gray-500 hover:text-gray-900 border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed px-2 py-0.5 rounded transition"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
@@ -537,82 +331,6 @@ function RosterRow({
   );
 }
 
-// ── Signing Modal ─────────────────────────────────────────────────────────────
-
-function SigningModal({
-  artist,
-  money,
-  onSign,
-  onClose,
-}: {
-  artist: Artist;
-  money: number;
-  onSign: (albumCount: 1 | 2 | 3, fee: number) => void;
-  onClose: () => void;
-}) {
-  const [albumCount, setAlbumCount] = useState<1 | 2 | 3>(1);
-  const fee = computeSigningFee(artist, albumCount);
-  const canAfford = money >= fee;
-
-  const ALBUM_LABELS: Record<number, string> = {
-    1: "1-Album — Short-term",
-    2: "2-Album — Balanced",
-    3: "3-Album — Long-term",
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white border border-gray-200 rounded-lg w-full max-w-sm shadow-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200">
-          <div>
-            <h3 className="text-gray-900 font-bold text-sm">Sign {artist.name}</h3>
-            <div className="text-gray-400 text-[11px]">{artist.genre} · Pop {artist.popularity} · {(artist.fanbase / 1000).toFixed(0)}K fans</div>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-900 transition text-sm">✕</button>
-        </div>
-
-        <div className="px-3 py-2 space-y-2">
-          <div className="space-y-1">
-            {([1, 2, 3] as const).map((n) => {
-              const f = computeSigningFee(artist, n);
-              return (
-                <button
-                  key={n}
-                  onClick={() => setAlbumCount(n)}
-                  className={`w-full text-left px-2 py-1.5 rounded border transition text-xs ${albumCount === n ? "border-indigo-400 bg-indigo-50" : "border-gray-200 bg-white hover:border-gray-300"}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-900 font-medium">{ALBUM_LABELS[n]}</span>
-                    <span className={`font-bold ${money >= f ? "text-green-600" : "text-red-500"}`}>
-                      ${(f / 1000).toFixed(0)}K
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-[11px] text-gray-500 space-y-0.5">
-            <div className="flex justify-between"><span>Signing Fee</span><span className="text-gray-900">${fee.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span>Albums</span><span className="text-gray-900">{albumCount}</span></div>
-            <div className="flex justify-between"><span>Your Cash</span><span className={canAfford ? "text-green-600" : "text-red-500"}>${money.toLocaleString()}</span></div>
-          </div>
-
-          {!canAfford && <p className="text-red-500 text-[11px]">Not enough money for this deal.</p>}
-
-          <button
-            onClick={() => onSign(albumCount, fee)}
-            disabled={!canAfford}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs py-1.5 rounded transition"
-          >
-            Sign {albumCount}-Album Deal — ${(fee / 1000).toFixed(0)}K
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Renegotiation Modal ───────────────────────────────────────────────────────
 
 function RenegotiationModal({
@@ -637,8 +355,8 @@ function RenegotiationModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white border border-gray-200 rounded-lg w-full max-w-sm shadow-lg" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-white border border-gray-200 rounded-t-xl sm:rounded-lg w-full max-w-sm h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto shadow-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200">
           <div>
             <h3 className="text-gray-900 font-bold text-sm">Renegotiate — {artist.name}</h3>
@@ -720,11 +438,11 @@ function ArtistProfileModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-2"
+      className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-2"
       onClick={onClose}
     >
       <div
-        className="bg-white border border-gray-200 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-lg"
+        className="bg-white border border-gray-200 rounded-t-xl sm:rounded-lg w-full max-w-2xl h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -742,32 +460,30 @@ function ArtistProfileModal({
         </div>
 
         <div className="px-3 py-2 space-y-3">
-          {/* Character sprite */}
-          <div className="flex gap-3 items-start">
+          {/* Character sprite + core stats side by side */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start">
             <div className="shrink-0 bg-gray-50 rounded border border-gray-200 p-2">
-              <ArtistSprite spriteIndex={artist.spriteIndex} size={60} />
+              <ArtistSprite spriteIndex={artist.spriteIndex} size={144} />
             </div>
-          </div>
-
-          {/* Core stats — compact grid */}
-          <div className="grid grid-cols-4 gap-1">
-            <MiniStat label="Pop" value={`${artist.popularity}`} sub={popularityLabel(artist.popularity)} />
-            <MiniStat label="Fans" value={artist.fanbase >= 1000000 ? `${(artist.fanbase / 1000000).toFixed(1)}M` : artist.fanbase >= 1000 ? `${(artist.fanbase / 1000).toFixed(1)}K` : String(artist.fanbase)} />
-            <MiniStat label="Morale" value={String(artist.morale)} />
-            <MiniStat label="Age" value={String(artist.age)} />
+            <div className="flex-1 grid grid-cols-2 gap-1 w-full">
+              <MiniStat label="Pop" value={`${artist.popularity}`} sub={popularityLabel(artist.popularity)} />
+              <MiniStat label="Fans" value={artist.fanbase >= 1000000 ? `${(artist.fanbase / 1000000).toFixed(1)}M` : artist.fanbase >= 1000 ? `${(artist.fanbase / 1000).toFixed(1)}K` : String(artist.fanbase)} />
+              <MiniStat label="Morale" value={String(artist.morale)} />
+              <MiniStat label="Age" value={String(artist.age)} />
+            </div>
           </div>
 
           {/* Career ecosystem */}
           {artist.careerPhase && (
             <div>
               <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career</h3>
-              <div className="grid grid-cols-4 gap-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
                 <MiniStat label="Phase" value={phaseStyle(artist.careerPhase).label} />
                 <MiniStat label="Momentum" value={String(artist.momentum ?? 0)} />
                 <MiniStat label="Buzz" value={String(artist.buzz ?? 0)} />
                 <MiniStat label="Peak Mom" value={String(artist.peakMomentum ?? 0)} />
               </div>
-              <div className="grid grid-cols-3 gap-1 mt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 mt-1">
                 <MiniStat label="Chart Hits" value={String(artist.chartHits ?? 0)} />
                 <MiniStat label="Flops" value={String(artist.flops ?? 0)} />
                 <MiniStat label="Durability" value={artist.durability === "flash" ? "Flash" : artist.durability === "durable" ? "Durable" : "Solid"} />
@@ -784,7 +500,7 @@ function ArtistProfileModal({
               {Object.entries(ATTRIBUTE_GROUPS).map(([group, keys]) => (
                 <div key={group}>
                   <div className="text-gray-400 text-[10px] font-semibold uppercase tracking-wider mb-0.5">{group}</div>
-                  <div className="grid grid-cols-5 gap-1">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-1">
                     {keys.map((k) => {
                       const val = artist.attributes[k];
                       const color = val >= 70 ? "text-green-600" : val >= 50 ? "text-gray-900" : val >= 30 ? "text-gray-400" : "text-red-500";
@@ -804,7 +520,7 @@ function ArtistProfileModal({
           {/* Personality */}
           <div>
             <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Personality</h3>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
               <MiniStat label="Loyalty" value={String(artist.traits.loyalty)} />
               <MiniStat label="Work Ethic" value={String(artist.traits.workEthic)} />
               <MiniStat label="Money Motiv." value={String(artist.traits.moneyMotivation)} />
@@ -817,7 +533,7 @@ function ArtistProfileModal({
           {/* Career stats */}
           <div>
             <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career Stats</h3>
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
               <MiniStat label="Songs" value={String(artistSongs.length)} />
               <MiniStat label="Albums" value={String(artistAlbums.length)} />
               <MiniStat label="Streams" value={totalStreams >= 1000000 ? `${(totalStreams / 1000000).toFixed(1)}M` : totalStreams >= 1000 ? `${(totalStreams / 1000).toFixed(0)}K` : String(totalStreams)} />
@@ -975,11 +691,3 @@ function momentumBar(mom: number): string {
   return "text-red-500";
 }
 
-function Stat({ label, value }: { label: string; value: number; max?: number; color?: string }) {
-  return (
-    <div className="flex justify-between text-gray-500 text-xs">
-      <span>{label}</span>
-      <span className="text-gray-900">{value}</span>
-    </div>
-  );
-}

@@ -9,3 +9,33 @@ body {
 ::-webkit-scrollbar-track { background: #f3f4f6; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Safe area insets for notch devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+}
+
+/* Mobile bottom nav height offset — keeps content above bottom bar */
+.has-bottom-nav {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Touch-friendly tap targets on mobile */
+@media (max-width: 640px) {
+  /* Ensure minimum 44px tap targets on interactive elements */
+  button, a, select, input[type="checkbox"] {
+    min-height: 36px;
+  }
+  select, input[type="text"], input[type="number"] {
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+  /* Hide scrollbars on mobile for cleaner look */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+}
+
+/* Responsive table wrapper */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}

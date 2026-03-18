@@ -94,6 +94,8 @@ function createInitialState(labelName: string): GameState {
     pendingFeatureRequests: [],
     achievements: [],
     hallOfFame: [],
+    globalHallOfFame: [],
+    transactions: [],
     dynastyYears: 0,
     labelMilestones: [],
     revenueHistory: {

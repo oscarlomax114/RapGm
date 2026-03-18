@@ -15,45 +15,49 @@ function fmtFans(n: number) {
   return `${n}`;
 }
 
-export default function TopBar({ onNextTurn }: { onNextTurn: () => void }) {
+export default function TopBar({ onNextTurn, onSeeAllNotifications }: { onNextTurn: () => void; onSeeAllNotifications?: () => void }) {
   const { labelName, money, reputation, fanbase, turn, startDate, gameOver } = useGameStore();
   const gameDate = formatGameDate(getGameDate(startDate || "2025-01-06", turn));
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-      <div className="flex items-center gap-3">
-        <span className="text-gray-900 font-semibold text-sm tracking-tight">{labelName}</span>
-        <div className="flex flex-col">
-          <span className="text-gray-500 text-xs font-medium">{gameDate}</span>
-          <span className="text-gray-400 text-[10px]">Week {turn}</span>
+    <div className="bg-white border-b border-gray-200 px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
+      {/* Left: Label name + date */}
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+        <span className="text-gray-900 font-semibold text-xs sm:text-sm tracking-tight truncate">{labelName}</span>
+        <div className="flex flex-col shrink-0">
+          <span className="text-gray-500 text-[10px] sm:text-xs font-medium">{gameDate}</span>
+          <span className="text-gray-400 text-[9px] sm:text-[10px]">Week {turn}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 text-sm">
-        <Stat label="Cash" value={fmt(money)} color={money < 0 ? "text-red-600" : "text-green-600"} />
-        <Stat label="Rep" value={`${reputation}/100`} color="text-gray-900" />
-        <Stat label="Fans" value={fmtFans(fanbase)} color="text-gray-900" />
+      {/* Center: Stats — compact on mobile, full on desktop */}
+      <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+        <StatCompact label="Cash" value={fmt(money)} color={money < 0 ? "text-red-600" : "text-green-600"} />
+        <StatCompact label="Rep" value={`${reputation}`} color="text-gray-900" />
+        <StatCompact label="Fans" value={fmtFans(fanbase)} color="text-gray-900" hideLabelMobile />
       </div>
 
-      <div className="flex items-center gap-2">
-        <ReputationBell />
+      {/* Right: Bell + Next Week */}
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <ReputationBell onSeeAll={onSeeAllNotifications} />
         <button
           onClick={onNextTurn}
           disabled={gameOver}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-medium px-4 py-1.5 rounded text-sm transition"
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-medium px-2.5 sm:px-4 py-1.5 rounded text-xs sm:text-sm transition whitespace-nowrap"
         >
-          Next Week
+          <span className="hidden sm:inline">Next Week</span>
+          <span className="sm:hidden">Next</span>
         </button>
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+function StatCompact({ label, value, color, hideLabelMobile }: { label: string; value: string; color: string; hideLabelMobile?: boolean }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="text-gray-400 text-xs">{label}</span>
-      <span className={`font-semibold ${color}`}>{value}</span>
+      <span className={`text-gray-400 text-[9px] sm:text-xs ${hideLabelMobile ? "hidden sm:block" : ""}`}>{label}</span>
+      <span className={`font-semibold text-xs sm:text-sm ${color}`}>{value}</span>
     </div>
   );
 }
