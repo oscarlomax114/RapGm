@@ -920,11 +920,16 @@ function AlbumDashboardModal({
 
   const standaloneSlotsUsed = albumSongs.filter((s) => s.wasStandalone).length;
 
-  const notOnAlbum = songs.filter(
+  // Unreleased songs not on this album
+  const unreleasedNotOnAlbum = songs.filter(
     (s) => s.artistId === album.artistId && !album.songIds.includes(s.id) && !s.released
   );
-  const standaloneAvailable = notOnAlbum.filter((s) => s.wasStandalone);
-  const otherAlbumAvailable = notOnAlbum.filter((s) => !s.wasStandalone && s.albumId && s.albumId !== album.id);
+  // Released singles that are album-eligible (not already linked to a released album)
+  const eligibleReleasedSingles = songs.filter(
+    (s) => s.artistId === album.artistId && !album.songIds.includes(s.id) && s.released && s.albumEligible && !s.linkedAlbumId
+  );
+  const standaloneAvailable = unreleasedNotOnAlbum.filter((s) => s.wasStandalone);
+  const otherAlbumAvailable = unreleasedNotOnAlbum.filter((s) => !s.wasStandalone && s.albumId && s.albumId !== album.id);
 
   const confirmedCount = confirmed.length;
   const metrics = computeAlbumMetrics(confirmed, artist?.popularity ?? 0);
@@ -1152,6 +1157,40 @@ function AlbumDashboardModal({
                         className="text-[10px] text-yellow-600 hover:text-yellow-500 disabled:opacity-40 disabled:cursor-not-allowed border border-yellow-300 hover:border-yellow-500 px-1.5 py-0.5 rounded transition shrink-0"
                       >
                         + Add
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Eligible released singles */}
+          {eligibleReleasedSingles.length > 0 && (
+            <div>
+              <div className="text-blue-600 text-xs font-medium uppercase tracking-wider mb-1">
+                Eligible Released Singles ({eligibleReleasedSingles.length})
+              </div>
+              <div className="space-y-1">
+                {eligibleReleasedSingles.map((s) => {
+                  const currentSinglesOnAlbum = albumSongs.filter((as) => as.released).length;
+                  const currentTrackCount = album.songIds.length + 1;
+                  const maxSingles = Math.min(4, Math.floor(currentTrackCount * 0.4));
+                  const atSinglesCap = currentSinglesOnAlbum >= maxSingles;
+                  return (
+                    <div key={s.id} className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded px-2 py-1 text-xs">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-gray-700 font-medium">{s.title}</span>
+                        <span className="text-gray-400 ml-1">Q{s.quality} VP{s.viralPotential}</span>
+                        <span className="text-blue-600 ml-1">{(s.streamsTotal / 1000).toFixed(0)}K streams</span>
+                      </div>
+                      <button
+                        onClick={() => act(() => onAdd(s.id))}
+                        disabled={atSinglesCap}
+                        className="text-[10px] text-blue-600 hover:text-blue-500 disabled:opacity-40 disabled:cursor-not-allowed border border-blue-300 hover:border-blue-500 px-1.5 py-0.5 rounded transition shrink-0"
+                        title={atSinglesCap ? "Singles cap reached for this album" : undefined}
+                      >
+                        + Add Single
                       </button>
                     </div>
                   );

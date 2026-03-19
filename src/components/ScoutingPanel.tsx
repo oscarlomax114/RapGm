@@ -18,7 +18,7 @@ const TIER_BADGE: Record<string, string> = {
 export default function ScoutingPanel() {
   const store = useGameStore();
   const { artists, money, songs, albums, producers, turn, reputation, fanbase,
-          signNewArtist, getVisibleFreeAgents, scoutingLevel, studioLevel } = store;
+          signNewArtist, getVisibleFreeAgents, scoutingLevel, studioLevel, freeAgentPool } = store;
   const gameState = store as unknown as GameState;
 
   const freeAgents = getVisibleFreeAgents();
@@ -157,7 +157,7 @@ export default function ScoutingPanel() {
             <div>
               <h2 className="text-gray-900 font-bold text-sm">Free Agents ({filteredFreeAgents.length})</h2>
               <p className="text-gray-400 text-[11px]">
-                Scouting Lv.{scoutingLevel} · {freeAgents.filter(a => a.scouted).length}/{freeAgents.length} scouted
+                Scouting Lv.{scoutingLevel} · {freeAgents.filter(a => a.scouted).length}/{freeAgents.length} visible · {freeAgentPool.length} total in market
               </p>
             </div>
           </div>
@@ -264,10 +264,17 @@ export default function ScoutingPanel() {
                     const willingnessColor = tooUnwilling ? "text-gray-300" : willingness >= 70 ? "text-green-600" : willingness >= 45 ? "text-yellow-600" : "text-red-500";
                     const fee1 = computeSigningFee(a, 1);
                     const ps = a.careerPhase ? phaseStyle(a.careerPhase) : null;
+                    // Signing cooldown check
+                    const SIGNING_COOLDOWN = 8;
+                    const REP_CHANGE_OVERRIDE = 10;
+                    const onCooldown = a.lastOfferOutcome === "declined" && a.lastOfferTurn
+                      && (turn - a.lastOfferTurn) < SIGNING_COOLDOWN
+                      && (reputation - (a.lastOfferReputation ?? 0)) < REP_CHANGE_OVERRIDE;
+                    const cooldownWeeks = onCooldown && a.lastOfferTurn ? SIGNING_COOLDOWN - (turn - a.lastOfferTurn) : 0;
                     return (
                       <tr
                         key={a.id}
-                        className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} ${tooUnwilling ? "opacity-50" : "hover:bg-blue-50"}`}
+                        className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} ${tooUnwilling || onCooldown ? "opacity-50" : "hover:bg-blue-50"}`}
                       >
                         <td className="py-1 px-2">
                           <div className="flex items-center gap-1.5">
@@ -294,14 +301,16 @@ export default function ScoutingPanel() {
                           </span>
                         </td>
                         <td className="text-right py-1 px-2">
-                          {!tooUnwilling && (
+                          {onCooldown ? (
+                            <span className="text-[10px] text-amber-500 font-medium">{cooldownWeeks}wk</span>
+                          ) : !tooUnwilling ? (
                             <button
                               onClick={() => setSigningArtist(a)}
                               className="text-[11px] text-green-600 hover:text-green-500 font-semibold"
                             >
                               Sign
                             </button>
-                          )}
+                          ) : null}
                         </td>
                       </tr>
                     );

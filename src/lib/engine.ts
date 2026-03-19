@@ -3251,11 +3251,32 @@ export function signArtist(
   const target = inRoster ?? inPool;
   if (!target) return { newState: state, error: "Artist not found." };
 
+  // ── Signing cooldown: prevent re-roll exploitation ──
+  const SIGNING_COOLDOWN = 8; // 8 weeks before you can re-approach
+  const REP_CHANGE_OVERRIDE = 10; // rep must improve by 10+ to bypass cooldown
+  if (target.lastOfferOutcome === "declined" && target.lastOfferTurn) {
+    const turnsSince = state.turn - target.lastOfferTurn;
+    const repImproved = state.reputation - (target.lastOfferReputation ?? 0);
+    if (turnsSince < SIGNING_COOLDOWN && repImproved < REP_CHANGE_OVERRIDE) {
+      const weeksLeft = SIGNING_COOLDOWN - turnsSince;
+      return { newState: state, error: `${target.name} recently declined your offer. Can re-approach in ${weeksLeft} week${weeksLeft > 1 ? "s" : ""}, or after improving reputation by ${REP_CHANGE_OVERRIDE - repImproved}+ points.` };
+    }
+  }
+
   // Willingness check: artist must agree to sign based on label reputation vs their star power
   const willingness = computeWillingness(target, state.reputation);
   const roll = Math.random() * 100;
   if (roll > willingness) {
-    return { newState: state, error: `${target.name} declined your offer (${willingness}% willingness). Build more reputation to attract this caliber of talent.` };
+    // Mark the decline on the artist so they can't be immediately re-approached
+    const declinedArtist = { ...target, lastOfferTurn: state.turn, lastOfferOutcome: "declined" as const, lastOfferReputation: state.reputation };
+    return {
+      newState: {
+        ...state,
+        artists: inRoster ? state.artists.map((a) => a.id === artistId ? declinedArtist : a) : state.artists,
+        freeAgentPool: inPool ? state.freeAgentPool.map((a) => a.id === artistId ? declinedArtist : a) : state.freeAgentPool,
+      },
+      error: `${target.name} declined your offer (${willingness}% willingness). Can re-approach in ${SIGNING_COOLDOWN} weeks. Build more reputation to attract this caliber of talent.`,
+    };
   }
 
   // Scouting bonus: better scouting department gives signed artists a momentum/buzz boost

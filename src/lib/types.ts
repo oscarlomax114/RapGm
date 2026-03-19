@@ -133,6 +133,11 @@ export interface Artist {
   releaseFromJailTurn?: number;     // turn released from jail (for comeback spike)
   comebackBonusTurns?: number;      // turns remaining for "first day out" viral bonus on next release
 
+  // ── Signing negotiation state ───────────────────────────────────
+  lastOfferTurn?: number;           // turn of last signing offer
+  lastOfferOutcome?: "declined";    // outcome of that offer
+  lastOfferReputation?: number;     // label rep at time of offer
+
   // ── Beef state ──────────────────────────────────────────────────
   activeBeef?: BeefState;           // current active beef (undefined = no beef)
 
