@@ -46,19 +46,17 @@ export function formatGameDate(date: Date): string {
 
 // ── Free agent visibility ─────────────────────────────────────────────────────
 // Returns ALL free agents with a `scouted` flag based on scouting level.
-// Scouted artists show full stats; unscouted show only genre, age, and prospect tier.
+// Discovered artists are fully visible with all stats.
+// Undiscovered artists are not shown at all.
+// Scouting level controls how many of the 400 total are discovered.
 
 export function getVisibleFreeAgents(state: GameState): Artist[] {
   const scouting = SCOUTING_DATA[state.scoutingLevel];
   const pool = state.freeAgentPool;
-  // Visibility controls how many agents you can SEE at all
-  const visibleCount = Math.max(1, Math.round(pool.length * scouting.visibilityPct / 100));
-  const visiblePool = pool.slice(0, visibleCount);
-  // Scouted controls how many of the visible ones reveal full stats
-  const scoutedCount = Math.max(1, Math.round(visiblePool.length * scouting.scoutedPct / 100));
-  return visiblePool.map((artist, i) => ({
+  const discoveredCount = Math.max(1, Math.round(pool.length * scouting.visibilityPct / 100));
+  return pool.slice(0, discoveredCount).map((artist) => ({
     ...artist,
-    scouted: i < scoutedCount,
+    scouted: true,
   }));
 }
 

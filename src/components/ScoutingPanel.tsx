@@ -2,13 +2,13 @@
 import { useState, useEffect } from "react";
 import { useGameStore, computeSigningFee } from "@/store/gameStore";
 import { Artist, Song, Producer, Album, GameState, ATTRIBUTE_GROUPS, ATTRIBUTE_LABELS } from "@/lib/types";
-import { computeWillingness, getProspectTier, MIN_SIGNING_WILLINGNESS } from "@/lib/engine";
+import { computeWillingness, MIN_SIGNING_WILLINGNESS } from "@/lib/engine";
 import { isProducerUnlocked, PRODUCER_TIER_MIN_STUDIO } from "@/lib/data";
 import ArtistSprite from "./ArtistSprite";
 
 type FaSortCol = "ovr" | "age" | "potential" | "popularity" | "genre" | "fee" | "willingness";
 type SubTab = "freeAgents" | "producers";
-type FaStatusFilter = "all" | "scouted" | "unscouted" | "declined";
+type FaStatusFilter = "all" | "signable" | "declined";
 
 const SIGNING_COOLDOWN = 8;
 const REP_CHANGE_OVERRIDE = 10;
@@ -72,34 +72,27 @@ export default function ScoutingPanel() {
 
   // Compute category counts for the header
   const totalMarket = freeAgentPool.length;
+  // All discovered agents have full stats — no unscouted concept
   const discoveredCount = freeAgents.length;
-  const scoutedCount = freeAgents.filter((a) => a.scouted).length;
   const declinedCount = freeAgents.filter((a) => isOnCooldown(a, turn, reputation)).length;
-  const unscoutedCount = discoveredCount - scoutedCount;
+  const signableCount = discoveredCount - declinedCount;
 
   const filteredFreeAgents = (() => {
-    // Status-based filtering first
     let pool = freeAgents;
-    if (faStatusFilter === "scouted") {
-      pool = pool.filter((a) => a.scouted && !isOnCooldown(a, turn, reputation));
-    } else if (faStatusFilter === "unscouted") {
-      pool = pool.filter((a) => !a.scouted);
+    if (faStatusFilter === "signable") {
+      pool = pool.filter((a) => !isOnCooldown(a, turn, reputation));
     } else if (faStatusFilter === "declined") {
       pool = pool.filter((a) => isOnCooldown(a, turn, reputation));
-    } else {
-      // "all" — show everything, but declined artists go to the end
     }
-
-    const scouted = pool.filter((a) => a.scouted);
-    const unscouted = pool.filter((a) => !a.scouted);
+    // "all" — show everything, declined pushed to end
 
     const dir = faSortDesc ? -1 : 1;
-    const filteredScouted = scouted
+    return pool
       .filter((a) => faGenreFilter === "all" || a.genre === faGenreFilter)
       .filter((a) => a.overallRating >= faMinOvr)
       .filter((a) => a.age <= faMaxAge)
       .sort((a, b) => {
-        // In "all" mode, push declined to end of scouted
+        // In "all" mode, push declined to end
         if (faStatusFilter === "all") {
           const aCd = isOnCooldown(a, turn, reputation) ? 1 : 0;
           const bCd = isOnCooldown(b, turn, reputation) ? 1 : 0;
@@ -113,12 +106,6 @@ export default function ScoutingPanel() {
         if (faSortBy === "willingness") return (computeWillingness(a, reputation) - computeWillingness(b, reputation)) * dir;
         return (a.popularity - b.popularity) * dir;
       });
-
-    const filteredUnscouted = faStatusFilter === "declined" ? [] : unscouted
-      .filter((a) => faGenreFilter === "all" || a.genre === faGenreFilter)
-      .filter((a) => a.age <= faMaxAge);
-
-    return [...filteredScouted, ...filteredUnscouted];
   })();
 
   const totalFaPages = Math.max(1, Math.ceil(filteredFreeAgents.length / FA_PER_PAGE));
@@ -205,8 +192,8 @@ export default function ScoutingPanel() {
             </div>
           </div>
 
-          {/* Three-tier market stats */}
-          <div className="grid grid-cols-4 gap-1.5 mb-2">
+          {/* Market stats */}
+          <div className="grid grid-cols-3 gap-1.5 mb-2">
             <div className="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-center">
               <div className="text-gray-900 font-bold text-sm">{totalMarket}</div>
               <div className="text-gray-400 text-[10px]">Total Market</div>
@@ -214,10 +201,6 @@ export default function ScoutingPanel() {
             <div className="bg-blue-50 border border-blue-200 rounded px-2 py-1.5 text-center">
               <div className="text-blue-700 font-bold text-sm">{discoveredCount}</div>
               <div className="text-blue-400 text-[10px]">Discovered</div>
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded px-2 py-1.5 text-center">
-              <div className="text-green-700 font-bold text-sm">{scoutedCount}</div>
-              <div className="text-green-400 text-[10px]">Fully Scouted</div>
             </div>
             <div className={`rounded px-2 py-1.5 text-center ${declinedCount > 0 ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-gray-200"}`}>
               <div className={`font-bold text-sm ${declinedCount > 0 ? "text-amber-700" : "text-gray-400"}`}>{declinedCount}</div>
@@ -228,9 +211,8 @@ export default function ScoutingPanel() {
           {/* Status filter tabs */}
           <div className="flex gap-0.5 mb-1.5">
             {([
-              { key: "all" as FaStatusFilter, label: "All Discovered", count: discoveredCount },
-              { key: "scouted" as FaStatusFilter, label: "Scouted", count: scoutedCount - declinedCount },
-              { key: "unscouted" as FaStatusFilter, label: "Unscouted", count: unscoutedCount },
+              { key: "all" as FaStatusFilter, label: "All", count: discoveredCount },
+              { key: "signable" as FaStatusFilter, label: "Signable", count: signableCount },
               ...(declinedCount > 0 ? [{ key: "declined" as FaStatusFilter, label: "Declined", count: declinedCount }] : []),
             ]).map((f) => (
               <button
@@ -262,21 +244,19 @@ export default function ScoutingPanel() {
               <option value="pop-rap">Pop Rap</option>
               <option value="experimental">Experimental</option>
             </select>
-            {faStatusFilter !== "unscouted" && (
-              <select
-                value={faMinOvr}
-                onChange={(e) => setFaMinOvr(Number(e.target.value))}
-                className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
-              >
-                <option value={0}>OVR: Any</option>
-                <option value={30}>OVR: 30+</option>
-                <option value={40}>OVR: 40+</option>
-                <option value={50}>OVR: 50+</option>
-                <option value={60}>OVR: 60+</option>
-                <option value={70}>OVR: 70+</option>
-                <option value={80}>OVR: 80+</option>
-              </select>
-            )}
+            <select
+              value={faMinOvr}
+              onChange={(e) => setFaMinOvr(Number(e.target.value))}
+              className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
+            >
+              <option value={0}>OVR: Any</option>
+              <option value={30}>OVR: 30+</option>
+              <option value={40}>OVR: 40+</option>
+              <option value={50}>OVR: 50+</option>
+              <option value={60}>OVR: 60+</option>
+              <option value={70}>OVR: 70+</option>
+              <option value={80}>OVR: 80+</option>
+            </select>
             <select
               value={faMaxAge}
               onChange={(e) => setFaMaxAge(Number(e.target.value))}
@@ -311,33 +291,6 @@ export default function ScoutingPanel() {
                 </thead>
                 <tbody>
                   {pagedFreeAgents.map((a, i) => {
-                    if (!a.scouted) {
-                      const prospect = getProspectTier(a);
-                      const ps = a.careerPhase ? phaseStyle(a.careerPhase) : null;
-                      return (
-                        <tr key={a.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <td className="py-1 px-2">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-5 h-5 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-[10px] font-bold shrink-0">?</div>
-                              <span className="text-gray-400 font-medium">Unscouted</span>
-                            </div>
-                          </td>
-                          <td className="text-center py-1 px-1 text-gray-500">{a.age}</td>
-                          <td className="py-1 px-1 text-gray-500">{a.genre}</td>
-                          <td className="text-center py-1 px-1 text-gray-300">--</td>
-                          <td className="text-center py-1 px-1 text-gray-300">--</td>
-                          <td className="text-center py-1 px-1">
-                            {ps && <span className={`${phaseStyleLight(a.careerPhase)} text-[10px] font-semibold`}>{ps.label}</span>}
-                          </td>
-                          <td className="text-right py-1 px-1 text-gray-300">--</td>
-                          <td className="text-center py-1 px-1">
-                            <span className={`text-[10px] font-semibold ${prospect.color}`}>{prospect.label}</span>
-                          </td>
-                          <td className="text-right py-1 px-2"></td>
-                        </tr>
-                      );
-                    }
-
                     const cooldown = isOnCooldown(a, turn, reputation);
                     const cooldownWks = getCooldownWeeks(a, turn);
                     const willingness = computeWillingness(a, reputation);
