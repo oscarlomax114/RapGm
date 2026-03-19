@@ -129,7 +129,7 @@ function createInitialState(labelName: string): GameState {
   // Pre-populate 6-12 months of industry history so charts aren't empty at game start
   const baseState: GameState = {
     labelName,
-    money: 100000,
+    money: 120000,
     reputation: 20,
     fanbase: 5000,
     turn: 1,

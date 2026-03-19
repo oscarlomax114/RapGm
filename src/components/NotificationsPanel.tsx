@@ -125,8 +125,11 @@ const TYPE_CATEGORY_LABELS: Record<TypeCategory, string> = {
 const PAGE_SIZE = 40;
 
 export default function NotificationsPanel() {
-  const recentEvents = useGameStore((s) => s.recentEvents);
+  const allEvents = useGameStore((s) => s.recentEvents);
   const turn = useGameStore((s) => s.turn);
+
+  // Only show label-relevant events (filter out rival/background simulation events)
+  const recentEvents = useMemo(() => allEvents.filter((e) => !e.isRivalEvent), [allEvents]);
 
   const [typeCategory, setTypeCategory] = useState<TypeCategory>("all");
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>("all");

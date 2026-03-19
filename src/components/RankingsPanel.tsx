@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import { useGameStore } from "@/store/gameStore";
 import ArtistSprite from "./ArtistSprite";
 import type { Artist, Genre } from "@/lib/types";
+import { getVisibleFreeAgents } from "@/lib/engine";
+import type { GameState } from "@/lib/types";
 
 const GENRE_COLORS: Record<string, string> = {
   trap: "bg-orange-50 text-orange-700",
@@ -80,7 +82,8 @@ function ComparisonBar({ label, a, b, max }: { label: string; a: number; b: numb
 
 // ── Main panel ───────────────────────────────────────────────────────────────
 export default function RankingsPanel() {
-  const { artists, rivalLabels, labelName, songs, freeAgentPool } = useGameStore();
+  const store = useGameStore();
+  const { artists, rivalLabels, labelName, songs } = store;
 
   // Sub-tab
   const [subTab, setSubTab] = useState<SubTab>("all");
@@ -102,17 +105,18 @@ export default function RankingsPanel() {
   const [compareA, setCompareA] = useState<string>("");
   const [compareB, setCompareB] = useState<string>("");
 
-  // ── Build merged artist list ──────────────────────────────────────────────
+  // ── Build merged artist list (respects scouting fog-of-war) ──────────────
   const signed = artists.filter((a) => a.signed);
+  const visibleFreeAgents = useMemo(() => getVisibleFreeAgents(store as unknown as GameState), [store]);
 
   const allArtists: RankedArtist[] = useMemo(() => {
     return [
       ...signed.map((a) => ({ ...a, label: labelName })),
       ...rivalLabels.flatMap((rl) => rl.rosterArtists.map((a) => ({ ...a, label: rl.name }))),
-      ...freeAgentPool.map((a) => ({ ...a, label: "Free Agent" })),
+      ...visibleFreeAgents.map((a) => ({ ...a, label: "Free Agent" })),
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [artists, rivalLabels, freeAgentPool, labelName]);
+  }, [artists, rivalLabels, visibleFreeAgents, labelName]);
 
   // ── Filter + sort ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {

@@ -50,6 +50,7 @@ export default function ScoutingPanel() {
   // Signing modal
   const [signingArtist, setSigningArtist] = useState<Artist | null>(null);
   const [signingError, setSigningError] = useState<string | null>(null);
+  const [signingSuccess, setSigningSuccess] = useState<{ name: string; albumCount: number; fee: number } | null>(null);
 
   // Free agent filters + pagination
   const [faGenreFilter, setFaGenreFilter] = useState<string>("all");
@@ -128,11 +129,13 @@ export default function ScoutingPanel() {
           artist={signingArtist}
           money={money}
           onSign={(albumCount, fee) => {
+            const artistName = signingArtist.name;
             const err = signNewArtist(signingArtist.id, fee, albumCount);
             if (err) {
               setSigningError(err);
               setSigningArtist(null);
             } else {
+              setSigningSuccess({ name: artistName, albumCount, fee });
               setSigningArtist(null);
             }
           }}
@@ -148,6 +151,27 @@ export default function ScoutingPanel() {
             <button
               onClick={() => setSigningError(null)}
               className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-1.5 rounded transition"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {signingSuccess && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
+          <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl p-5 sm:max-w-sm w-full text-center shadow-lg">
+            <div className="text-green-600 text-2xl mb-2">&#10003;</div>
+            <h3 className="text-gray-900 font-bold text-sm mb-1">Artist Signed!</h3>
+            <p className="text-gray-500 text-xs mb-1">
+              <strong>{signingSuccess.name}</strong> has signed with your label.
+            </p>
+            <p className="text-gray-400 text-[11px] mb-4">
+              {signingSuccess.albumCount}-album deal &middot; ${signingSuccess.fee.toLocaleString()} signing fee
+            </p>
+            <button
+              onClick={() => setSigningSuccess(null)}
+              className="bg-green-600 hover:bg-green-500 text-white font-bold text-xs px-4 py-1.5 rounded transition"
             >
               OK
             </button>

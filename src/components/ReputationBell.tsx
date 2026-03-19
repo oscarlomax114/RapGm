@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { GameEvent } from "@/lib/types";
 
@@ -42,7 +42,9 @@ function deltaTag(value: number, prefix: string, suffix: string) {
 }
 
 export default function ReputationBell({ onSeeAll }: { onSeeAll?: () => void } = {}) {
-  const recentEvents = useGameStore((s) => s.recentEvents);
+  const allEvents = useGameStore((s) => s.recentEvents);
+  // Only show label-relevant events (filter out rival/background simulation events)
+  const recentEvents = useMemo(() => allEvents.filter((e) => !e.isRivalEvent), [allEvents]);
   const [open, setOpen] = useState(false);
   const [seenCount, setSeenCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);

@@ -1,888 +1,556 @@
 /**
- * Simulation script for Wrap Label GM — tests balance across 4 strategies over 600 turns.
- * Run with: npx tsx sim.ts
+ * Game Balance Simulation — 20 games across 10 strategies (2 each)
+ * Run: npx tsx sim.ts
  */
-
+import { GameState, Artist, TourSize } from "./src/lib/types";
 import {
-  advanceTurn,
-  recordSong,
-  releaseSong,
-  signArtist,
-  sendOnTour,
-  upgradeStudio,
-  upgradeScouting,
-  upgradeArtistDev,
-  upgradeTouringDept,
-  upgradeMarketing,
-  upgradePR,
-  upgradeMerch,
-  computeSigningFee,
-  computeWillingness,
-  MIN_SIGNING_WILLINGNESS,
-  getVisibleFreeAgents,
-  startAlbum,
-  releaseAlbum,
-  restArtist,
-  promoWeek,
-  renegotiateContract,
-  computeRenegotiationFee,
-  TOUR_DATA,
-  generateIndustryHistory,
+  advanceTurn, recordSong, releaseSong, signArtist,
+  upgradeStudio, upgradeScouting, upgradeArtistDev, upgradeTouringDept,
+  upgradeMarketing, upgradePR, upgradeMerch, sendOnTour,
+  startAlbum, releaseAlbum, computeSigningFee, computeWillingness,
+  getVisibleFreeAgents, MIN_SIGNING_WILLINGNESS, restArtist, promoWeek,
+  TOUR_DATA, generateIndustryHistory, computeRenegotiationFee, renegotiateContract,
 } from "./src/lib/engine";
 import {
-  generateArtist,
-  PRODUCER_ROSTER,
-  INITIAL_UPGRADES,
-  isProducerUnlocked,
-  createRivalLabels,
-  STUDIO_DATA,
-  SCOUTING_DATA,
-  ARTIST_DEV_DATA,
-  TOURING_DEPT_DATA,
-  MARKETING_DATA,
-  PR_DATA,
-  MERCH_DATA,
+  generateArtist, PRODUCER_ROSTER, INITIAL_UPGRADES, createRivalLabels,
+  STUDIO_DATA, SCOUTING_DATA, ARTIST_DEV_DATA, TOURING_DEPT_DATA,
+  MARKETING_DATA, PR_DATA, MERCH_DATA, isProducerUnlocked,
 } from "./src/lib/data";
-import type { GameState, Artist, TourSize } from "./src/lib/types";
 
-// ── Create initial state (mirrors gameStore.ts) ─────────────────────────────
+// ── Create initial state (mirrors gameStore.ts createInitialState) ──────────
 
-function createInitialState(labelName: string): GameState {
-  const rosterArtists: Artist[] = Array.from({ length: 2 }, (_, i) =>
-    generateArtist(`a${i}`, true)
-  );
-  const freeAgentPool: Artist[] = Array.from({ length: 400 }, (_, i) =>
-    generateArtist(`pool_${i}`)
-  );
-  const producers = PRODUCER_ROSTER;
-  const startDate = "2025-01-06";
+function createState(labelName: string): GameState {
+  const freeAgentPool = Array.from({ length: 400 }, (_, i) => generateArtist(`pool_${i}`));
   const rivalLabels = createRivalLabels();
-
-  const baseState: GameState = {
-    labelName,
-    money: 100000,
-    reputation: 30,
-    fanbase: 10000,
-    turn: 1,
-    startDate,
-    artists: rosterArtists,
-    producers,
-    songs: [],
-    albums: [],
-    upgrades: INITIAL_UPGRADES,
-    chart: [],
-    recentEvents: [],
-    gameStarted: true,
-    gameOver: false,
-    lastRefreshTurn: 0,
-    studioLevel: 0,
-    scoutingLevel: 0,
-    artistDevLevel: 0,
-    touringLevel: 0,
-    marketingLevel: 0,
-    prLevel: 0,
-    merchLevel: 0,
-    recordingTokens: 0,
-    vault: [],
-    rivalLabels,
-    industrySongs: [],
-    freeAgentPool,
-    awardHistory: [],
-    pendingAwardCeremony: null,
-    activeBeefs: [],
-    artistRelationships: [],
-    pendingFeatureRequests: [],
-    achievements: [],
-    hallOfFame: [],
-    globalHallOfFame: [],
-    transactions: [],
-    dynastyYears: 0,
-    labelMilestones: [],
+  const base: GameState = {
+    labelName, money: 120000, reputation: 20, fanbase: 5000,
+    turn: 1, startDate: "2025-01-06",
+    artists: [], producers: PRODUCER_ROSTER, songs: [], albums: [],
+    upgrades: INITIAL_UPGRADES, chart: [], recentEvents: [],
+    gameStarted: true, gameOver: false, lastRefreshTurn: 0,
+    studioLevel: 0, scoutingLevel: 0, artistDevLevel: 0,
+    touringLevel: 0, marketingLevel: 0, prLevel: 0, merchLevel: 0,
+    recordingTokens: 0, vault: [], rivalLabels, industrySongs: [],
+    freeAgentPool, awardHistory: [], pendingAwardCeremony: null,
+    activeBeefs: [], artistRelationships: [], pendingFeatureRequests: [],
+    achievements: [], hallOfFame: [], globalHallOfFame: [],
+    transactions: [], dynastyYears: 0, labelMilestones: [],
     revenueHistory: {
       streaming: 0, touring: 0, merch: 0, brandDeals: 0, awards: 0,
       weeklyStreaming: 0, weeklyTouring: 0, weeklyMerch: 0, weeklyBrandDeals: 0, weeklyOverhead: 0,
     },
   };
-
-  const history = generateIndustryHistory(baseState);
-  return {
-    ...baseState,
-    industrySongs: history.industrySongs,
-    rivalLabels: history.rivalLabels,
-    chart: history.chart,
-  };
-}
-
-// ── Tracking ────────────────────────────────────────────────────────────────
-
-interface TurnSnapshot {
-  turn: number;
-  money: number;
-  reputation: number;
-  fanbase: number;
-  signedCount: number;
-  chartEntries: number;
-  playerChartEntries: number;
-}
-
-interface PoolAnalysis {
-  totalCount: number;
-  ageDistribution: Record<string, number>;
-  ovrDistribution: Record<string, number>;
-  careerPhaseDistribution: Record<string, number>;
-  durabilityDistribution: Record<string, number>;
-  signableCount: number;
-  avgMomentum: number;
-}
-
-interface SimTracker {
-  totalStreamRevenue: number;
-  totalTourRevenue: number;
-  totalMerchRevenue: number;
-  totalOverheadPaid: number;
-  totalSigningFees: number;
-  totalProducerCosts: number;
-  totalMarketingSpend: number;
-  totalUpgradeCosts: number;
-  totalArtistsSigned: number;
-  songsRecorded: number;
-  songsReleased: number;
-  albumsReleased: number;
-  chartAppearances: number;
-  numberOneHits: number;
-  awardWins: number;
-  firstChartTurn: number;
-  firstNumberOneTurn: number;
-  firstAwardWinTurn: number;
-  hit500k: number;
-  hit1m: number;
-  hit2m: number;
-  hit5m: number;
-  minMoney: number;
-  minMoneyTurn: number;
-  prevMoney: number;
-  lossStreakStart: number;
-  sustainedLossPeriods: Array<{ start: number; end: number; length: number }>;
-  bankruptcyCloseCallTurns: number[];
-  momentumDecaySamples: Array<{ artistName: string; turn: number; momentum: number }>;
-  careerPhaseTransitions: Array<{ artistName: string; turn: number; from: string; to: string }>;
-  prevPhases: Map<string, string>;
-  freeAgentAnalysis: {
-    turn1: PoolAnalysis | null;
-    turn300: PoolAnalysis | null;
-    turn600: PoolAnalysis | null;
-  };
-}
-
-interface SimResult {
-  strategyName: string;
-  snapshots: TurnSnapshot[];
-  finalState: GameState;
-  totalStreamRevenue: number;
-  totalTourRevenue: number;
-  totalMerchRevenue: number;
-  totalOverheadPaid: number;
-  totalSigningFees: number;
-  totalProducerCosts: number;
-  totalMarketingSpend: number;
-  totalUpgradeCosts: number;
-  totalArtistsSigned: number;
-  songsRecorded: number;
-  songsReleased: number;
-  albumsReleased: number;
-  chartAppearances: number;
-  numberOneHits: number;
-  awardWins: number;
-  firstChartTurn: number;
-  firstNumberOneTurn: number;
-  firstAwardWinTurn: number;
-  hit500k: number;
-  hit1m: number;
-  hit2m: number;
-  hit5m: number;
-  minMoney: number;
-  minMoneyTurn: number;
-  sustainedLossPeriods: Array<{ start: number; end: number; length: number }>;
-  bankruptcyCloseCallTurns: number[];
-  freeAgentAnalysis: { turn1: PoolAnalysis | null; turn300: PoolAnalysis | null; turn600: PoolAnalysis | null };
-  momentumDecaySamples: Array<{ artistName: string; turn: number; momentum: number }>;
-  careerPhaseTransitions: Array<{ artistName: string; turn: number; from: string; to: string }>;
-}
-
-function analyzePool(pool: Artist[], labelRep: number): PoolAnalysis {
-  const ageDistribution: Record<string, number> = { "18-20": 0, "21-23": 0, "24-26": 0, "27-29": 0, "30-32": 0, "33-35": 0, "36+": 0 };
-  const ovrDistribution: Record<string, number> = { "25-39": 0, "40-54": 0, "55-69": 0, "70-79": 0, "80-89": 0, "90+": 0 };
-  const careerPhaseDistribution: Record<string, number> = { prospect: 0, emerging: 0, established: 0, veteran: 0, declining: 0 };
-  const durabilityDistribution: Record<string, number> = { flash: 0, solid: 0, durable: 0 };
-  let signableCount = 0;
-  let totalMomentum = 0;
-  for (const a of pool) {
-    if (a.age <= 20) ageDistribution["18-20"]++; else if (a.age <= 23) ageDistribution["21-23"]++; else if (a.age <= 26) ageDistribution["24-26"]++; else if (a.age <= 29) ageDistribution["27-29"]++; else if (a.age <= 32) ageDistribution["30-32"]++; else if (a.age <= 35) ageDistribution["33-35"]++; else ageDistribution["36+"]++;
-    if (a.overallRating < 40) ovrDistribution["25-39"]++; else if (a.overallRating < 55) ovrDistribution["40-54"]++; else if (a.overallRating < 70) ovrDistribution["55-69"]++; else if (a.overallRating < 80) ovrDistribution["70-79"]++; else if (a.overallRating < 90) ovrDistribution["80-89"]++; else ovrDistribution["90+"]++;
-    careerPhaseDistribution[a.careerPhase ?? "prospect"]++;
-    durabilityDistribution[a.durability ?? "solid"]++;
-    if (computeWillingness(a, labelRep) >= MIN_SIGNING_WILLINGNESS) signableCount++;
-    totalMomentum += a.momentum ?? 0;
-  }
-  return { totalCount: pool.length, ageDistribution, ovrDistribution, careerPhaseDistribution, durabilityDistribution, signableCount, avgMomentum: pool.length > 0 ? Math.round(totalMomentum / pool.length) : 0 };
-}
-
-function createTracker(): SimTracker {
-  return {
-    totalStreamRevenue: 0, totalTourRevenue: 0, totalMerchRevenue: 0, totalOverheadPaid: 0,
-    totalSigningFees: 0, totalProducerCosts: 0, totalMarketingSpend: 0, totalUpgradeCosts: 0,
-    totalArtistsSigned: 0, songsRecorded: 0, songsReleased: 0, albumsReleased: 0,
-    chartAppearances: 0, numberOneHits: 0, awardWins: 0,
-    firstChartTurn: 0, firstNumberOneTurn: 0, firstAwardWinTurn: 0,
-    hit500k: 0, hit1m: 0, hit2m: 0, hit5m: 0,
-    minMoney: 100000, minMoneyTurn: 1, prevMoney: 100000,
-    lossStreakStart: 0, sustainedLossPeriods: [], bankruptcyCloseCallTurns: [],
-    momentumDecaySamples: [], careerPhaseTransitions: [], prevPhases: new Map(),
-    freeAgentAnalysis: { turn1: null, turn300: null, turn600: null },
-  };
-}
-
-function getWeeklyOverhead(state: GameState): number {
-  return STUDIO_DATA[state.studioLevel].weeklyOperatingCost +
-    SCOUTING_DATA[state.scoutingLevel].weeklyOperatingCost +
-    ARTIST_DEV_DATA[state.artistDevLevel].weeklyOperatingCost +
-    TOURING_DEPT_DATA[state.touringLevel].weeklyOperatingCost +
-    MARKETING_DATA[state.marketingLevel].weeklyOperatingCost +
-    PR_DATA[state.prLevel].weeklyOperatingCost +
-    MERCH_DATA[state.merchLevel].weeklyOperatingCost;
-}
-
-function updateTracker(state: GameState, prevState: GameState, tracker: SimTracker, turn: number): void {
-  for (const ev of state.recentEvents) {
-    if (ev.turn !== state.turn) continue;
-    if (ev.type === "revenue") {
-      if (ev.title === "Stream Revenue") tracker.totalStreamRevenue += ev.moneyDelta;
-      else if (ev.title === "Tour Earnings") tracker.totalTourRevenue += ev.moneyDelta;
-      else if (ev.title === "Merch Sales") tracker.totalMerchRevenue += ev.moneyDelta;
-    }
-  }
-  tracker.totalOverheadPaid += getWeeklyOverhead(state);
-  const playerChartCount = state.chart.filter((c) => c.isPlayerSong).length;
-  if (playerChartCount > 0) { tracker.chartAppearances += playerChartCount; if (tracker.firstChartTurn === 0) tracker.firstChartTurn = turn; }
-  if (state.chart.length > 0 && state.chart[0].isPlayerSong) { tracker.numberOneHits++; if (tracker.firstNumberOneTurn === 0) tracker.firstNumberOneTurn = turn; }
-  if (state.pendingAwardCeremony?.playerWins?.length) { tracker.awardWins += state.pendingAwardCeremony.playerWins.length; if (tracker.firstAwardWinTurn === 0) tracker.firstAwardWinTurn = turn; }
-  if (tracker.hit500k === 0 && state.money >= 500000) tracker.hit500k = turn;
-  if (tracker.hit1m === 0 && state.money >= 1000000) tracker.hit1m = turn;
-  if (tracker.hit2m === 0 && state.money >= 2000000) tracker.hit2m = turn;
-  if (tracker.hit5m === 0 && state.money >= 5000000) tracker.hit5m = turn;
-  if (state.money < tracker.minMoney) { tracker.minMoney = state.money; tracker.minMoneyTurn = turn; }
-  if (state.money < 0) tracker.bankruptcyCloseCallTurns.push(turn);
-  if (state.money < tracker.prevMoney) { if (tracker.lossStreakStart === 0) tracker.lossStreakStart = turn; } else { if (tracker.lossStreakStart > 0) { const len = turn - tracker.lossStreakStart; if (len >= 8) tracker.sustainedLossPeriods.push({ start: tracker.lossStreakStart, end: turn - 1, length: len }); tracker.lossStreakStart = 0; } }
-  tracker.prevMoney = state.money;
-  if (turn % 50 === 0) for (const a of state.artists.filter((a) => a.signed)) tracker.momentumDecaySamples.push({ artistName: a.name, turn, momentum: a.momentum ?? 0 });
-  for (const a of state.artists.filter((a) => a.signed)) { const prev = tracker.prevPhases.get(a.id); const cur = a.careerPhase ?? "prospect"; if (prev && prev !== cur) tracker.careerPhaseTransitions.push({ artistName: a.name, turn, from: prev, to: cur }); tracker.prevPhases.set(a.id, cur); }
-  if (turn === 1) tracker.freeAgentAnalysis.turn1 = analyzePool(state.freeAgentPool, state.reputation);
-  if (turn === 300) tracker.freeAgentAnalysis.turn300 = analyzePool(state.freeAgentPool, state.reputation);
-  if (turn === 600) tracker.freeAgentAnalysis.turn600 = analyzePool(state.freeAgentPool, state.reputation);
+  const history = generateIndustryHistory(base);
+  return { ...base, industrySongs: history.industrySongs, rivalLabels: history.rivalLabels, chart: history.chart };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-type UpgradeFn = (state: GameState) => { newState: GameState; error?: string };
+function signed(s: GameState): Artist[] { return s.artists.filter(a => a.signed); }
 
-function tryUpgrade(state: GameState, fn: UpgradeFn, keepReserve: number): { state: GameState; upgraded: boolean; cost: number } {
-  if (state.money < keepReserve) return { state, upgraded: false, cost: 0 };
-  const before = state.money;
-  const result = fn(state);
-  if (result.error) return { state, upgraded: false, cost: 0 };
-  // Check we still have reserve after upgrade
-  if (result.newState.money < keepReserve * 0.5) return { state, upgraded: false, cost: 0 };
-  return { state: result.newState, upgraded: true, cost: before - result.newState.money };
+function bestProducer(s: GameState, maxCost: number) {
+  const unlocked = s.producers.filter(p => isProducerUnlocked(p, s) && p.costPerSong <= maxCost);
+  return unlocked.sort((a, b) => b.quality - a.quality)[0] ?? null;
 }
 
-function getBestAffordableProducer(state: GameState, maxCost: number) {
-  const unlocked = state.producers.filter((p) => isProducerUnlocked(p, state) && p.costPerSong <= maxCost);
-  if (unlocked.length === 0) return null;
-  return unlocked.sort((a, b) => b.quality - a.quality)[0];
+function cheapProducer(s: GameState) {
+  const unlocked = s.producers.filter(p => isProducerUnlocked(p, s));
+  return unlocked.sort((a, b) => a.costPerSong - b.costPerSong)[0] ?? null;
 }
 
-function getCheapestProducer(state: GameState) {
-  const unlocked = state.producers.filter((p) => isProducerUnlocked(p, state));
-  if (unlocked.length === 0) return null;
-  return unlocked.sort((a, b) => a.costPerSong - b.costPerSong)[0];
-}
-
-function trySignFromPool(state: GameState, filter: (a: Artist) => boolean, maxFee: number): { state: GameState; signed: boolean; fee: number } {
-  const rosterCap = STUDIO_DATA[state.studioLevel].rosterCap;
-  const currentSigned = state.artists.filter((a) => a.signed).length;
-  if (currentSigned >= rosterCap) return { state, signed: false, fee: 0 };
-  const visible = getVisibleFreeAgents(state);
+function trySign(s: GameState, maxFee: number, minOvr: number, albumCount: 1|2|3): GameState {
+  const cap = STUDIO_DATA[s.studioLevel].rosterCap;
+  if (signed(s).length >= cap) return s;
+  const visible = getVisibleFreeAgents(s);
   const candidates = visible
-    .filter((a) => computeWillingness(a, state.reputation) >= MIN_SIGNING_WILLINGNESS && filter(a))
+    .filter(a => computeWillingness(a, s.reputation) >= MIN_SIGNING_WILLINGNESS && a.overallRating >= minOvr)
     .sort((a, b) => b.overallRating - a.overallRating);
-  for (const c of candidates.slice(0, 8)) {
-    const fee = computeSigningFee(c, 1);
-    if (fee > maxFee || fee > state.money) continue;
-    const result = signArtist(state, c.id, fee, 1);
-    if (!result.error) return { state: result.newState, signed: true, fee };
+  for (const c of candidates.slice(0, 5)) {
+    const fee = computeSigningFee(c, albumCount);
+    if (fee <= maxFee && fee <= s.money * 0.5) {
+      const r = signArtist(s, c.id, fee, albumCount);
+      if (!r.error) return r.newState;
+    }
   }
-  return { state, signed: false, fee: 0 };
+  return s;
 }
 
-function trySendOnTour(state: GameState, artistId: string, preferred: TourSize): { state: GameState; sent: boolean } {
-  const artist = state.artists.find((a) => a.id === artistId);
-  if (!artist || !artist.signed || artist.onTour || artist.fatigue > 75) return { state, sent: false };
-  const allTours: TourSize[] = ["world_tour", "major_tour", "national_tour", "regional_tour", "club_tour"];
-  const idx = allTours.indexOf(preferred);
-  const toTry = allTours.slice(idx);
-  for (const tt of toTry) {
-    const t = TOUR_DATA[tt];
-    if (t.bookingCost > state.money * 0.5) continue; // don't spend more than half on booking
-    const result = sendOnTour(state, artistId, tt);
-    if (!result.error) return { state: result.newState, sent: true };
-  }
-  return { state, sent: false };
+function tryUpg(s: GameState, fn: (s: GameState) => { newState: GameState; error?: string }): GameState {
+  const r = fn(s);
+  return r.error ? s : r.newState;
 }
 
-function handleExpiredContracts(state: GameState, maxFee: number): GameState {
-  let s = state;
-  for (const artist of s.artists.filter((a) => a.signed && a.contractAlbumsLeft === 0 && a.contractAlbumsTotal > 0)) {
-    if (artist.overallRating < 30) continue; // let bad artists leave
-    const fee = computeRenegotiationFee(artist, s, 1);
+function handleExpired(s: GameState, maxFee: number): GameState {
+  for (const a of signed(s).filter(a => a.contractAlbumsLeft === 0)) {
+    if (a.overallRating < 30) continue;
+    const fee = computeRenegotiationFee(a, s, 2);
     if (fee <= maxFee && fee <= s.money * 0.3) {
-      const result = renegotiateContract(s, artist.id, 1, fee);
-      if (!result.error) s = result.newState;
+      const r = renegotiateContract(s, a.id, 2, fee);
+      if (!r.error) s = r.newState;
     }
   }
   return s;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ── STRATEGIES ──────────────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Strategy definitions ────────────────────────────────────────────────────
 
-type StrategyFn = (state: GameState, turn: number, tracker: SimTracker) => GameState;
+type StrategyFn = (s: GameState) => GameState;
 
-// ── Strategy A: Singles Factory ─────────────────────────────────────────────
-// Focus: sign young cheap artists, record cheap singles, release immediately, club tours.
-// Upgrade studio & scouting when flush. Never make albums.
-
-function singlesFactory(state: GameState, turn: number, tracker: SimTracker): GameState {
-  let s = state;
-  const overhead = getWeeklyOverhead(s);
-  const safeReserve = Math.max(20000, overhead * 12);
-
-  // STEP 1: Record and release singles with existing artists FIRST (revenue before spending)
-  const cheapProd = getCheapestProducer(s);
-  if (cheapProd) {
-    for (const artist of s.artists.filter((a) => a.signed && !a.onTour)) {
-      if (artist.fatigue >= 75) {
-        const rr = restArtist(s, artist.id);
-        if (!rr.error) s = rr.newState;
-        continue;
-      }
-      if (artist.fatigue >= 85 || s.money < cheapProd.costPerSong + safeReserve) continue;
-      const rec = recordSong(s, artist.id, cheapProd.id, true);
-      if (rec.song) {
-        s = rec.newState;
-        tracker.songsRecorded++;
-        tracker.totalProducerCosts += cheapProd.costPerSong;
-        s = releaseSong(s, rec.song.id);
-        tracker.songsReleased++;
-      }
+function stratBalanced(s: GameState): GameState {
+  if (s.turn <= 5 || s.turn % 4 === 0) s = trySign(s, 30000, 30, 2);
+  s = handleExpired(s, 25000);
+  if (s.studioLevel < 3 && s.money > 60000) s = tryUpg(s, upgradeStudio);
+  if (s.scoutingLevel < 2 && s.money > 30000) s = tryUpg(s, upgradeScouting);
+  if (s.marketingLevel < 2 && s.money > 30000) s = tryUpg(s, upgradeMarketing);
+  if (s.touringLevel < 2 && s.money > 30000) s = tryUpg(s, upgradeTouringDept);
+  if (s.studioLevel < 5 && s.money > 150000) s = tryUpg(s, upgradeStudio);
+  if (s.merchLevel < 3 && s.money > 50000) s = tryUpg(s, upgradeMerch);
+  for (const a of signed(s)) {
+    if (a.fatigue > 70 || a.onTour || a.jailed) continue;
+    const p = bestProducer(s, Math.min(s.money * 0.3, 15000));
+    if (!p) continue;
+    const r = recordSong(s, a.id, p.id, true);
+    if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); }
+  }
+  for (const a of signed(s)) {
+    if (!a.onTour && a.fatigue < 50 && a.popularity > 15) {
+      const t: TourSize = a.popularity > 50 ? "regional_tour" : "club_tour";
+      const r = sendOnTour(s, a.id, t);
+      if (!r.error) s = r.newState;
     }
   }
-
-  // STEP 2: Send available artists on club tours
-  for (const artist of s.artists.filter((a) => a.signed && !a.onTour && a.fatigue <= 55)) {
-    if (s.money < TOUR_DATA.club_tour.bookingCost + safeReserve) break;
-    const r = trySendOnTour(s, artist.id, "club_tour");
-    if (r.sent) s = r.state;
-  }
-
-  // STEP 3: Handle expired contracts (cheap)
-  s = handleExpiredContracts(s, 15000);
-
-  // STEP 4: Sign new young cheap artists when flush
-  const signedCount = s.artists.filter((a) => a.signed).length;
-  const rosterCap = STUDIO_DATA[s.studioLevel].rosterCap;
-  if (signedCount < rosterCap && s.money > safeReserve + 20000) {
-    const r = trySignFromPool(s, (a) => a.age <= 24 && a.overallRating >= 30, Math.min(s.money - safeReserve, 25000));
-    if (r.signed) { s = r.state; tracker.totalSigningFees += r.fee; tracker.totalArtistsSigned++; }
-  }
-
-  // STEP 5: Upgrade only when well above reserve (studio > scouting > marketing > merch)
-  if (s.money > safeReserve * 2) {
-    for (const fn of [upgradeStudio, upgradeScouting, upgradeMarketing, upgradeMerch] as UpgradeFn[]) {
-      const r = tryUpgrade(s, fn, safeReserve * 1.5);
-      if (r.upgraded) { s = r.state; tracker.totalUpgradeCosts += r.cost; break; }
-    }
-  }
-
   return s;
 }
 
-// ── Strategy B: Album Builder ───────────────────────────────────────────────
-// Focus: 2-3 mid-level artists, invest in artist dev, record 10+ track albums, tour after.
-
-function albumBuilder(state: GameState, turn: number, tracker: SimTracker): GameState {
-  let s = state;
-  const overhead = getWeeklyOverhead(s);
-  const safeReserve = Math.max(25000, overhead * 12);
-
-  // STEP 1: For signed artists not on tour, work on albums
-  const bestProd = getBestAffordableProducer(s, Math.min(s.money * 0.08, 25000));
-  if (bestProd) {
-    for (const artist of s.artists.filter((a) => a.signed && !a.onTour)) {
-      if (artist.fatigue >= 70) {
-        const rr = restArtist(s, artist.id);
-        if (!rr.error) s = rr.newState;
-        continue;
-      }
-      if (artist.fatigue >= 85) continue;
-
-      // Get or start album
-      let album = s.albums.find((al) => al.artistId === artist.id && al.status === "recording");
-      if (!album) {
-        const startRes = startAlbum(s, artist.id);
-        if (!startRes.error && startRes.album) {
-          s = startRes.newState;
-          album = startRes.album;
-        }
-      }
-
-      if (album && s.money >= bestProd.costPerSong + safeReserve) {
-        const rec = recordSong(s, artist.id, bestProd.id, false);
-        if (rec.song) {
-          s = rec.newState;
-          tracker.songsRecorded++;
-          tracker.totalProducerCosts += bestProd.costPerSong;
-        }
-
-        // Check if album has enough tracks to release
-        const albumSongCount = s.songs.filter((song) => album!.songIds.includes(song.id)).length;
-        if (albumSongCount >= 12) {
-          const mktBudget = Math.min(Math.floor(s.money * 0.08), 30000);
-          const relRes = releaseAlbum(s, album.id, mktBudget);
-          if (!relRes.error) {
-            s = relRes.newState;
-            tracker.albumsReleased++;
-            tracker.totalMarketingSpend += mktBudget;
-            tracker.songsReleased += albumSongCount;
-          }
-        }
-      } else if (!album) {
-        // No album possible — record a standalone single as filler
-        if (s.money >= bestProd.costPerSong + safeReserve) {
-          const rec = recordSong(s, artist.id, bestProd.id, true);
-          if (rec.song) {
-            s = rec.newState;
-            tracker.songsRecorded++;
-            tracker.totalProducerCosts += bestProd.costPerSong;
-            s = releaseSong(s, rec.song.id);
-            tracker.songsReleased++;
-          }
-        }
-      }
+function stratStudioRush(s: GameState): GameState {
+  if (s.studioLevel < 5 && s.money > 20000) s = tryUpg(s, upgradeStudio);
+  if (s.studioLevel < 7 && s.money > 250000) s = tryUpg(s, upgradeStudio);
+  if (s.turn <= 3 || s.turn % 3 === 0) s = trySign(s, 25000, 25, 2);
+  s = handleExpired(s, 20000);
+  for (const a of signed(s)) {
+    if (a.fatigue > 75 || a.onTour || a.jailed) continue;
+    const p = bestProducer(s, Math.min(s.money * 0.4, 25000));
+    if (!p) continue;
+    const r = recordSong(s, a.id, p.id, true);
+    if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); }
+  }
+  for (const a of signed(s)) {
+    if (!a.onTour && a.fatigue < 50) {
+      const r = sendOnTour(s, a.id, "club_tour");
+      if (!r.error) s = r.newState;
     }
   }
+  return s;
+}
 
-  // STEP 2: Tour after album release
-  for (const artist of s.artists.filter((a) => a.signed && !a.onTour && a.fatigue <= 55)) {
-    const recentAlbum = s.albums.find((al) => al.artistId === artist.id && al.status === "released" && s.turn - al.turnReleased <= 20);
-    if (!recentAlbum && s.turn > 30) continue; // only tour after an album (or early game for income)
-    if (s.money < TOUR_DATA.regional_tour.bookingCost + safeReserve) {
-      // Fall back to club tour
-      if (s.money < TOUR_DATA.club_tour.bookingCost + safeReserve) break;
-      const r = trySendOnTour(s, artist.id, "club_tour");
-      if (r.sent) s = r.state;
+function stratMassSigning(s: GameState): GameState {
+  if (s.studioLevel < 4 && s.money > 30000) s = tryUpg(s, upgradeStudio);
+  if (s.studioLevel < 6 && s.money > 150000) s = tryUpg(s, upgradeStudio);
+  for (let i = 0; i < 3; i++) s = trySign(s, 15000, 20, 1);
+  s = handleExpired(s, 10000);
+  for (const a of signed(s)) {
+    if (a.fatigue > 75 || a.onTour || a.jailed) continue;
+    const p = cheapProducer(s);
+    if (!p || s.money < 3000) continue;
+    const r = recordSong(s, a.id, p.id, true);
+    if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); }
+  }
+  return s;
+}
+
+function stratSingleStar(s: GameState): GameState {
+  if (signed(s).length === 0) s = trySign(s, 50000, 35, 3);
+  if (s.studioLevel < 4 && s.money > 40000) s = tryUpg(s, upgradeStudio);
+  if (s.marketingLevel < 3 && s.money > 40000) s = tryUpg(s, upgradeMarketing);
+  if (s.artistDevLevel < 3 && s.money > 40000) s = tryUpg(s, upgradeArtistDev);
+  s = handleExpired(s, 50000);
+  const star = signed(s)[0];
+  if (star && !star.onTour && !star.jailed && star.fatigue < 70) {
+    const p = bestProducer(s, Math.min(s.money * 0.5, 20000));
+    if (p) { const r = recordSong(s, star.id, p.id, true); if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); } }
+  }
+  if (star && !star.onTour && star.fatigue < 50 && star.popularity > 20) {
+    const t: TourSize = star.popularity > 60 ? "national_tour" : star.popularity > 30 ? "regional_tour" : "club_tour";
+    const r = sendOnTour(s, star.id, t); if (!r.error) s = r.newState;
+  }
+  if (star && star.fatigue > 60 && !star.onTour) { const r = restArtist(s, star.id); if (!r.error) s = r.newState; }
+  return s;
+}
+
+function stratTourHeavy(s: GameState): GameState {
+  if (s.touringLevel < 4 && s.money > 30000) s = tryUpg(s, upgradeTouringDept);
+  if (s.touringLevel < 7 && s.money > 200000) s = tryUpg(s, upgradeTouringDept);
+  if (s.studioLevel < 3 && s.money > 50000) s = tryUpg(s, upgradeStudio);
+  if (s.turn <= 3 || s.turn % 5 === 0) s = trySign(s, 25000, 30, 2);
+  s = handleExpired(s, 20000);
+  for (const a of signed(s)) {
+    if (a.fatigue > 75 || a.onTour || a.jailed) continue;
+    const p = cheapProducer(s);
+    if (!p || s.money < 3000) continue;
+    const r = recordSong(s, a.id, p.id, true);
+    if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); }
+  }
+  for (const a of signed(s)) {
+    if (!a.onTour && a.fatigue < 60) {
+      const t: TourSize = a.popularity > 60 ? "national_tour" : a.popularity > 30 ? "regional_tour" : "club_tour";
+      const r = sendOnTour(s, a.id, t); if (!r.error) s = r.newState;
+    }
+  }
+  return s;
+}
+
+function stratAlbumFactory(s: GameState): GameState {
+  if (s.studioLevel < 4 && s.money > 40000) s = tryUpg(s, upgradeStudio);
+  if (s.turn <= 4 || s.turn % 6 === 0) s = trySign(s, 30000, 30, 3);
+  s = handleExpired(s, 30000);
+  for (const a of signed(s)) {
+    if (a.fatigue > 80 || a.onTour || a.jailed) continue;
+    let album = s.albums.find(al => al.artistId === a.id && al.status === "recording");
+    if (!album) {
+      const sa = startAlbum(s, a.id);
+      if (!sa.error && sa.album) { s = sa.newState; album = sa.album; }
+    }
+    if (album) {
+      const p = bestProducer(s, Math.min(s.money * 0.3, 15000));
+      if (p) { const r = recordSong(s, a.id, p.id, false); if (r.song) s = r.newState; }
+      const cnt = s.songs.filter(song => album!.songIds.includes(song.id)).length;
+      if (cnt >= 7) {
+        const ra = releaseAlbum(s, album.id, Math.min(5000, s.money * 0.1));
+        if (!ra.error) s = ra.newState;
+      }
     } else {
-      const r = trySendOnTour(s, artist.id, "regional_tour");
-      if (r.sent) s = r.state;
+      const p = cheapProducer(s);
+      if (p && s.money >= 3000) { const r = recordSong(s, a.id, p.id, true); if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); } }
     }
   }
-
-  // STEP 3: Handle expired contracts
-  s = handleExpiredContracts(s, 30000);
-
-  // STEP 4: Sign mid-level artists (target 3)
-  const signedCount = s.artists.filter((a) => a.signed).length;
-  if (signedCount < 3 && s.money > safeReserve + 30000) {
-    const r = trySignFromPool(s, (a) => a.overallRating >= 38 && a.overallRating <= 75 && a.age >= 20 && a.age <= 28, Math.min(s.money - safeReserve, 40000));
-    if (r.signed) { s = r.state; tracker.totalSigningFees += r.fee; tracker.totalArtistsSigned++; }
+  for (const a of signed(s)) {
+    if (!a.onTour && a.fatigue < 40 && a.popularity > 20 && s.turn % 8 === 0) {
+      const r = sendOnTour(s, a.id, "club_tour"); if (!r.error) s = r.newState;
+    }
   }
-
-  // STEP 5: Balanced upgrades when flush
-  if (s.money > safeReserve * 2.5) {
-    const fns = [upgradeStudio, upgradeArtistDev, upgradeMarketing, upgradeScouting, upgradeTouringDept, upgradeMerch, upgradePR] as UpgradeFn[];
-    const fn = fns[turn % fns.length];
-    const r = tryUpgrade(s, fn, safeReserve * 2);
-    if (r.upgraded) { s = r.state; tracker.totalUpgradeCosts += r.cost; }
-  }
-
   return s;
 }
 
-// ── Strategy C: Star Chaser ─────────────────────────────────────────────────
-// Focus: Save early, upgrade scouting & studio to find/afford high-OVR artists. Quality > quantity.
-
-function starChaser(state: GameState, turn: number, tracker: SimTracker): GameState {
-  let s = state;
-  const overhead = getWeeklyOverhead(s);
-  const safeReserve = Math.max(30000, overhead * 15);
-
-  // STEP 1: Record with best available producers for existing artists
-  const maxProdCost = Math.min(s.money * 0.1, 20000);
-  const prod = getBestAffordableProducer(s, maxProdCost);
-  if (prod) {
-    for (const artist of s.artists.filter((a) => a.signed && !a.onTour)) {
-      if (artist.fatigue >= 65) {
-        const rr = restArtist(s, artist.id);
-        if (!rr.error) s = rr.newState;
-        continue;
-      }
-      if (artist.fatigue >= 80 || s.money < prod.costPerSong + safeReserve) continue;
-
-      // Work on albums when possible
-      let album = s.albums.find((al) => al.artistId === artist.id && al.status === "recording");
-      if (!album) {
-        const startRes = startAlbum(s, artist.id);
-        if (!startRes.error && startRes.album) { s = startRes.newState; album = startRes.album; }
-      }
-
-      if (album) {
-        const rec = recordSong(s, artist.id, prod.id, false);
-        if (rec.song) {
-          s = rec.newState;
-          tracker.songsRecorded++;
-          tracker.totalProducerCosts += prod.costPerSong;
-        }
-        const albumSongCount = s.songs.filter((song) => album!.songIds.includes(song.id)).length;
-        if (albumSongCount >= 10) {
-          const mktBudget = Math.min(Math.floor(s.money * 0.1), 50000);
-          const relRes = releaseAlbum(s, album.id, mktBudget);
-          if (!relRes.error) {
-            s = relRes.newState;
-            tracker.albumsReleased++;
-            tracker.totalMarketingSpend += mktBudget;
-            tracker.songsReleased += albumSongCount;
-          }
-        }
-      } else {
-        // Record standalone singles
-        const rec = recordSong(s, artist.id, prod.id, true);
-        if (rec.song) {
-          s = rec.newState;
-          tracker.songsRecorded++;
-          tracker.totalProducerCosts += prod.costPerSong;
-          s = releaseSong(s, rec.song.id);
-          tracker.songsReleased++;
-        }
-      }
-    }
+function stratMarketingFirst(s: GameState): GameState {
+  if (s.marketingLevel < 4 && s.money > 20000) s = tryUpg(s, upgradeMarketing);
+  if (s.marketingLevel < 7 && s.money > 200000) s = tryUpg(s, upgradeMarketing);
+  if (s.studioLevel < 3 && s.money > 50000) s = tryUpg(s, upgradeStudio);
+  if (s.turn <= 3 || s.turn % 4 === 0) s = trySign(s, 25000, 30, 2);
+  s = handleExpired(s, 20000);
+  for (const a of signed(s)) {
+    if (a.fatigue > 70 || a.onTour || a.jailed) continue;
+    const p = bestProducer(s, Math.min(s.money * 0.3, 15000));
+    if (!p) continue;
+    const r = recordSong(s, a.id, p.id, true);
+    if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); }
   }
-
-  // STEP 2: Selective touring
-  for (const artist of s.artists.filter((a) => a.signed && !a.onTour && a.fatigue <= 50)) {
-    if (s.money < safeReserve + 5000) break;
-    const r = trySendOnTour(s, artist.id, "regional_tour");
-    if (r.sent) s = r.state;
+  for (const a of signed(s)) {
+    if (!a.onTour && a.fatigue < 60) { const r = promoWeek(s, a.id); if (!r.error) s = r.newState; }
   }
-
-  // STEP 3: Handle contracts
-  s = handleExpiredContracts(s, 40000);
-
-  // STEP 4: Sign high-OVR only (fewer but better) — wait until scouting is decent
-  const signedCount = s.artists.filter((a) => a.signed).length;
-  const targetRoster = Math.min(4, STUDIO_DATA[s.studioLevel].rosterCap);
-  if (signedCount < targetRoster && s.money > safeReserve + 50000) {
-    const minOvr = s.scoutingLevel >= 3 ? 55 : 42;
-    const r = trySignFromPool(s, (a) => a.overallRating >= minOvr, Math.min(s.money - safeReserve, 60000));
-    if (r.signed) { s = r.state; tracker.totalSigningFees += r.fee; tracker.totalArtistsSigned++; }
-  }
-
-  // STEP 5: Aggressive scouting & studio upgrades when flush
-  if (s.money > safeReserve * 2) {
-    for (const fn of [upgradeScouting, upgradeStudio, upgradeArtistDev, upgradeMarketing, upgradePR] as UpgradeFn[]) {
-      const r = tryUpgrade(s, fn, safeReserve * 1.5);
-      if (r.upgraded) { s = r.state; tracker.totalUpgradeCosts += r.cost; break; }
-    }
-  }
-
   return s;
 }
 
-// ── Strategy D: Touring Machine ─────────────────────────────────────────────
-// Focus: Upgrade touring early, send artists on tours ASAP, use tour revenue to grow.
-
-function touringMachine(state: GameState, turn: number, tracker: SimTracker): GameState {
-  let s = state;
-  const overhead = getWeeklyOverhead(s);
-  const safeReserve = Math.max(20000, overhead * 10);
-
-  // STEP 1: Record cheap singles for artists not on tour (need content for charts)
-  const cheapProd = getCheapestProducer(s);
-  if (cheapProd) {
-    for (const artist of s.artists.filter((a) => a.signed && !a.onTour)) {
-      if (artist.fatigue >= 70) {
-        const rr = restArtist(s, artist.id);
-        if (!rr.error) s = rr.newState;
-        continue;
-      }
-      if (artist.fatigue >= 80 || s.money < cheapProd.costPerSong + safeReserve) continue;
-      const rec = recordSong(s, artist.id, cheapProd.id, true);
-      if (rec.song) {
-        s = rec.newState;
-        tracker.songsRecorded++;
-        tracker.totalProducerCosts += cheapProd.costPerSong;
-        s = releaseSong(s, rec.song.id);
-        tracker.songsReleased++;
-      }
+function stratMerchEmpire(s: GameState): GameState {
+  if (s.merchLevel < 5 && s.money > 20000) s = tryUpg(s, upgradeMerch);
+  if (s.merchLevel < 8 && s.money > 150000) s = tryUpg(s, upgradeMerch);
+  if (s.studioLevel < 3 && s.money > 50000) s = tryUpg(s, upgradeStudio);
+  if (s.turn <= 3 || s.turn % 4 === 0) s = trySign(s, 25000, 30, 2);
+  s = handleExpired(s, 20000);
+  for (const a of signed(s)) {
+    if (a.fatigue > 70 || a.onTour || a.jailed) continue;
+    const p = cheapProducer(s);
+    if (!p || s.money < 3000) continue;
+    const r = recordSong(s, a.id, p.id, true);
+    if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); }
+  }
+  for (const a of signed(s)) {
+    if (!a.onTour && a.fatigue < 55) {
+      const r = sendOnTour(s, a.id, "club_tour"); if (!r.error) s = r.newState;
     }
   }
-
-  // STEP 2: Send EVERY available artist on tour (the core strategy)
-  for (const artist of s.artists.filter((a) => a.signed && !a.onTour && a.fatigue <= 65)) {
-    if (s.money < TOUR_DATA.club_tour.bookingCost + safeReserve * 0.5) break;
-    const preferred: TourSize = s.touringLevel >= 5 ? "national_tour" : s.touringLevel >= 2 ? "regional_tour" : "club_tour";
-    const r = trySendOnTour(s, artist.id, preferred);
-    if (r.sent) s = r.state;
-  }
-
-  // STEP 3: Handle contracts
-  s = handleExpiredContracts(s, 20000);
-
-  // STEP 4: Sign more artists for touring (more = more tour revenue)
-  const signedCount = s.artists.filter((a) => a.signed).length;
-  const rosterCap = STUDIO_DATA[s.studioLevel].rosterCap;
-  if (signedCount < rosterCap && s.money > safeReserve + 15000) {
-    const r = trySignFromPool(s, (a) => a.overallRating >= 30 && a.age <= 30, Math.min(s.money - safeReserve, 20000));
-    if (r.signed) { s = r.state; tracker.totalSigningFees += r.fee; tracker.totalArtistsSigned++; }
-  }
-
-  // STEP 5: Upgrade touring > studio > merch > marketing
-  if (s.money > safeReserve * 2) {
-    for (const fn of [upgradeTouringDept, upgradeStudio, upgradeMerch, upgradeMarketing, upgradePR] as UpgradeFn[]) {
-      const r = tryUpgrade(s, fn, safeReserve * 1.5);
-      if (r.upgraded) { s = r.state; tracker.totalUpgradeCosts += r.cost; break; }
-    }
-  }
-
   return s;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ── SIMULATION RUNNER ───────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-
-function runSimulation(strategyName: string, strategyFn: StrategyFn): SimResult {
-  let state = createInitialState(strategyName);
-  const tracker = createTracker();
-  const snapshots: TurnSnapshot[] = [];
-  tracker.totalArtistsSigned = 2;
-  for (let turn = 1; turn <= 600; turn++) {
-    const prevState = state;
-    state = strategyFn(state, turn, tracker);
-    state = advanceTurn(state);
-    updateTracker(state, prevState, tracker, turn);
-    if (turn % 10 === 0 || turn === 1 || turn === 600) {
-      snapshots.push({ turn, money: state.money, reputation: state.reputation, fanbase: state.fanbase, signedCount: state.artists.filter((a) => a.signed).length, chartEntries: state.chart.length, playerChartEntries: state.chart.filter((c) => c.isPlayerSong).length });
+function stratScoutHeavy(s: GameState): GameState {
+  if (s.scoutingLevel < 4 && s.money > 20000) s = tryUpg(s, upgradeScouting);
+  if (s.scoutingLevel < 7 && s.money > 150000) s = tryUpg(s, upgradeScouting);
+  if (s.studioLevel < 3 && s.money > 50000) s = tryUpg(s, upgradeStudio);
+  if (s.turn <= 5 || s.turn % 3 === 0) s = trySign(s, 35000, 35, 2);
+  s = handleExpired(s, 25000);
+  for (const a of signed(s)) {
+    if (a.fatigue > 70 || a.onTour || a.jailed) continue;
+    const p = bestProducer(s, Math.min(s.money * 0.3, 15000));
+    if (!p) continue;
+    const r = recordSong(s, a.id, p.id, true);
+    if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); }
+  }
+  for (const a of signed(s)) {
+    if (!a.onTour && a.fatigue < 50 && a.popularity > 15) {
+      const r = sendOnTour(s, a.id, "club_tour"); if (!r.error) s = r.newState;
     }
-    if (state.gameOver) {
-      console.log(`  [${strategyName}] GAME OVER at turn ${turn} (money: $${state.money.toLocaleString()}, rep: ${state.reputation})`);
-      for (let t = turn + 10; t <= 600; t += 10) snapshots.push({ turn: t, money: state.money, reputation: state.reputation, fanbase: state.fanbase, signedCount: 0, chartEntries: 0, playerChartEntries: 0 });
+  }
+  return s;
+}
+
+function stratConservative(s: GameState): GameState {
+  if (signed(s).length === 0 && s.turn <= 8) s = trySign(s, 15000, 20, 1);
+  if (s.money > 150000 && s.turn % 10 === 0) s = trySign(s, 20000, 30, 1);
+  if (s.studioLevel < 2 && s.money > 100000) s = tryUpg(s, upgradeStudio);
+  s = handleExpired(s, 15000);
+  for (const a of signed(s)) {
+    if (a.fatigue > 60 || a.onTour || a.jailed) continue;
+    const p = cheapProducer(s);
+    if (!p || s.money < 5000) continue;
+    const r = recordSong(s, a.id, p.id, true);
+    if (r.song) { s = r.newState; s = releaseSong(s, r.song.id); }
+  }
+  return s;
+}
+
+// ── Run simulation ──────────────────────────────────────────────────────────
+
+interface GameResult {
+  strategy: string; run: number; finalTurn: number;
+  survived: boolean; gameOverTurn: number | null; gameOverReason: string;
+  finalMoney: number; peakMoney: number; lowestMoney: number;
+  finalRep: number; peakRep: number; finalFanbase: number;
+  totalSongs: number; totalAlbums: number; totalArtistsSigned: number;
+  chartsAppearances: number;
+  streamingRev: number; touringRev: number; merchRev: number; brandDeals: number;
+  studioLvl: number; scoutingLvl: number; marketingLvl: number;
+  touringLvl: number; merchLvl: number; artistDevLvl: number; prLvl: number;
+  moneyAt52: number; repAt52: number; moneyAt104: number; repAt104: number;
+  totalRevenue: number;
+  turnsProfitable: number; turnsNegCash: number;
+  // Revenue snapshots
+  weeklyRevSamples: { turn: number; streaming: number; touring: number; merch: number; overhead: number }[];
+}
+
+const STRATEGIES: { name: string; fn: StrategyFn }[] = [
+  { name: "Balanced", fn: stratBalanced },
+  { name: "Studio Rush", fn: stratStudioRush },
+  { name: "Mass Signing", fn: stratMassSigning },
+  { name: "Single Star", fn: stratSingleStar },
+  { name: "Tour Heavy", fn: stratTourHeavy },
+  { name: "Album Factory", fn: stratAlbumFactory },
+  { name: "Marketing First", fn: stratMarketingFirst },
+  { name: "Merch Empire", fn: stratMerchEmpire },
+  { name: "Scout Heavy", fn: stratScoutHeavy },
+  { name: "Conservative", fn: stratConservative },
+];
+
+const TOTAL_TURNS = 156; // 3 years
+
+function runGame(strat: { name: string; fn: StrategyFn }, run: number): GameResult {
+  let s = createState(`${strat.name}_${run}`);
+  let peakMoney = s.money, lowestMoney = s.money, peakRep = s.reputation;
+  let gameOverTurn: number | null = null, gameOverReason = "";
+  let moneyAt52 = 0, repAt52 = 0, moneyAt104 = 0, repAt104 = 0;
+  let turnsProfitable = 0, turnsNegCash = 0;
+  const weeklyRevSamples: GameResult["weeklyRevSamples"] = [];
+
+  for (let t = 0; t < TOTAL_TURNS; t++) {
+    if (s.gameOver) {
+      if (!gameOverTurn) {
+        gameOverTurn = s.turn;
+        gameOverReason = s.money < -15000 ? "bankruptcy" : "reputation_collapse";
+      }
       break;
     }
+    const moneyBefore = s.money;
+    s = strat.fn(s);
+    s = advanceTurn(s);
+    if (s.money - moneyBefore > 0) turnsProfitable++;
+    if (s.money < 0) turnsNegCash++;
+    if (s.money > peakMoney) peakMoney = s.money;
+    if (s.money < lowestMoney) lowestMoney = s.money;
+    if (s.reputation > peakRep) peakRep = s.reputation;
+    if (s.turn === 52) { moneyAt52 = s.money; repAt52 = s.reputation; }
+    if (s.turn === 104) { moneyAt104 = s.money; repAt104 = s.reputation; }
+    if (s.turn % 26 === 0) {
+      weeklyRevSamples.push({
+        turn: s.turn,
+        streaming: s.revenueHistory.weeklyStreaming,
+        touring: s.revenueHistory.weeklyTouring,
+        merch: s.revenueHistory.weeklyMerch,
+        overhead: s.revenueHistory.weeklyOverhead,
+      });
+    }
   }
+
+  const released = s.songs.filter(song => song.released);
   return {
-    strategyName, snapshots, finalState: state,
-    totalStreamRevenue: tracker.totalStreamRevenue, totalTourRevenue: tracker.totalTourRevenue, totalMerchRevenue: tracker.totalMerchRevenue,
-    totalOverheadPaid: tracker.totalOverheadPaid, totalSigningFees: tracker.totalSigningFees, totalProducerCosts: tracker.totalProducerCosts,
-    totalMarketingSpend: tracker.totalMarketingSpend, totalUpgradeCosts: tracker.totalUpgradeCosts,
-    totalArtistsSigned: tracker.totalArtistsSigned, songsRecorded: tracker.songsRecorded,
-    songsReleased: Math.max(state.songs.filter((s) => s.released).length, tracker.songsReleased),
-    albumsReleased: Math.max(state.albums.filter((al) => al.status === "released").length, tracker.albumsReleased),
-    chartAppearances: tracker.chartAppearances, numberOneHits: tracker.numberOneHits, awardWins: tracker.awardWins,
-    firstChartTurn: tracker.firstChartTurn, firstNumberOneTurn: tracker.firstNumberOneTurn, firstAwardWinTurn: tracker.firstAwardWinTurn,
-    hit500k: tracker.hit500k, hit1m: tracker.hit1m, hit2m: tracker.hit2m, hit5m: tracker.hit5m,
-    minMoney: tracker.minMoney, minMoneyTurn: tracker.minMoneyTurn,
-    sustainedLossPeriods: tracker.sustainedLossPeriods, bankruptcyCloseCallTurns: tracker.bankruptcyCloseCallTurns,
-    freeAgentAnalysis: { turn1: tracker.freeAgentAnalysis.turn1, turn300: tracker.freeAgentAnalysis.turn300, turn600: tracker.freeAgentAnalysis.turn600 },
-    momentumDecaySamples: tracker.momentumDecaySamples, careerPhaseTransitions: tracker.careerPhaseTransitions,
+    strategy: strat.name, run, finalTurn: s.turn,
+    survived: !s.gameOver, gameOverTurn, gameOverReason,
+    finalMoney: s.money, peakMoney, lowestMoney,
+    finalRep: s.reputation, peakRep, finalFanbase: s.fanbase,
+    totalSongs: released.length, totalAlbums: s.albums.filter(a => a.status === "released").length,
+    totalArtistsSigned: s.artists.length,
+    chartsAppearances: released.filter(song => song.chartPosition && song.chartPosition <= 20).length,
+    streamingRev: s.revenueHistory.streaming, touringRev: s.revenueHistory.touring,
+    merchRev: s.revenueHistory.merch, brandDeals: s.revenueHistory.brandDeals,
+    studioLvl: s.studioLevel, scoutingLvl: s.scoutingLevel, marketingLvl: s.marketingLevel,
+    touringLvl: s.touringLevel, merchLvl: s.merchLevel, artistDevLvl: s.artistDevLevel, prLvl: s.prLevel,
+    moneyAt52: moneyAt52 || s.money, repAt52: repAt52 || s.reputation,
+    moneyAt104: moneyAt104 || s.money, repAt104: repAt104 || s.reputation,
+    totalRevenue: s.revenueHistory.streaming + s.revenueHistory.touring + s.revenueHistory.merch + s.revenueHistory.brandDeals + s.revenueHistory.awards,
+    turnsProfitable, turnsNegCash,
+    weeklyRevSamples,
   };
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ── OUTPUT ──────────────────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Main ────────────────────────────────────────────────────────────────────
 
-function printStrategyReport(r: SimResult): void {
-  const s = r.finalState;
-  console.log(`\n${"=".repeat(70)}`);
-  console.log(`  STRATEGY: ${r.strategyName}`);
-  console.log(`${"=".repeat(70)}`);
-  console.log(`\n  Final State (Turn ${s.turn}):`);
-  console.log(`    Money:      $${s.money.toLocaleString()}`);
-  console.log(`    Reputation: ${s.reputation}`);
-  console.log(`    Fanbase:    ${s.fanbase.toLocaleString()}`);
-  console.log(`    Game Over:  ${s.gameOver ? "YES (turn " + s.turn + ")" : "NO"}`);
-  console.log(`\n  Department Levels:`);
-  console.log(`    Studio: ${s.studioLevel}/10 | Scouting: ${s.scoutingLevel}/10 | ArtistDev: ${s.artistDevLevel}/10 | Touring: ${s.touringLevel}/10`);
-  console.log(`    Marketing: ${s.marketingLevel}/10 | PR: ${s.prLevel}/10 | Merch: ${s.merchLevel}/10`);
-  console.log(`\n  Revenue Breakdown:`);
-  console.log(`    Streaming:  $${r.totalStreamRevenue.toLocaleString()}`);
-  console.log(`    Touring:    $${r.totalTourRevenue.toLocaleString()}`);
-  console.log(`    Merch:      $${r.totalMerchRevenue.toLocaleString()}`);
-  const totalRev = r.totalStreamRevenue + r.totalTourRevenue + r.totalMerchRevenue;
-  console.log(`    TOTAL REV:  $${totalRev.toLocaleString()}`);
-  console.log(`\n  Expenses:`);
-  console.log(`    Overhead:   $${r.totalOverheadPaid.toLocaleString()}`);
-  console.log(`    Signing:    $${r.totalSigningFees.toLocaleString()}`);
-  console.log(`    Producers:  $${r.totalProducerCosts.toLocaleString()}`);
-  console.log(`    Marketing:  $${r.totalMarketingSpend.toLocaleString()}`);
-  console.log(`    Upgrades:   $${r.totalUpgradeCosts.toLocaleString()}`);
-  const totalExp = r.totalOverheadPaid + r.totalSigningFees + r.totalProducerCosts + r.totalMarketingSpend + r.totalUpgradeCosts;
-  console.log(`    TOTAL EXP:  $${totalExp.toLocaleString()}`);
-  console.log(`\n  Activity:`);
-  console.log(`    Artists Signed: ${r.totalArtistsSigned} | Songs Recorded: ${r.songsRecorded} | Songs Released: ${r.songsReleased} | Albums Released: ${r.albumsReleased}`);
-  console.log(`    Currently Signed: ${s.artists.filter((a) => a.signed).length}`);
-  console.log(`\n  Chart Performance:`);
-  console.log(`    Chart Appearances: ${r.chartAppearances} | #1 Hits: ${r.numberOneHits} | Awards Won: ${r.awardWins}`);
-  console.log(`\n  Key Milestones (turn #):`);
-  console.log(`    First Chart: ${r.firstChartTurn || "never"} | First #1: ${r.firstNumberOneTurn || "never"} | First Award: ${r.firstAwardWinTurn || "never"}`);
-  console.log(`    Hit $500K: ${r.hit500k || "never"} | Hit $1M: ${r.hit1m || "never"} | Hit $2M: ${r.hit2m || "never"} | Hit $5M: ${r.hit5m || "never"}`);
-  console.log(`\n  Financial Health:`);
-  console.log(`    Lowest Cash: $${r.minMoney.toLocaleString()} (turn ${r.minMoneyTurn}) | Below $0: ${r.bankruptcyCloseCallTurns.length} turns`);
-  if (r.sustainedLossPeriods.length > 0) {
-    console.log(`    Sustained Loss Periods (8+ turns): ${r.sustainedLossPeriods.length}`);
-    for (const p of r.sustainedLossPeriods.slice(0, 3)) console.log(`      Turns ${p.start}-${p.end} (${p.length} turns)`);
-  }
-  console.log(`\n  Cash Flow Trajectory:`);
-  for (const t of [1, 50, 100, 150, 200, 300, 400, 500, 600]) {
-    const snap = r.snapshots.find((s) => s.turn === t) ?? r.snapshots[r.snapshots.length - 1];
-    if (snap) console.log(`    Turn ${String(t).padStart(3)}: $${snap.money.toLocaleString().padStart(14)} | Rep: ${String(snap.reputation).padStart(3)} | Fans: ${snap.fanbase.toLocaleString().padStart(12)} | Signed: ${snap.signedCount} | Chart: ${snap.playerChartEntries}`);
-  }
-  console.log(`\n  Current Roster:`);
-  for (const a of s.artists.filter((a) => a.signed).slice(0, 10)) {
-    console.log(`    ${a.name.padEnd(22)} Age ${String(a.age).padStart(2)} | OVR ${String(a.overallRating).padStart(2)} | Pop ${String(a.popularity).padStart(3)} | Mom ${String(a.momentum).padStart(3)} | Phase: ${a.careerPhase.padEnd(11)} | Dur: ${a.durability}`);
+console.log("Running 20-game simulation (10 strategies × 2 runs, 156 turns / 3 years each)...\n");
+const results: GameResult[] = [];
+
+for (const strat of STRATEGIES) {
+  for (let run = 1; run <= 2; run++) {
+    process.stdout.write(`  ${strat.name} #${run}...`);
+    const r = runGame(strat, run);
+    results.push(r);
+    console.log(` ${r.survived ? "OK" : "DEAD t" + r.gameOverTurn} | $${(r.finalMoney/1000).toFixed(0)}K | Rep ${r.finalRep} | ${r.totalSongs} songs | ${(r.finalFanbase/1000).toFixed(0)}K fans`);
   }
 }
 
-function printComparison(results: SimResult[]): void {
-  console.log(`\n${"=".repeat(70)}`);
-  console.log(`  CROSS-STRATEGY COMPARISON`);
-  console.log(`${"=".repeat(70)}`);
-  const headers = ["Metric", ...results.map((r) => r.strategyName.substring(0, 18))];
-  const rows: string[][] = [];
-  function addRow(l: string, fn: (r: SimResult) => string | number) { rows.push([l, ...results.map((r) => String(fn(r)))]); }
-  addRow("Final Money", (r) => "$" + r.finalState.money.toLocaleString());
-  addRow("Final Rep", (r) => r.finalState.reputation);
-  addRow("Final Fanbase", (r) => r.finalState.fanbase.toLocaleString());
-  addRow("Game Over?", (r) => r.finalState.gameOver ? `YES (t${r.finalState.turn})` : "NO");
-  addRow("Total Revenue", (r) => "$" + (r.totalStreamRevenue + r.totalTourRevenue + r.totalMerchRevenue).toLocaleString());
-  addRow("Stream Rev", (r) => "$" + r.totalStreamRevenue.toLocaleString());
-  addRow("Tour Rev", (r) => "$" + r.totalTourRevenue.toLocaleString());
-  addRow("Merch Rev", (r) => "$" + r.totalMerchRevenue.toLocaleString());
-  addRow("Total Overhead", (r) => "$" + r.totalOverheadPaid.toLocaleString());
-  addRow("Artists Signed", (r) => r.totalArtistsSigned);
-  addRow("Songs Released", (r) => r.songsReleased);
-  addRow("Albums Released", (r) => r.albumsReleased);
-  addRow("Chart Appear.", (r) => r.chartAppearances);
-  addRow("#1 Hits", (r) => r.numberOneHits);
-  addRow("Awards Won", (r) => r.awardWins);
-  addRow("First Chart", (r) => r.firstChartTurn || "never");
-  addRow("First #1", (r) => r.firstNumberOneTurn || "never");
-  addRow("Hit $1M Turn", (r) => r.hit1m || "never");
-  addRow("Hit $5M Turn", (r) => r.hit5m || "never");
-  addRow("Lowest Cash", (r) => "$" + r.minMoney.toLocaleString());
-  addRow("Below $0 Turns", (r) => r.bankruptcyCloseCallTurns.length);
-  const colWidths = headers.map((_, i) => Math.max(headers[i].length, ...rows.map((r) => r[i].length)) + 2);
-  console.log("\n  " + headers.map((h, i) => h.padEnd(colWidths[i])).join("|"));
-  console.log("  " + colWidths.map((w) => "-".repeat(w)).join("+"));
-  for (const row of rows) console.log("  " + row.map((c, i) => c.padEnd(colWidths[i])).join("|"));
-}
+// ── Detailed Table ──────────────────────────────────────────────────────────
 
-function printPoolAnalysis(label: string, pa: PoolAnalysis | null): void {
-  if (!pa) { console.log(`  ${label}: [no data]`); return; }
-  console.log(`\n  ${label} (${pa.totalCount} artists, avg momentum: ${pa.avgMomentum}):`);
-  console.log(`    Signable (willingness >= 25): ${pa.signableCount} (${Math.round(pa.signableCount / Math.max(1, pa.totalCount) * 100)}%)`);
-  console.log(`    Age:   ${JSON.stringify(pa.ageDistribution)}`);
-  console.log(`    OVR:   ${JSON.stringify(pa.ovrDistribution)}`);
-  console.log(`    Phase: ${JSON.stringify(pa.careerPhaseDistribution)}`);
-  console.log(`    Dur:   ${JSON.stringify(pa.durabilityDistribution)}`);
-}
+console.log("\n" + "═".repeat(140));
+console.log("DETAILED RESULTS");
+console.log("═".repeat(140));
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ── MAIN ────────────────────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
+const hdr = (s: string, w: number) => s.padEnd(w);
+const num = (n: number, w: number) => String(n).padStart(w);
+const $k = (n: number, w: number) => ("$" + (n/1000).toFixed(0) + "K").padStart(w);
 
-console.log("Starting simulation of 4 strategies x 600 turns...\n");
+console.log("");
+console.log(
+  hdr("Strategy", 18) + hdr("Res", 5) + hdr("Final$", 10) + hdr("Peak$", 10) + hdr("Low$", 10) +
+  hdr("Rep", 6) + hdr("Fans", 9) + hdr("Songs", 6) + hdr("Albums", 7) + hdr("Artists", 8) +
+  hdr("Stream$", 10) + hdr("Tour$", 10) + hdr("Merch$", 9) + hdr("Brand$", 9) + hdr("TotalRev", 10)
+);
+console.log("─".repeat(140));
 
-const strategies: Array<{ name: string; fn: StrategyFn }> = [
-  { name: "A: Singles Factory", fn: singlesFactory },
-  { name: "B: Album Builder", fn: albumBuilder },
-  { name: "C: Star Chaser", fn: starChaser },
-  { name: "D: Touring Machine", fn: touringMachine },
-];
-
-const results: SimResult[] = [];
-for (const { name, fn } of strategies) {
-  console.log(`Running ${name}...`);
-  const result = runSimulation(name, fn);
-  results.push(result);
-  console.log(`  Done. Final money: $${result.finalState.money.toLocaleString()}, Game Over: ${result.finalState.gameOver}`);
-}
-
-for (const r of results) printStrategyReport(r);
-printComparison(results);
-
-// Free Agent Pool Analysis
-console.log(`\n${"=".repeat(70)}`);
-console.log(`  FREE AGENT POOL ANALYSIS`);
-console.log(`${"=".repeat(70)}`);
-const poolResult = results.find((r) => !r.finalState.gameOver) ?? results[0];
-printPoolAnalysis("Turn 1 Pool", poolResult.freeAgentAnalysis.turn1);
-printPoolAnalysis("Turn 300 Pool", poolResult.freeAgentAnalysis.turn300);
-printPoolAnalysis("Turn 600 Pool", poolResult.freeAgentAnalysis.turn600);
-
-// Momentum Decay Analysis
-console.log(`\n${"=".repeat(70)}`);
-console.log(`  MOMENTUM DECAY ANALYSIS (sampled every 50 turns)`);
-console.log(`${"=".repeat(70)}`);
 for (const r of results) {
-  console.log(`\n  ${r.strategyName}:`);
-  const byTurn = new Map<number, number[]>();
-  for (const s of r.momentumDecaySamples) { const arr = byTurn.get(s.turn) || []; arr.push(s.momentum); byTurn.set(s.turn, arr); }
-  for (const [turn, moms] of [...byTurn.entries()].sort((a, b) => a[0] - b[0])) {
-    const avg = Math.round(moms.reduce((a, b) => a + b, 0) / moms.length);
-    console.log(`    Turn ${String(turn).padStart(3)}: avg=${avg}, min=${Math.min(...moms)}, max=${Math.max(...moms)}, artists=${moms.length}`);
-  }
-  if (byTurn.size === 0) console.log("    [no data - game ended too early]");
+  const status = r.survived ? " OK " : `D${r.gameOverTurn}`;
+  console.log(
+    hdr(r.strategy + " #" + r.run, 18) + hdr(status, 5) +
+    $k(r.finalMoney, 10) + $k(r.peakMoney, 10) + $k(r.lowestMoney, 10) +
+    num(r.finalRep, 4) + "/" + num(r.peakRep, -1).padEnd(1) + " " +
+    ((r.finalFanbase/1000).toFixed(0) + "K").padStart(8) + " " +
+    num(r.totalSongs, 5) + " " + num(r.totalAlbums, 6) + " " + num(r.totalArtistsSigned, 7) + " " +
+    $k(r.streamingRev, 10) + $k(r.touringRev, 10) + $k(r.merchRev, 9) + $k(r.brandDeals, 9) + $k(r.totalRevenue, 10)
+  );
 }
 
-// Career Phase Transitions
-console.log(`\n${"=".repeat(70)}`);
-console.log(`  CAREER PHASE TRANSITIONS`);
-console.log(`${"=".repeat(70)}`);
+// ── Upgrade levels ──────────────────────────────────────────────────────────
+
+console.log("\n" + "═".repeat(100));
+console.log("FINAL UPGRADE LEVELS");
+console.log("═".repeat(100));
+console.log(hdr("Strategy", 18) + hdr("Studio", 8) + hdr("Scout", 8) + hdr("ArtDev", 8) + hdr("Tour", 8) + hdr("Mktg", 8) + hdr("PR", 8) + hdr("Merch", 8));
+console.log("─".repeat(100));
 for (const r of results) {
-  console.log(`\n  ${r.strategyName}: ${r.careerPhaseTransitions.length} total transitions`);
-  const counts: Record<string, number> = {};
-  for (const t of r.careerPhaseTransitions) { const key = `${t.from} -> ${t.to}`; counts[key] = (counts[key] || 0) + 1; }
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  for (const [key, count] of sorted.slice(0, 15)) console.log(`    ${key}: ${count}`);
-  if (sorted.length === 0) console.log("    [none]");
+  console.log(
+    hdr(r.strategy + " #" + r.run, 18) +
+    num(r.studioLvl, 5) + "   " + num(r.scoutingLvl, 5) + "   " + num(r.artistDevLvl, 5) + "   " +
+    num(r.touringLvl, 5) + "   " + num(r.marketingLvl, 5) + "   " + num(r.prLvl, 5) + "   " + num(r.merchLvl, 5)
+  );
 }
 
-// Signing Difficulty
-console.log(`\n${"=".repeat(70)}`);
-console.log(`  SIGNING DIFFICULTY AT DIFFERENT REPUTATION LEVELS`);
-console.log(`${"=".repeat(70)}`);
+// ── Year-by-year ────────────────────────────────────────────────────────────
+
+console.log("\n" + "═".repeat(80));
+console.log("YEAR-BY-YEAR PROGRESSION");
+console.log("═".repeat(80));
+console.log(hdr("Strategy", 18) + hdr("Y1 Money", 12) + hdr("Y1 Rep", 8) + hdr("Y2 Money", 12) + hdr("Y2 Rep", 8) + hdr("Y3 Money", 12) + hdr("Y3 Rep", 8));
+console.log("─".repeat(80));
+for (const r of results) {
+  console.log(
+    hdr(r.strategy + " #" + r.run, 18) +
+    $k(r.moneyAt52, 12) + num(r.repAt52, 6) + "  " +
+    $k(r.moneyAt104, 12) + num(r.repAt104, 6) + "  " +
+    $k(r.finalMoney, 12) + num(r.finalRep, 6)
+  );
+}
+
+// ── Profitability ───────────────────────────────────────────────────────────
+
+console.log("\n" + "═".repeat(80));
+console.log("PROFITABILITY & CASH HEALTH");
+console.log("═".repeat(80));
+console.log(hdr("Strategy", 18) + hdr("Profit Turns", 14) + hdr("Neg Cash Turns", 16) + hdr("Profit %", 10));
+console.log("─".repeat(80));
+for (const r of results) {
+  const pct = r.survived ? ((r.turnsProfitable / TOTAL_TURNS) * 100).toFixed(0) + "%" : "N/A";
+  console.log(
+    hdr(r.strategy + " #" + r.run, 18) +
+    num(r.turnsProfitable, 10) + "    " +
+    num(r.turnsNegCash, 12) + "    " +
+    hdr(pct, 10)
+  );
+}
+
+// ── Revenue snapshots (every 26 weeks) ──────────────────────────────────────
+
+console.log("\n" + "═".repeat(100));
+console.log("WEEKLY REVENUE SNAPSHOTS (every 6 months)");
+console.log("═".repeat(100));
+for (const r of results.filter((_, i) => i % 2 === 0)) { // just first run of each
+  console.log(`\n  ${r.strategy}:`);
+  console.log("    " + hdr("Turn", 6) + hdr("Stream$/wk", 12) + hdr("Tour$/wk", 12) + hdr("Merch$/wk", 12) + hdr("Overhead$/wk", 14));
+  for (const s of r.weeklyRevSamples) {
+    console.log("    " + num(s.turn, 4) + "  " + $k(s.streaming, 12) + $k(s.touring, 12) + $k(s.merch, 12) + $k(s.overhead, 14));
+  }
+}
+
+// ── Aggregate ───────────────────────────────────────────────────────────────
+
+console.log("\n" + "═".repeat(100));
+console.log("AGGREGATE BY STRATEGY (avg of 2 runs)");
+console.log("═".repeat(100));
+
+for (const name of STRATEGIES.map(s => s.name)) {
+  const runs = results.filter(r => r.strategy === name);
+  const surv = runs.filter(r => r.survived).length;
+  const avg = (fn: (r: GameResult) => number) => runs.reduce((s, r) => s + fn(r), 0) / runs.length;
+
+  console.log(`\n── ${name} (${surv}/2 survived) ──`);
+  console.log(`  Money:   Final $${(avg(r=>r.finalMoney)/1000).toFixed(0)}K | Peak $${(avg(r=>r.peakMoney)/1000).toFixed(0)}K | Low $${(avg(r=>r.lowestMoney)/1000).toFixed(0)}K`);
+  console.log(`  Rep:     Final ${avg(r=>r.finalRep).toFixed(0)} | Peak ${avg(r=>r.peakRep).toFixed(0)} | Y1 ${avg(r=>r.repAt52).toFixed(0)} → Y2 ${avg(r=>r.repAt104).toFixed(0)} → Y3 ${avg(r=>r.finalRep).toFixed(0)}`);
+  console.log(`  Fans:    ${(avg(r=>r.finalFanbase)/1000).toFixed(0)}K`);
+  console.log(`  Content: ${avg(r=>r.totalSongs).toFixed(0)} songs | ${avg(r=>r.totalAlbums).toFixed(0)} albums | ${avg(r=>r.totalArtistsSigned).toFixed(0)} artists signed`);
+  const totalRev = avg(r => r.totalRevenue);
+  const sRev = avg(r => r.streamingRev);
+  const tRev = avg(r => r.touringRev);
+  const mRev = avg(r => r.merchRev);
+  const bRev = avg(r => r.brandDeals);
+  console.log(`  Revenue: Stream $${(sRev/1000).toFixed(0)}K | Tour $${(tRev/1000).toFixed(0)}K | Merch $${(mRev/1000).toFixed(0)}K | Brands $${(bRev/1000).toFixed(0)}K | Total $${(totalRev/1000).toFixed(0)}K`);
+  if (totalRev > 0) {
+    console.log(`  Rev Mix: Stream ${(sRev/totalRev*100).toFixed(0)}% | Tour ${(tRev/totalRev*100).toFixed(0)}% | Merch ${(mRev/totalRev*100).toFixed(0)}% | Brands ${(bRev/totalRev*100).toFixed(0)}%`);
+  }
+  console.log(`  Health:  ${avg(r=>r.turnsProfitable).toFixed(0)}/${TOTAL_TURNS} profitable turns | ${avg(r=>r.turnsNegCash).toFixed(0)} turns negative cash`);
+}
+
+// ── Signing difficulty check ────────────────────────────────────────────────
+
+console.log("\n" + "═".repeat(80));
+console.log("SIGNING DIFFICULTY BY REPUTATION LEVEL");
+console.log("═".repeat(80));
 const testPool = Array.from({ length: 1000 }, (_, i) => generateArtist(`test_${i}`));
-for (const rep of [10, 20, 30, 40, 50, 60, 70, 80, 90]) {
-  let signable = 0, ovrAbove60Signable = 0, ovrAbove60Total = 0;
+for (const rep of [10, 20, 30, 40, 50, 60, 70, 80]) {
+  let total = 0, above50 = 0, above60 = 0, above70 = 0;
   for (const a of testPool) {
     const w = computeWillingness(a, rep);
-    if (w >= MIN_SIGNING_WILLINGNESS) signable++;
-    if (a.overallRating >= 60) { ovrAbove60Total++; if (w >= MIN_SIGNING_WILLINGNESS) ovrAbove60Signable++; }
+    if (w >= MIN_SIGNING_WILLINGNESS) { total++; }
+    if (a.overallRating >= 50 && w >= MIN_SIGNING_WILLINGNESS) above50++;
+    if (a.overallRating >= 60 && w >= MIN_SIGNING_WILLINGNESS) above60++;
+    if (a.overallRating >= 70 && w >= MIN_SIGNING_WILLINGNESS) above70++;
   }
-  console.log(`  Rep ${String(rep).padStart(2)}: ${signable}/1000 signable (${Math.round(signable/10)}%) | OVR 60+: ${ovrAbove60Signable}/${ovrAbove60Total} (${Math.round(ovrAbove60Signable/Math.max(1,ovrAbove60Total)*100)}%)`);
+  const pool50 = testPool.filter(a => a.overallRating >= 50).length;
+  const pool60 = testPool.filter(a => a.overallRating >= 60).length;
+  const pool70 = testPool.filter(a => a.overallRating >= 70).length;
+  console.log(`  Rep ${String(rep).padStart(2)}: ${total}/1000 willing (${(total/10).toFixed(0)}%) | OVR50+: ${above50}/${pool50} | OVR60+: ${above60}/${pool60} | OVR70+: ${above70}/${pool70}`);
 }
 
-console.log(`\n${"=".repeat(70)}`);
-console.log(`  SIMULATION COMPLETE`);
-console.log(`${"=".repeat(70)}\n`);
+console.log("\nSimulation complete.\n");

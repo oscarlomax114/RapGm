@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { useAuth } from "./AuthProvider";
 import { useAutosave } from "@/lib/useAutosave";
@@ -27,6 +27,18 @@ type Tab =
   | "labels" | "finances" | "transactions" | "rankings" | "halloffame"
   | "upgrades" | "mall" | "awards" | "achievements" | "notifications" | "help";
 
+const VALID_TABS = new Set<string>([
+  "dashboard", "artists", "studio", "scouting", "charts",
+  "labels", "finances", "transactions", "rankings", "halloffame",
+  "upgrades", "mall", "awards", "achievements", "notifications", "help",
+]);
+
+function getTabFromHash(): Tab {
+  if (typeof window === "undefined") return "dashboard";
+  const hash = window.location.hash.replace("#", "");
+  return VALID_TABS.has(hash) ? (hash as Tab) : "dashboard";
+}
+
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "dashboard",    label: "Dashboard",     icon: "📊" },
   { id: "artists",      label: "Artists",       icon: "🎤" },
@@ -48,7 +60,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 
 export default function GameLayout() {
-  const [tab, setTab] = useState<Tab>("dashboard");
+  const [tab, setTabState] = useState<Tab>(getTabFromHash);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const { nextTurn, gameOver, money, reputation, labelName, pendingAwardCeremony, dismissAwardCeremony, activeSlot, setActiveSlot } = useGameStore();
@@ -57,6 +69,37 @@ export default function GameLayout() {
   useAutosave(activeSlot, isGuest);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Sync tab state with browser hash for back/forward/refresh support
+  const setTab = useCallback((t: Tab) => {
+    setTabState(t);
+    if (typeof window !== "undefined") {
+      const currentHash = window.location.hash.replace("#", "");
+      if (currentHash !== t) {
+        window.history.pushState({ tab: t }, "", `#${t}`);
+      }
+    }
+  }, []);
+
+  // Set initial hash on mount if none exists
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const initialTab = getTabFromHash();
+    if (!window.location.hash || window.location.hash === "#") {
+      window.history.replaceState({ tab: initialTab }, "", `#${initialTab}`);
+    }
+  }, []);
+
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function handlePopState() {
+      const t = getTabFromHash();
+      setTabState(t);
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   function switchTab(t: Tab) {
     setTab(t);

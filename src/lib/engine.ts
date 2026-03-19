@@ -1841,45 +1841,87 @@ export function advanceTurn(state: GameState): GameState {
   // Market heat: random weekly conditions (0.75x to 1.25x) — adds revenue variance
   const marketHeat = 0.75 + Math.random() * 0.50;
   // Label recognition multiplier: new labels earn less from streaming until they build rep
-  // At rep 10: 0.35x, rep 30: 0.55x, rep 50: 0.75x, rep 70: 0.90x, rep 90+: 1.0x
-  const labelRecognition = clamp(0.2 + (s.reputation / 100) * 0.8, 0.2, 1.0);
+  // Floor raised to 0.5 so early labels still earn meaningful streaming income
+  // At rep 10: 0.58x, rep 30: 0.74x, rep 50: 0.90x, rep 70+: ~1.0x
+  const labelRecognition = clamp(0.5 + (s.reputation / 100) * 0.5, 0.5, 1.0);
   // Chart saturation: diminishing returns when dominating the chart
   // First 3 songs: 100%, 4-6: 80%, 7-10: 60%, 11+: 40%
   const playerChartCount = newChart.filter((c) => c.isPlayerSong).length;
   const saturationMult = playerChartCount <= 3 ? 1.0 : playerChartCount <= 6 ? 0.80 : playerChartCount <= 10 ? 0.60 : 0.40;
   let streamRevenue = 0;
-  // Streaming revenue cap: diminishing returns above $40K/week prevents exponential snowball
-  // First $40K at 100%, next $40K at 65%, anything beyond at 35%
+  // Streaming revenue cap: only applies once label is established (total streaming > $100K)
+  // Prevents snowball in mid/late game while letting early-game revenue flow freely
+  const totalHistoricStreaming = s.revenueHistory.streaming;
   const applyStreamCap = (raw: number): number => {
+    if (totalHistoricStreaming < 100000) return raw; // no cap for early labels
     if (raw <= 40000) return raw;
     if (raw <= 80000) return 40000 + (raw - 40000) * 0.65;
     return 40000 + 40000 * 0.65 + (raw - 80000) * 0.35;
   };
+  // Total label fanbase for base revenue calculations
+  const totalLabelFanbase = s.artists.filter(a => a.signed).reduce((sum, a) => sum + a.fanbase, 0) + s.fanbase;
   const updatedSongs = s.songs.map((song) => {
+    if (!song.released) return song;
     const entry = newChart.find((c) => c.songId === song.id);
-    if (!entry) return { ...song, chartPosition: null };
-    // Exponential position multiplier: #1 = ×2.0, #10 ≈ ×1.14, #20 = ×0.6 (rewards top spots more)
-    const posMult = 0.6 + 1.4 * Math.pow((20 - entry.position) / 19, 1.5);
-    // Quality multiplier: scales from 0.5x at Q30 to 1.0x at Q60 to 2.0x at Q90 to 2.6x at Q100
-    // Rewards quality investment; punishes low-quality spam
-    const qualMult = song.quality >= 60
-      ? Math.min(1.8, 1.0 + (song.quality - 60) * 0.02)
-      : 0.4 + (song.quality / 60) * 0.6;
-    const rev = Math.floor(entry.streams * 0.007 * revMult * posMult * qualMult * labelRecognition * saturationMult * marketHeat);
-    streamRevenue += rev;
+
+    if (entry) {
+      // ── Charting song: amplified revenue ──
+      // Exponential position multiplier: #1 = ×2.0, #10 ≈ ×1.14, #20 = ×0.6
+      const posMult = 0.6 + 1.4 * Math.pow((20 - entry.position) / 19, 1.5);
+      const qualMult = song.quality >= 60
+        ? Math.min(1.8, 1.0 + (song.quality - 60) * 0.02)
+        : 0.4 + (song.quality / 60) * 0.6;
+      const rev = Math.floor(entry.streams * 0.007 * revMult * posMult * qualMult * labelRecognition * saturationMult * marketHeat);
+      streamRevenue += rev;
+      return {
+        ...song,
+        chartPosition: entry.position,
+        streamsTotal: song.streamsTotal + entry.streams,
+        weeksOnChart: song.weeksOnChart + 1,
+        revenue: song.revenue + rev,
+      };
+    }
+
+    // ── Non-charting released song: base / catalog revenue ──
+    // All released songs generate some revenue from their existing listener base.
+    // Songs that previously charted (catalog songs) earn more than songs that never charted.
+    const weeksSinceRelease = s.turn - song.turnReleased;
+    if (weeksSinceRelease <= 0) return { ...song, chartPosition: null };
+
+    const isCatalog = song.weeksOnChart > 0; // previously charted = catalog
+    const qualFactor = 0.3 + (song.quality / 100) * 0.7; // 0.3 to 1.0
+
+    let baseRev: number;
+    if (isCatalog) {
+      // Catalog song: persistent income from past chart performance
+      // Higher peak = more lasting listeners. Decays slowly over time.
+      const peakBonus = 1 + song.weeksOnChart * 0.15; // more chart weeks = bigger catalog
+      const catalogDecay = Math.max(0.10, 1 - weeksSinceRelease * 0.02); // -2%/week, floor 10%
+      baseRev = Math.floor(totalLabelFanbase * 0.0008 * qualFactor * peakBonus * catalogDecay * labelRecognition * marketHeat);
+    } else {
+      // Never charted: minimal base revenue from label's fanbase discovering back catalog
+      const freshness = Math.max(0.15, 1 - weeksSinceRelease * 0.03); // decays faster, floor 15%
+      baseRev = Math.floor(totalLabelFanbase * 0.0003 * qualFactor * freshness * labelRecognition * marketHeat);
+    }
+
+    // Minimum floor: every released song earns at least $25/week (prevents $0 outcomes)
+    baseRev = Math.max(25, baseRev);
+    // Passive streams estimate for tracking
+    const passiveStreams = Math.floor(baseRev / 0.005);
+    streamRevenue += baseRev;
+
     return {
       ...song,
-      chartPosition: entry.position,
-      streamsTotal: song.streamsTotal + entry.streams,
-      weeksOnChart: song.weeksOnChart + 1,
-      revenue: song.revenue + rev,
+      chartPosition: null,
+      streamsTotal: song.streamsTotal + passiveStreams,
+      revenue: song.revenue + baseRev,
     };
   });
   // Legacy multiplier: total career streams build streaming clout over time (1.0x to 2.0x)
   const totalCareerStreams = s.songs.reduce((sum, song) => sum + song.streamsTotal, 0);
   const legacyMult = 1 + Math.min(1.0, Math.log10(Math.max(1, totalCareerStreams / 1000000)) * 0.15);
   streamRevenue = Math.floor(streamRevenue * legacyMult);
-  // Apply streaming revenue cap (diminishing returns at high volumes)
+  // Apply streaming revenue cap (diminishing returns at high volumes — only mid/late game)
   streamRevenue = Math.floor(applyStreamCap(streamRevenue));
 
   // Update album aggregate stats from their songs
@@ -1905,22 +1947,21 @@ export function advanceTurn(state: GameState): GameState {
   s = { ...s, songs: updatedSongs, albums: updatedAlbums, chart: newChart };
 
   // Merch income — scales per artist's fanbase × popularity
-  // Popular artists sell more merch per fan (0.5x at pop 0, 1.5x at pop 100)
-  // Fanbase tier multiplier: bigger fanbases sell disproportionately more merch
-  // Merch income boosted: higher base multiplier and better fan tier scaling
+  // 3x buff: merch should be a meaningful revenue stream for labels that invest in it
   const merchPerFan = MERCH_DATA[s.merchLevel].revenuePerFan;
   const merchIncome = merchPerFan > 0
     ? Math.floor(s.artists.filter((a) => a.signed).reduce((sum, a) => {
-        const popMult = 0.6 + (a.popularity / 80); // boosted from 0.5 + pop/100
-        const fanTier = a.fanbase >= 1000000 ? 3.0 : a.fanbase >= 500000 ? 2.2 : a.fanbase >= 100000 ? 1.5 : a.fanbase >= 25000 ? 1.2 : 1.0;
-        return sum + a.fanbase * merchPerFan * popMult * fanTier * 1.8; // 1.8x global merch boost
+        const popMult = 0.6 + (a.popularity / 60); // stronger popularity scaling
+        const fanTier = a.fanbase >= 1000000 ? 4.0 : a.fanbase >= 500000 ? 3.0 : a.fanbase >= 100000 ? 2.0 : a.fanbase >= 25000 ? 1.5 : 1.0;
+        return sum + a.fanbase * merchPerFan * popMult * fanTier * 5.0; // 5.0x global merch boost (was 1.8x)
       }, 0) * (0.8 + Math.random() * 0.4))
     : 0;
 
-  // Brand deal / endorsement revenue — unlocks at rep 50+, scales with time
-  // Represents sponsorships, brand partnerships, media deals
-  const brandDealRevenue = s.reputation >= 50
-    ? Math.floor((s.reputation - 40) * (s.fanbase / 100000) * 250 * (1 + s.turn / 520) * (0.8 + Math.random() * 0.4))
+  // Brand deal / endorsement revenue — unlocks at rep 50+ AND requires meaningful artist roster
+  // Requires at least one artist with 25K+ fans or popularity 40+ to attract brand interest
+  const hasMarketableArtist = s.artists.some(a => a.signed && (a.fanbase >= 25000 || a.popularity >= 40));
+  const brandDealRevenue = s.reputation >= 50 && hasMarketableArtist
+    ? Math.floor((s.reputation - 40) * (s.fanbase / 100000) * 150 * (1 + s.turn / 520) * (0.8 + Math.random() * 0.4))
     : 0;
 
   // Per-week tour payouts + artist updates
@@ -2005,8 +2046,12 @@ export function advanceTurn(state: GameState): GameState {
       const t = TOUR_DATA[tourType];
       const td = TOURING_DEPT_DATA[s.touringLevel];
       const popMult = 0.5 + popularity / 100;
-      const fanbaseMult = 1 + Math.log10(Math.max(1, fanbase / 10000)) * 0.2; // reduced from 0.3
-      const weekRev = Math.floor(t.revPerWeek * 0.6 * popMult * fanbaseMult * (1 + td.revenueBonusPct / 100) * marketHeat); // 0.6x nerf to tour revenue
+      const fanbaseMult = 1 + Math.log10(Math.max(1, fanbase / 10000)) * 0.15;
+      // Diminishing returns: repeated tours within 20 weeks yield less (min 0.5x)
+      const recentTourPenalty = a.lastTourEndTurn > 0 && (s.turn - a.lastTourEndTurn) < 20
+        ? Math.max(0.5, 1 - (20 - (s.turn - a.lastTourEndTurn)) * 0.025)
+        : 1.0;
+      const weekRev = Math.floor(t.revPerWeek * 0.4 * popMult * fanbaseMult * (1 + td.revenueBonusPct / 100) * marketHeat * recentTourPenalty); // 0.4x base nerf + diminishing returns
       const weekFans = Math.floor(t.fanPerWeek * popMult * (1 + td.fanBonusPct / 100));
       tourRevenue += weekRev;
       tourFanDelta += weekFans;
@@ -2509,10 +2554,11 @@ export function advanceTurn(state: GameState): GameState {
   }
 
   // Passive reputation decay when the label has gone quiet (no songs released recently)
-  // 12-turn freshness window (was 8) gives album-focused players enough runway to finish an album.
-  // Decays only every other turn (-0.5/turn avg) rather than every turn to reduce early-game punishment.
+  // 12-turn freshness window gives album-focused players enough runway to finish an album.
+  // Decays only every other turn (-0.5/turn avg) rather than every turn.
+  // Disabled below rep 30 — new labels shouldn't be punished before stabilizing.
   const recentlyReleased = s.songs.some((song) => song.released && s.turn - song.turnReleased <= 12);
-  if (!recentlyReleased && s.turn > 4 && s.turn % 2 === 0) {
+  if (!recentlyReleased && s.turn > 4 && s.turn % 2 === 0 && s.reputation >= 30) {
     repDelta -= 1;
   }
 
@@ -2586,9 +2632,9 @@ export function advanceTurn(state: GameState): GameState {
   // Generate recording tokens from studio level (cap pool at 10)
   const newTokens = Math.min(10, s.recordingTokens + STUDIO_DATA[s.studioLevel].tokensPerWeek);
 
-  // Dynamic bankruptcy threshold: 4 weeks of overhead buffer (min $15k, max $200k).
-  // Early game has tight limits; late game gets a realistic buffer to weather short dips.
-  const bankruptcyThreshold = -Math.max(15000, Math.min(200000, weeklyOverhead * 4));
+  // Dynamic bankruptcy threshold: 8 weeks of overhead buffer (min $15k, max $200k).
+  // Gives players enough runway to recover from mistakes without making early game easy.
+  const bankruptcyThreshold = -Math.max(15000, Math.min(200000, weeklyOverhead * 8));
   const gameOver = newMoney < bankruptcyThreshold || (s.turn > 26 && newReputation < 10);
 
   // Update weeksOnChart for industry songs that appeared in this chart
@@ -2961,7 +3007,7 @@ export function removeSongFromAlbum(
   };
 }
 
-export const ALBUM_CYCLE_TURNS = 8;       // minimum turns after album release before new project / renegotiation
+export const ALBUM_CYCLE_TURNS = 5;       // minimum turns after album release before new project / renegotiation
 export const ALBUM_YEAR_TURNS = 52;
 export const HIGH_WORK_ETHIC_THRESHOLD = 75; // workEthic needed for 2 albums/year
 
