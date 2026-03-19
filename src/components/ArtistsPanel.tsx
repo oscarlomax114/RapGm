@@ -128,7 +128,7 @@ export default function ArtistsPanel() {
                   Risk ({a.traits.loyalty}%)
                 </button>
                 <button
-                  onClick={() => dropArtist(a.id)}
+                  onClick={() => { if (window.confirm(`Are you sure you want to release ${a.name}?`)) dropArtist(a.id); }}
                   className="text-[11px] bg-red-600 hover:bg-red-500 text-white px-2 py-0.5 rounded transition"
                 >
                   Release
@@ -175,7 +175,7 @@ export default function ArtistsPanel() {
                       phase={ps}
                       onViewProfile={() => setProfileArtistId(a.id)}
                       onRename={(newName) => renameArtist(a.id, newName)}
-                      onDrop={() => dropArtist(a.id)}
+                      onDrop={() => { if (window.confirm(`Are you sure you want to drop ${a.name}?`)) dropArtist(a.id); }}
                     />
                   );
                 })}

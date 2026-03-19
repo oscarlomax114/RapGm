@@ -51,7 +51,7 @@ export default function GameLayout() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
-  const { nextTurn, gameOver, money, reputation, labelName, pendingAwardCeremony, dismissAwardCeremony, activeSlot, rivalLabels, switchLabel } = useGameStore();
+  const { nextTurn, gameOver, money, reputation, labelName, pendingAwardCeremony, dismissAwardCeremony, activeSlot, setActiveSlot } = useGameStore();
   const { isGuest } = useAuth();
   const isMobile = useIsMobile();
   useAutosave(activeSlot, isGuest);
@@ -107,40 +107,33 @@ export default function GameLayout() {
         />
       )}
 
-      {/* Switch Label Modal */}
+      {/* Main Menu Modal */}
       {showSwitchModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setShowSwitchModal(false)}>
-          <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-md max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
               <div>
-                <h3 className="text-gray-900 font-bold text-sm">Switch Label</h3>
-                <p className="text-gray-400 text-[11px]">Take over management of another label</p>
+                <h3 className="text-gray-900 font-bold text-sm">Main Menu</h3>
+                <p className="text-gray-400 text-[11px]">Return to save slot selection</p>
               </div>
               <button onClick={() => setShowSwitchModal(false)} className="text-gray-400 hover:text-gray-900 text-sm p-1">✕</button>
             </div>
-            <div className="p-3 space-y-1 overflow-y-auto flex-1">
-              {rivalLabels.map((rl) => (
+            <div className="p-4 space-y-3">
+              <p className="text-gray-600 text-xs">Your progress is saved automatically. You can switch to a different save slot or start a new label.</p>
+              <div className="flex gap-2">
                 <button
-                  key={rl.id}
-                  onClick={() => {
-                    if (confirm(`Switch to ${rl.name}? Your current progress as ${labelName} will be preserved as a rival label.`)) {
-                      switchLabel(rl.id);
-                      setShowSwitchModal(false);
-                      setTab("dashboard");
-                    }
-                  }}
-                  className="w-full text-left px-3 py-2.5 rounded border border-gray-200 hover:border-blue-400 hover:bg-blue-50 active:bg-blue-100 transition flex items-center justify-between"
+                  onClick={() => setShowSwitchModal(false)}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded text-xs transition"
                 >
-                  <div>
-                    <div className="text-gray-900 font-medium text-sm">{rl.name}</div>
-                    <div className="text-gray-400 text-[11px]">{rl.primaryGenre} · {rl.rosterArtists.length} artists</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-gray-900 font-semibold text-xs">{rl.prestige}</div>
-                    <div className="text-gray-400 text-[10px]">prestige</div>
-                  </div>
+                  Cancel
                 </button>
-              ))}
+                <button
+                  onClick={() => { setActiveSlot(null); }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded text-xs transition"
+                >
+                  Go to Main Menu
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -178,7 +171,7 @@ export default function GameLayout() {
                   className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition flex items-center gap-2.5"
                 >
                   <span className="text-base leading-none w-5 text-center">🔄</span>
-                  Switch Label
+                  Main Menu
                 </button>
               </div>
             </div>
@@ -208,7 +201,7 @@ export default function GameLayout() {
           onClick={() => setShowSwitchModal(true)}
           className="px-3 py-2 text-xs font-medium whitespace-nowrap text-gray-400 hover:text-gray-900 transition"
         >
-          Switch Label
+          Main Menu
         </button>
       </div>
 
