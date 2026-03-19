@@ -18,6 +18,20 @@ function uid() {
   return Math.random().toString(36).slice(2, 9);
 }
 
+// ── Diminishing returns for reputation gains ──────────────────────────────────
+// At low rep, gains are full. Above 50, gains taper. Above 80, gains are heavily reduced.
+// This prevents snowballing past mid-game and makes elite reputation feel earned.
+function dimRep(currentRep: number, rawGain: number): number {
+  if (rawGain <= 0) return rawGain;
+  const mult = currentRep >= 90 ? 0.15
+             : currentRep >= 80 ? 0.30
+             : currentRep >= 70 ? 0.50
+             : currentRep >= 60 ? 0.65
+             : currentRep >= 50 ? 0.80
+             : 1.0;
+  return Math.max(rawGain > 0 ? 1 : 0, Math.round(rawGain * mult));
+}
+
 // ── Calendar helpers ──────────────────────────────────────────────────────────
 
 export function getGameDate(startDate: string, turn: number): Date {
@@ -37,8 +51,12 @@ export function formatGameDate(date: Date): string {
 export function getVisibleFreeAgents(state: GameState): Artist[] {
   const scouting = SCOUTING_DATA[state.scoutingLevel];
   const pool = state.freeAgentPool;
-  const scoutedCount = Math.max(1, Math.round(pool.length * scouting.scoutedPct / 100));
-  return pool.map((artist, i) => ({
+  // Visibility controls how many agents you can SEE at all
+  const visibleCount = Math.max(1, Math.round(pool.length * scouting.visibilityPct / 100));
+  const visiblePool = pool.slice(0, visibleCount);
+  // Scouted controls how many of the visible ones reveal full stats
+  const scoutedCount = Math.max(1, Math.round(visiblePool.length * scouting.scoutedPct / 100));
+  return visiblePool.map((artist, i) => ({
     ...artist,
     scouted: i < scoutedCount,
   }));
@@ -778,7 +796,7 @@ export function releaseSong(state: GameState, songId: string): GameState {
   const comebackBonus = releaseArtist ? getComebackViralBonus(releaseArtist) : 0;
   let finalSongs = state.songs.map((s) =>
     s.id === songId
-      ? { ...s, released: true, turnReleased: state.turn, viralPotential: clamp(s.viralPotential + comebackBonus, 0, 100) }
+      ? { ...s, released: true, turnReleased: state.turn, viralPotential: clamp(s.viralPotential + comebackBonus, 0, 100), albumEligible: !s.albumId } // released standalone singles are album-eligible
       : s
   );
 
@@ -1169,8 +1187,8 @@ export function sendOnTour(
     newState: {
       ...state,
       money: state.money - t.bookingCost,
-      // Tour rep gain scales with artist popularity (halved to slow early rep climb)
-      reputation: clamp(state.reputation + Math.floor(t.reputationGain * 0.5) + Math.floor(artist.popularity / 80), 0, 100),
+      // Tour rep gain scales with artist popularity; diminishing returns at high rep
+      reputation: clamp(state.reputation + dimRep(state.reputation, Math.floor(t.reputationGain * 0.35) + Math.floor(artist.popularity / 100)), 0, 100),
       artists: state.artists.map((a) =>
         a.id === artistId
           ? {
@@ -1424,41 +1442,50 @@ function simulateRivalSignings(state: GameState): { freeAgentPool: Artist[]; riv
   const labels = state.rivalLabels.map((l) => ({ ...l, rosterArtists: [...l.rosterArtists] }));
 
   for (const label of labels) {
-    // Each label has a chance to sign a free agent every turn
-    const signChance = (label.prestige / 800) + (label.activityLevel / 1000);
-    if (Math.random() > signChance || pool.length < 10) continue;
-    // Composite interest scoring: OVR + potential + momentum + buzz + age + genre fit
-    const minOvr = Math.floor(label.prestige * 0.4 + 20); // higher prestige = pickier
-    const candidates = pool
-      .filter((a) => a.overallRating >= Math.min(35, minOvr))
-      .map((a) => {
-        let score = a.overallRating * 0.25 + (a.potential ?? a.overallRating) * 0.20
-                  + (a.momentum ?? 30) * 0.20 + (a.buzz ?? 20) * 0.15;
-        score += a.age <= 22 ? 15 : a.age <= 26 ? 10 : a.age <= 30 ? 5 : a.age <= 33 ? 0 : -10;
-        const stage = a.careerPhase ?? "unknown";
-        score += stage === "buzzing" ? 12 : stage === "breakout" ? 15 : stage === "emerging" ? 10 : stage === "unknown" ? 5 : stage === "established" ? 15 : stage === "peak" ? 10 : stage === "legacy" ? -5 : -15;
-        if (a.genre === label.primaryGenre) score += 8;
-        // Signing imperfection: add random variance so labels don't always pick optimally
-        score += (Math.random() - 0.5) * 16; // ±8 random swing
-        return { artist: a, score };
-      })
-      .filter((c) => c.score > 40)
-      .sort((a, b) => b.score - a.score);
-    const target = candidates.length > 0
-      ? candidates[Math.floor(Math.random() * Math.min(3, candidates.length))].artist
-      : null;
-    if (!target) continue;
+    // Roster cap scales with prestige: low prestige = 4-6, high prestige = 8-12
+    const rosterCap = Math.floor(4 + (label.prestige / 100) * 8); // 4 at 0 prestige, 12 at 100
 
-    // Sign the artist: add full Artist object to label roster, remove from pool
-    label.rosterArtists.push({ ...target, signed: true });
-    pool = pool.filter((a) => a.id !== target.id);
+    // Higher sign chance; labels with roster room are more aggressive
+    const roomFactor = label.rosterArtists.length < rosterCap ? 1.5 : 0.3;
+    const signChance = ((label.prestige / 600) + (label.activityLevel / 800)) * roomFactor;
 
-    // Cap label roster at 6 artists — drop weakest instead of oldest
-    if (label.rosterArtists.length > 6) {
-      // Weighted drop score: lower = more likely to be dropped
+    // Labels can attempt to sign up to 2 artists per turn at high prestige
+    const maxSignings = label.prestige >= 70 ? 2 : 1;
+    let signed = 0;
+
+    while (signed < maxSignings && Math.random() < signChance && pool.length >= 10) {
+      // Composite interest scoring: OVR + potential + momentum + buzz + age + genre fit
+      const minOvr = Math.floor(label.prestige * 0.4 + 20);
+      const candidates = pool
+        .filter((a) => a.overallRating >= Math.min(35, minOvr))
+        .map((a) => {
+          let score = a.overallRating * 0.25 + (a.potential ?? a.overallRating) * 0.20
+                    + (a.momentum ?? 30) * 0.20 + (a.buzz ?? 20) * 0.15;
+          score += a.age <= 22 ? 15 : a.age <= 26 ? 10 : a.age <= 30 ? 5 : a.age <= 33 ? 0 : -10;
+          const stage = a.careerPhase ?? "unknown";
+          score += stage === "buzzing" ? 12 : stage === "breakout" ? 15 : stage === "emerging" ? 10 : stage === "unknown" ? 5 : stage === "established" ? 15 : stage === "peak" ? 10 : stage === "legacy" ? -5 : -15;
+          if (a.genre === label.primaryGenre) score += 8;
+          // Signing imperfection: add random variance so labels don't always pick optimally
+          score += (Math.random() - 0.5) * 16;
+          return { artist: a, score };
+        })
+        .filter((c) => c.score > 40)
+        .sort((a, b) => b.score - a.score);
+      const target = candidates.length > 0
+        ? candidates[Math.floor(Math.random() * Math.min(3, candidates.length))].artist
+        : null;
+      if (!target) break;
+
+      label.rosterArtists.push({ ...target, signed: true });
+      pool = pool.filter((a) => a.id !== target.id);
+      signed++;
+    }
+
+    // Drop weakest artists if over roster cap
+    while (label.rosterArtists.length > rosterCap) {
       let worstIdx = 0;
       let worstScore = Infinity;
-      for (let i = 0; i < label.rosterArtists.length - 1; i++) { // skip the one just signed
+      for (let i = 0; i < label.rosterArtists.length; i++) {
         const ra = label.rosterArtists[i];
         const mom = ra.momentum ?? 20;
         const ovr = ra.overallRating ?? 40;
@@ -1823,12 +1850,12 @@ export function advanceTurn(state: GameState): GameState {
   const playerChartCount = newChart.filter((c) => c.isPlayerSong).length;
   const saturationMult = playerChartCount <= 3 ? 1.0 : playerChartCount <= 6 ? 0.80 : playerChartCount <= 10 ? 0.60 : 0.40;
   let streamRevenue = 0;
-  // Streaming revenue cap: diminishing returns above $20K/week prevents exponential snowball
-  // First $20K at 100%, next $20K at 60%, anything beyond at 25%
+  // Streaming revenue cap: diminishing returns above $40K/week prevents exponential snowball
+  // First $40K at 100%, next $40K at 65%, anything beyond at 35%
   const applyStreamCap = (raw: number): number => {
-    if (raw <= 20000) return raw;
-    if (raw <= 40000) return 20000 + (raw - 20000) * 0.6;
-    return 20000 + 20000 * 0.6 + (raw - 40000) * 0.25;
+    if (raw <= 40000) return raw;
+    if (raw <= 80000) return 40000 + (raw - 40000) * 0.65;
+    return 40000 + 40000 * 0.65 + (raw - 80000) * 0.35;
   };
   const updatedSongs = s.songs.map((song) => {
     const entry = newChart.find((c) => c.songId === song.id);
@@ -1840,7 +1867,7 @@ export function advanceTurn(state: GameState): GameState {
     const qualMult = song.quality >= 60
       ? Math.min(1.8, 1.0 + (song.quality - 60) * 0.02)
       : 0.4 + (song.quality / 60) * 0.6;
-    const rev = Math.floor(entry.streams * 0.004 * revMult * posMult * qualMult * labelRecognition * saturationMult * marketHeat);
+    const rev = Math.floor(entry.streams * 0.007 * revMult * posMult * qualMult * labelRecognition * saturationMult * marketHeat);
     streamRevenue += rev;
     return {
       ...song,
@@ -1882,20 +1909,20 @@ export function advanceTurn(state: GameState): GameState {
   // Merch income — scales per artist's fanbase × popularity
   // Popular artists sell more merch per fan (0.5x at pop 0, 1.5x at pop 100)
   // Fanbase tier multiplier: bigger fanbases sell disproportionately more merch
+  // Merch income boosted: higher base multiplier and better fan tier scaling
   const merchPerFan = MERCH_DATA[s.merchLevel].revenuePerFan;
   const merchIncome = merchPerFan > 0
     ? Math.floor(s.artists.filter((a) => a.signed).reduce((sum, a) => {
-        const popMult = 0.5 + (a.popularity / 100);
-        const fanTier = a.fanbase >= 1000000 ? 2.5 : a.fanbase >= 500000 ? 1.8 : a.fanbase >= 100000 ? 1.3 : 1.0;
-        return sum + a.fanbase * merchPerFan * popMult * fanTier;
+        const popMult = 0.6 + (a.popularity / 80); // boosted from 0.5 + pop/100
+        const fanTier = a.fanbase >= 1000000 ? 3.0 : a.fanbase >= 500000 ? 2.2 : a.fanbase >= 100000 ? 1.5 : a.fanbase >= 25000 ? 1.2 : 1.0;
+        return sum + a.fanbase * merchPerFan * popMult * fanTier * 1.8; // 1.8x global merch boost
       }, 0) * (0.8 + Math.random() * 0.4))
     : 0;
 
-  // Brand deal / endorsement revenue — unlocks at rep 70+, scales with time
+  // Brand deal / endorsement revenue — unlocks at rep 50+, scales with time
   // Represents sponsorships, brand partnerships, media deals
-  // At rep 90, fanbase 2M, year 10: ~$600K/week. At rep 95, fanbase 5M, year 15: ~$1.5M/week.
-  const brandDealRevenue = s.reputation >= 70
-    ? Math.floor((s.reputation - 60) * (s.fanbase / 100000) * 200 * (1 + s.turn / 520) * (0.8 + Math.random() * 0.4))
+  const brandDealRevenue = s.reputation >= 50
+    ? Math.floor((s.reputation - 40) * (s.fanbase / 100000) * 250 * (1 + s.turn / 520) * (0.8 + Math.random() * 0.4))
     : 0;
 
   // Per-week tour payouts + artist updates
@@ -1980,8 +2007,8 @@ export function advanceTurn(state: GameState): GameState {
       const t = TOUR_DATA[tourType];
       const td = TOURING_DEPT_DATA[s.touringLevel];
       const popMult = 0.5 + popularity / 100;
-      const fanbaseMult = 1 + Math.log10(Math.max(1, fanbase / 10000)) * 0.3;
-      const weekRev = Math.floor(t.revPerWeek * popMult * fanbaseMult * (1 + td.revenueBonusPct / 100) * marketHeat);
+      const fanbaseMult = 1 + Math.log10(Math.max(1, fanbase / 10000)) * 0.2; // reduced from 0.3
+      const weekRev = Math.floor(t.revPerWeek * 0.6 * popMult * fanbaseMult * (1 + td.revenueBonusPct / 100) * marketHeat); // 0.6x nerf to tour revenue
       const weekFans = Math.floor(t.fanPerWeek * popMult * (1 + td.fanBonusPct / 100));
       tourRevenue += weekRev;
       tourFanDelta += weekFans;
@@ -1994,7 +2021,7 @@ export function advanceTurn(state: GameState): GameState {
 
       // Touring builds label reputation over time (not just at booking)
       // ~30% chance per week for +1 rep, scaled by tour size
-      const tourRepChance = t.reputationGain >= 8 ? 0.20 : t.reputationGain >= 5 ? 0.15 : 0.10;
+      const tourRepChance = t.reputationGain >= 8 ? 0.15 : t.reputationGain >= 5 ? 0.10 : 0.06;
       if (Math.random() < tourRepChance) {
         tourRepDelta += 1;
       }
@@ -2290,7 +2317,7 @@ export function advanceTurn(state: GameState): GameState {
           description: `${artist.name} has reached ${milestone.toLocaleString()} fans — a new milestone!`,
           artistId: artist.id,
           moneyDelta: 0,
-          reputationDelta: milestone >= 100000 ? 2 : 1,
+          reputationDelta: dimRep(s.reputation, milestone >= 100000 ? 2 : 1),
           fanbaseDelta: 0,
           resolved: true,
         });
@@ -2520,12 +2547,10 @@ export function advanceTurn(state: GameState): GameState {
     repDelta = Math.floor(repDelta * 0.5);
   }
 
-  // Diminishing rep gains: harder to climb as reputation increases
-  // At rep 50: positive gains reduced by 20%. At rep 80: reduced by 50%. At rep 95: reduced by 70%.
+  // Diminishing rep gains: harder to climb as reputation increases (uses dimRep)
   const totalRepGain = repDelta + tourRepDelta;
-  if (totalRepGain > 0 && s.reputation >= 50) {
-    const dampening = Math.min(0.7, (s.reputation - 50) * 0.014); // 0% at 50, 14% at 60, 42% at 80, 63% at 95
-    const dampened = Math.max(0, Math.round(totalRepGain * (1 - dampening)));
+  if (totalRepGain > 0) {
+    const dampened = dimRep(s.reputation, totalRepGain);
     // Redistribute: reduce tourRepDelta first, then repDelta
     const reduction = totalRepGain - dampened;
     if (tourRepDelta > 0 && reduction > 0) {
@@ -2865,9 +2890,10 @@ export function addSongToAlbum(
   if (album.songIds.includes(songId))
     return { newState: state, error: "Song already on this album." };
 
-  // Eligibility: songs must be recorded after the artist's last album release
+  // Eligibility: unreleased songs must be recorded after the artist's last album release.
+  // Released singles with albumEligible flag can always be added to an album.
   const artist = state.artists.find((a) => a.id === album.artistId);
-  if (artist && artist.lastAlbumReleaseTurn > 0 && song.turnRecorded < artist.lastAlbumReleaseTurn) {
+  if (artist && artist.lastAlbumReleaseTurn > 0 && song.turnRecorded < artist.lastAlbumReleaseTurn && !song.albumEligible) {
     return { newState: state, error: "Song was recorded before last album release and is not eligible for a new album." };
   }
 
@@ -2897,7 +2923,7 @@ export function addSongToAlbum(
           return { ...al, songIds: al.songIds.filter((id) => id !== songId) };
         return al;
       }),
-      songs: state.songs.map((s) => (s.id === songId ? { ...s, albumId, albumStatus: "maybe" as const } : s)),
+      songs: state.songs.map((s) => (s.id === songId ? { ...s, albumId, albumStatus: "maybe" as const, linkedAlbumId: s.released ? albumId : s.linkedAlbumId } : s)),
     },
   };
 }
@@ -3135,7 +3161,7 @@ export function releaseAlbum(
     description: `${artist?.name ?? "Unknown"}'s album "${album.title}" released (${strategy.category}, ${qualityScore}/100 score). ${albumSongs.length} tracks drop.${strategyLabel}`,
     artistId: album.artistId,
     moneyDelta: -marketingBudget,
-    reputationDelta: (qualityScore >= 60 ? rand(2, 5) : qualityScore >= 40 ? rand(1, 2) : rand(0, 1)) + strategy.repBonus + (stockpileBonus > 0 ? rand(1, 2) : 0),
+    reputationDelta: dimRep(state.reputation, (qualityScore >= 60 ? rand(2, 5) : qualityScore >= 40 ? rand(1, 2) : rand(0, 1)) + strategy.repBonus + (stockpileBonus > 0 ? rand(1, 2) : 0)),
     fanbaseDelta: Math.floor(qualityScore * 200 * (1 + MARKETING_DATA[state.marketingLevel].fanGrowthPct / 100)),
     popularityDelta: Math.floor(qualityScore * 0.1),
     resolved: true,

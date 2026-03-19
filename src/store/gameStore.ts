@@ -109,10 +109,8 @@ function generateGlobalHoF(rivalLabels: GameState["rivalLabels"]): GameState["gl
 }
 
 function createInitialState(labelName: string): GameState {
-  // 2 signed starter artists
-  const rosterArtists: Artist[] = Array.from({ length: 2 }, (_, i) =>
-    generateArtist(`a${i}`, true)
-  );
+  // Start with zero signed artists — player builds from scratch via scouting
+  const rosterArtists: Artist[] = [];
   // Large persistent free agent pool (400 agents — the full game world)
   // Player sees a filtered/scouted subset; rival labels can sign from the pool too
   const freeAgentPool: Artist[] = Array.from({ length: 400 }, (_, i) =>
@@ -131,9 +129,9 @@ function createInitialState(labelName: string): GameState {
   // Pre-populate 6-12 months of industry history so charts aren't empty at game start
   const baseState: GameState = {
     labelName,
-    money: 75000,
-    reputation: 30,
-    fanbase: 10000,
+    money: 100000,
+    reputation: 20,
+    fanbase: 5000,
     turn: 1,
     startDate,
     artists: rosterArtists,

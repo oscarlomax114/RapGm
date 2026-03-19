@@ -34,7 +34,9 @@ export default function ArtistsPanel() {
   }
 
   function getStatusLabel(a: Artist): { text: string; color: string } {
-    if (a.onTour) return { text: "Touring", color: "text-yellow-600" };
+    if (a.jailed) return { text: `Jailed (${a.jailTurnsLeft ?? "?"}wk)`, color: "text-red-700" };
+    if (a.legalState && a.legalState.stage !== "resolved") return { text: `Legal: ${a.legalState.stage.replace("_", " ")}`, color: "text-red-500" };
+    if (a.onTour) return { text: `Tour (${a.tourTurnsLeft}wk left)`, color: "text-yellow-600" };
     if (a.contractAlbumsLeft === 0) return { text: "Expired", color: "text-red-500" };
     if (a.fatigue > 70) return { text: "Fatigued", color: "text-orange-500" };
     return { text: "Active", color: "text-green-600" };
@@ -49,6 +51,7 @@ export default function ArtistsPanel() {
           songs={songs}
           albums={albums}
           producers={producers}
+          turn={turn}
           onClose={() => setProfileArtistId(null)}
         />
       )}
@@ -416,12 +419,14 @@ function ArtistProfileModal({
   songs,
   albums,
   producers,
+  turn,
   onClose,
 }: {
   artist: Artist;
   songs: Song[];
   albums: Album[];
   producers: Producer[];
+  turn: number;
   onClose: () => void;
 }) {
   const artistSongs = songs
@@ -460,6 +465,44 @@ function ArtistProfileModal({
         </div>
 
         <div className="px-3 py-2 space-y-3">
+          {/* Legal / Jail status badges */}
+          {artist.jailed && (
+            <div className="bg-red-50 border border-red-300 rounded px-3 py-2 flex items-center gap-2">
+              <span className="text-red-700 font-bold text-xs">JAILED</span>
+              <span className="text-red-600 text-xs">{artist.jailTurnsLeft ?? 0} weeks remaining · {artist.jailSentenceType ?? "unknown"} sentence</span>
+              {artist.legalState?.offense && <span className="text-red-400 text-[10px] ml-auto">{artist.legalState.offense}</span>}
+            </div>
+          )}
+          {!artist.jailed && artist.legalState && artist.legalState.stage !== "resolved" && (
+            <div className="bg-amber-50 border border-amber-300 rounded px-3 py-2 flex items-center gap-2">
+              <span className="text-amber-700 font-bold text-xs">LEGAL TROUBLE</span>
+              <span className="text-amber-600 text-xs capitalize">{artist.legalState.stage.replace("_", " ")} · Severity {artist.legalState.severity}/10</span>
+              {artist.legalState.offense && <span className="text-amber-400 text-[10px] ml-auto">{artist.legalState.offense}</span>}
+            </div>
+          )}
+
+          {/* Tour timing info */}
+          {artist.onTour && artist.tourType && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded px-3 py-2 flex items-center gap-2">
+              <span className="text-yellow-700 font-bold text-xs">ON TOUR</span>
+              <span className="text-yellow-600 text-xs">{artist.tourTurnsLeft} weeks remaining · {(artist.tourType ?? "").replace("_", " ")}</span>
+            </div>
+          )}
+          {!artist.onTour && artist.lastTourEndTurn > 0 && (() => {
+            const sinceTour = turn - artist.lastTourEndTurn;
+            const cooldownNeeded = artist.lastMajorTourTurn > 0 ? 16 : 0;
+            const weeksUntilEligible = cooldownNeeded > 0 ? Math.max(0, cooldownNeeded - (turn - artist.lastMajorTourTurn)) : 0;
+            return weeksUntilEligible > 0 ? (
+              <div className="bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs text-gray-500">
+                Tour cooldown: <span className="font-semibold text-gray-700">{weeksUntilEligible} weeks</span> until next major tour eligible
+              </div>
+            ) : sinceTour < 4 ? (
+              <div className="bg-green-50 border border-green-200 rounded px-3 py-1.5 text-xs text-green-600">
+                Tour eligible — last tour ended {sinceTour} week{sinceTour !== 1 ? "s" : ""} ago
+              </div>
+            ) : null;
+          })()}
+
           {/* Character sprite + core stats side by side */}
           <div className="flex flex-col sm:flex-row gap-3 items-start">
             <div className="shrink-0 bg-gray-50 rounded border border-gray-200 p-2">

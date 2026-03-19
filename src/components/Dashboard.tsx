@@ -2,6 +2,7 @@
 import { useGameStore } from "@/store/gameStore";
 import { ACHIEVEMENT_DEFS } from "@/lib/achievements";
 import { MallCategory, RevenueHistory, AchievementCategory, HoFTier, Artist } from "@/lib/types";
+import { STUDIO_DATA } from "@/lib/data";
 import ArtistSprite from "./ArtistSprite";
 
 const CATEGORY_LABELS: Record<MallCategory, string> = {
@@ -69,7 +70,7 @@ export default function Dashboard() {
   const {
     money, reputation, fanbase, turn, artists, songs, recentEvents,
     vault, labelMilestones, awardHistory, revenueHistory,
-    achievements, hallOfFame, dynastyYears,
+    achievements, hallOfFame, dynastyYears, studioLevel,
   } = useGameStore();
 
   const signedArtists = artists.filter((a) => a.signed);
@@ -108,7 +109,7 @@ export default function Dashboard() {
     <div className="p-2 sm:p-3 space-y-2 sm:space-y-3">
       {/* Stat cards — tighter padding */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <Card label="Signed Artists" value={signedArtists.length} sub={`of ${artists.length} on roster`} />
+        <Card label="Signed Artists" value={signedArtists.length} sub={`of ${STUDIO_DATA[studioLevel].rosterCap} slots`} />
         <Card label="Songs Released" value={releasedSongs.length} sub={`${charting.length} charting`} />
         <Card
           label="Total Streams"
@@ -140,8 +141,12 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {signedArtists.map((a: Artist, i: number) => {
-                  const status = a.onTour
-                    ? { text: "Touring", color: "text-yellow-600" }
+                  const status = a.jailed
+                    ? { text: `Jailed (${a.jailTurnsLeft ?? "?"}wk)`, color: "text-red-700" }
+                    : a.legalState && a.legalState.stage !== "resolved"
+                    ? { text: "Legal Issue", color: "text-red-500" }
+                    : a.onTour
+                    ? { text: `Tour (${a.tourTurnsLeft}wk)`, color: "text-yellow-600" }
                     : a.contractAlbumsLeft === 0
                     ? { text: "Expired", color: "text-red-500" }
                     : a.fatigue > 70

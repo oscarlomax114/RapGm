@@ -173,6 +173,8 @@ export interface Song {
   albumId?: string;            // set if this song belongs to an album
   albumStatus?: "confirmed" | "maybe" | "scrap";  // curation status within the album
   wasStandalone?: boolean;     // true if recorded as a standalone single (not directly for an album)
+  albumEligible?: boolean;     // true if this released single can still be added to an album
+  linkedAlbumId?: string;      // album this single was later added to (post-release)
   // ── Feature / collaboration ──────────────────────────────────────────
   featuredArtistId?: string;       // id of featured artist (player roster or rival)
   featuredArtistName?: string;     // display name (always set if feature exists)

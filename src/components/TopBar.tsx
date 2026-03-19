@@ -15,14 +15,25 @@ function fmtFans(n: number) {
   return `${n}`;
 }
 
-export default function TopBar({ onNextTurn, onSeeAllNotifications }: { onNextTurn: () => void; onSeeAllNotifications?: () => void }) {
+export default function TopBar({ onNextTurn, onSeeAllNotifications, onMenuOpen }: { onNextTurn: () => void; onSeeAllNotifications?: () => void; onMenuOpen?: () => void }) {
   const { labelName, money, reputation, fanbase, turn, startDate, gameOver } = useGameStore();
   const gameDate = formatGameDate(getGameDate(startDate || "2025-01-06", turn));
 
   return (
     <div className="bg-white border-b border-gray-200 px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
-      {/* Left: Label name + date */}
+      {/* Left: Hamburger (mobile) + Label name + date */}
       <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+        {onMenuOpen && (
+          <button
+            onClick={onMenuOpen}
+            className="sm:hidden text-gray-600 hover:text-gray-900 p-1 -ml-1 shrink-0"
+            aria-label="Open menu"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
         <span className="text-gray-900 font-semibold text-xs sm:text-sm tracking-tight truncate">{labelName}</span>
         <div className="flex flex-col shrink-0">
           <span className="text-gray-500 text-[10px] sm:text-xs font-medium">{gameDate}</span>

@@ -20,11 +20,12 @@ import HallOfFamePanel from "./HallOfFamePanel";
 import RankingsPanel from "./RankingsPanel";
 import AchievementsPanel from "./AchievementsPanel";
 import NotificationsPanel from "./NotificationsPanel";
+import HelpPanel from "./HelpPanel";
 
 type Tab =
   | "dashboard" | "artists" | "studio" | "scouting" | "charts"
   | "labels" | "finances" | "transactions" | "rankings" | "halloffame"
-  | "upgrades" | "mall" | "awards" | "achievements" | "notifications";
+  | "upgrades" | "mall" | "awards" | "achievements" | "notifications" | "help";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "dashboard",    label: "Dashboard",     icon: "📊" },
@@ -42,10 +43,9 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "awards",       label: "Awards",        icon: "🏅" },
   { id: "achievements", label: "Achievements",  icon: "🎯" },
   { id: "notifications",label: "Notifications", icon: "🔔" },
+  { id: "help",         label: "How to Play",   icon: "❓" },
 ];
 
-// Primary tabs shown in mobile bottom bar
-const MOBILE_PRIMARY: Tab[] = ["dashboard", "artists", "studio", "charts", "scouting"];
 
 export default function GameLayout() {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -56,9 +56,12 @@ export default function GameLayout() {
   const isMobile = useIsMobile();
   useAutosave(activeSlot, isGuest);
 
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   function switchTab(t: Tab) {
     setTab(t);
     setMobileMoreOpen(false);
+    setDrawerOpen(false);
   }
 
   if (gameOver) {
@@ -93,8 +96,6 @@ export default function GameLayout() {
       </div>
     );
   }
-
-  const mobileSecondary = TABS.filter((t) => !MOBILE_PRIMARY.includes(t.id));
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -145,39 +146,38 @@ export default function GameLayout() {
         </div>
       )}
 
-      {/* Mobile "More" drawer overlay */}
-      {isMobile && mobileMoreOpen && (
-        <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setMobileMoreOpen(false)}>
+      {/* Mobile side drawer */}
+      {isMobile && drawerOpen && (
+        <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setDrawerOpen(false)}>
           <div
-            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-lg pb-safe max-h-[70vh] flex flex-col"
+            className="absolute top-0 left-0 bottom-0 w-64 bg-white shadow-lg flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-              <span className="text-gray-900 font-bold text-sm">All Tabs</span>
-              <button onClick={() => setMobileMoreOpen(false)} className="text-gray-400 hover:text-gray-900 p-1">✕</button>
+              <span className="text-gray-900 font-bold text-sm">{labelName}</span>
+              <button onClick={() => setDrawerOpen(false)} className="text-gray-400 hover:text-gray-900 p-1">✕</button>
             </div>
-            <div className="overflow-y-auto flex-1 p-2">
-              <div className="grid grid-cols-3 gap-1.5">
-                {TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => switchTab(t.id)}
-                    className={`flex flex-col items-center gap-1 px-2 py-3 rounded-lg transition text-center ${
-                      tab === t.id
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-600 hover:bg-gray-50 active:bg-gray-100"
-                    }`}
-                  >
-                    <span className="text-lg leading-none">{t.icon}</span>
-                    <span className="text-[11px] font-medium leading-tight">{t.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="border-t border-gray-200 mt-2 pt-2">
+            <div className="overflow-y-auto flex-1 py-1">
+              {TABS.map((t) => (
                 <button
-                  onClick={() => { setMobileMoreOpen(false); setShowSwitchModal(true); }}
-                  className="w-full text-left px-3 py-2.5 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 transition"
+                  key={t.id}
+                  onClick={() => switchTab(t.id)}
+                  className={`w-full text-left px-4 py-2.5 text-sm font-medium transition flex items-center gap-2.5 ${
+                    tab === t.id
+                      ? "bg-blue-50 text-blue-600 border-l-2 border-blue-600"
+                      : "text-gray-700 hover:bg-gray-50 active:bg-gray-100 border-l-2 border-transparent"
+                  }`}
                 >
+                  <span className="text-base leading-none w-5 text-center">{t.icon}</span>
+                  {t.label}
+                </button>
+              ))}
+              <div className="border-t border-gray-200 mt-1 pt-1">
+                <button
+                  onClick={() => { setDrawerOpen(false); setShowSwitchModal(true); }}
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition flex items-center gap-2.5"
+                >
+                  <span className="text-base leading-none w-5 text-center">🔄</span>
                   Switch Label
                 </button>
               </div>
@@ -186,7 +186,7 @@ export default function GameLayout() {
         </div>
       )}
 
-      <TopBar onNextTurn={nextTurn} onSeeAllNotifications={() => switchTab("notifications")} />
+      <TopBar onNextTurn={nextTurn} onSeeAllNotifications={() => switchTab("notifications")} onMenuOpen={isMobile ? () => setDrawerOpen(true) : undefined} />
 
       {/* Desktop Tab Nav — hidden on mobile */}
       <div className="hidden sm:flex bg-white border-b border-gray-200 px-2 gap-0.5 overflow-x-auto">
@@ -212,8 +212,8 @@ export default function GameLayout() {
         </button>
       </div>
 
-      {/* Panel — add bottom padding on mobile for the bottom nav */}
-      <div className={`flex-1 overflow-y-auto ${isMobile ? "has-bottom-nav" : ""}`}>
+      {/* Panel */}
+      <div className="flex-1 overflow-y-auto">
         {tab === "dashboard"    && <Dashboard />}
         {tab === "artists"      && <ArtistsPanel />}
         {tab === "studio"       && <StudioPanel />}
@@ -229,41 +229,8 @@ export default function GameLayout() {
         {tab === "awards"       && <AwardsPanel />}
         {tab === "achievements" && <AchievementsPanel />}
         {tab === "notifications"&& <NotificationsPanel />}
+        {tab === "help"          && <HelpPanel />}
       </div>
-
-      {/* Mobile Bottom Nav — shown only on mobile */}
-      {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 pb-safe">
-          <div className="flex items-stretch justify-around">
-            {MOBILE_PRIMARY.map((id) => {
-              const t = TABS.find((x) => x.id === id)!;
-              const active = tab === id;
-              return (
-                <button
-                  key={id}
-                  onClick={() => switchTab(id)}
-                  className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition ${
-                    active ? "text-blue-600" : "text-gray-400"
-                  }`}
-                >
-                  <span className="text-base leading-none">{t.icon}</span>
-                  <span className="text-[10px] font-medium leading-tight">{t.label}</span>
-                </button>
-              );
-            })}
-            {/* More button */}
-            <button
-              onClick={() => setMobileMoreOpen(true)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition ${
-                !MOBILE_PRIMARY.includes(tab) ? "text-blue-600" : "text-gray-400"
-              }`}
-            >
-              <span className="text-base leading-none">☰</span>
-              <span className="text-[10px] font-medium leading-tight">More</span>
-            </button>
-          </div>
-        </nav>
-      )}
     </div>
   );
 }

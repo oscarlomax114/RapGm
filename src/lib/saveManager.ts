@@ -1,5 +1,4 @@
 import { GameState } from "./types";
-import { createClient } from "./supabase/client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -76,123 +75,86 @@ export function guestClearAll(): void {
   }
 }
 
-// ── Account (Supabase API) ────────────────────────────────────────────────────
-
-interface SaveRow {
-  slot_number: number;
-  label_name: string;
-  turn: number;
-  updated_at: string;
-  game_state?: GameState;
-}
+// ── Account (API) ─────────────────────────────────────────────────────────────
 
 export async function accountListSlots(): Promise<SaveSlotMeta[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("save_slots")
-    .select("slot_number, label_name, turn, updated_at")
-    .order("slot_number");
-
-  if (error) {
-    console.error("Failed to list saves:", error);
+  try {
+    const res = await fetch("/api/saves");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.error("Failed to list saves:", e);
     return Array.from({ length: MAX_SLOTS }, (_, i) => ({
       slotNumber: i + 1, labelName: "", turn: 0, updatedAt: "", isEmpty: true,
     }));
   }
-
-  const rows = (data || []) as SaveRow[];
-  const existing = new Map(rows.map((r) => [r.slot_number, r]));
-  const slots: SaveSlotMeta[] = [];
-  for (let i = 1; i <= MAX_SLOTS; i++) {
-    const row = existing.get(i);
-    if (row) {
-      slots.push({
-        slotNumber: i,
-        labelName: row.label_name,
-        turn: row.turn,
-        updatedAt: row.updated_at,
-        isEmpty: false,
-      });
-    } else {
-      slots.push({ slotNumber: i, labelName: "", turn: 0, updatedAt: "", isEmpty: true });
-    }
-  }
-  return slots;
 }
 
 export async function accountLoad(slot: number): Promise<GameState | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("save_slots")
-    .select("game_state")
-    .eq("slot_number", slot)
-    .single();
-
-  if (error || !data) return null;
-  return data.game_state as GameState;
+  try {
+    const res = await fetch(`/api/saves/${slot}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.game_state ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function accountSave(slot: number, state: GameState): Promise<void> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { error } = await supabase
-    .from("save_slots")
-    .upsert({
-      user_id: user.id,
-      slot_number: slot,
-      label_name: state.labelName,
-      turn: state.turn,
-      game_state: state,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id,slot_number" });
-
-  if (error) console.error("Account save failed:", error);
+  try {
+    const res = await fetch(`/api/saves/${slot}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        game_state: state,
+        label_name: state.labelName,
+        turn: state.turn,
+      }),
+    });
+    if (!res.ok) console.error("Account save failed:", res.status);
+  } catch (e) {
+    console.error("Account save failed:", e);
+  }
 }
 
 export async function accountDelete(slot: number): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("save_slots")
-    .delete()
-    .eq("slot_number", slot);
-
-  if (error) console.error("Account delete failed:", error);
+  try {
+    await fetch(`/api/saves/${slot}`, { method: "DELETE" });
+  } catch (e) {
+    console.error("Account delete failed:", e);
+  }
 }
 
 export async function migrateGuestSaves(): Promise<number> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return 0;
+  const saves: { slot_number: number; label_name: string; turn: number; game_state: GameState }[] = [];
 
-  // Get existing account slots
-  const { data: existing } = await supabase
-    .from("save_slots")
-    .select("slot_number");
-
-  const usedSlots = new Set(((existing || []) as { slot_number: number }[]).map((r) => r.slot_number));
-
-  let migrated = 0;
   for (let i = 1; i <= MAX_SLOTS; i++) {
-    if (usedSlots.has(i)) continue;
     const state = guestLoad(i);
-    if (!state) continue;
-
-    const { error } = await supabase
-      .from("save_slots")
-      .insert({
-        user_id: user.id,
-        slot_number: i,
-        label_name: state.labelName,
-        turn: state.turn,
-        game_state: state,
-      });
-
-    if (!error) {
-      guestDelete(i);
-      migrated++;
+    if (state) {
+      saves.push({ slot_number: i, label_name: state.labelName, turn: state.turn, game_state: state });
     }
   }
-  return migrated;
+
+  if (saves.length === 0) return 0;
+
+  try {
+    const res = await fetch("/api/saves/migrate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ saves }),
+    });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    // Clear migrated guest saves
+    if (data.migrated > 0) {
+      for (const save of saves) {
+        guestDelete(save.slot_number);
+      }
+    }
+    return data.migrated;
+  } catch (e) {
+    console.error("Migration failed:", e);
+    return 0;
+  }
 }

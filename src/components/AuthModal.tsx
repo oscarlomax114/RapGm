@@ -24,9 +24,8 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
 
     if (err) {
       setError(err);
-    } else if (mode === "signup") {
-      setSuccess(true);
     } else {
+      // Both signin and signup auto-authenticate — close modal
       onClose();
     }
   }

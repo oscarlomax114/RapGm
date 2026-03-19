@@ -1,8 +1,11 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
 import { guestHasAnySave, migrateGuestSaves } from "@/lib/saveManager";
+
+interface User {
+  id: string;
+  email: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -29,52 +32,64 @@ export function useAuth() {
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
-    // Check initial session
-    supabase.auth.getUser().then(({ data }: { data: { user: User | null } }) => {
-      setUser(data.user);
-      setLoading(false);
-    });
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => setUser(data.user ?? null))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+  }, []);
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event: string, session: { user: User | null } | null) => {
-        const newUser = session?.user ?? null;
-        setUser(newUser);
-
-        // Auto-migrate guest saves on first sign-in
-        if (newUser && guestHasAnySave()) {
-          try {
-            const count = await migrateGuestSaves();
-            if (count > 0) {
-              console.log(`Migrated ${count} guest save(s) to account`);
-            }
-          } catch (e) {
-            console.error("Migration failed:", e);
-          }
-        }
+  const handlePostAuth = useCallback(async () => {
+    if (guestHasAnySave()) {
+      try {
+        const count = await migrateGuestSaves();
+        if (count > 0) console.log(`Migrated ${count} guest save(s) to account`);
+      } catch (e) {
+        console.error("Migration failed:", e);
       }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+    }
+  }, []);
 
   const signIn = useCallback(async (email: string, password: string): Promise<string | null> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return error ? error.message : null;
-  }, [supabase]);
+    try {
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return data.error || "Sign in failed";
+      setUser(data.user);
+      await handlePostAuth();
+      return null;
+    } catch {
+      return "Network error";
+    }
+  }, [handlePostAuth]);
 
   const signUp = useCallback(async (email: string, password: string): Promise<string | null> => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return error ? error.message : null;
-  }, [supabase]);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return data.error || "Sign up failed";
+      setUser(data.user);
+      await handlePostAuth();
+      return null;
+    } catch {
+      return "Network error";
+    }
+  }, [handlePostAuth]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await fetch("/api/auth/signout", { method: "POST" });
     setUser(null);
-  }, [supabase]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isGuest: !user, loading, signIn, signUp, signOut }}>

@@ -4,7 +4,7 @@ import { useGameStore, computeFeatureFee, evaluateFeatureAcceptance, getAvailabl
 import { GameState } from "@/lib/types";
 import { isProducerUnlocked, PRODUCER_TIER_MIN_STUDIO } from "@/lib/data";
 import { Producer, Album, TourSize, Song, Artist } from "@/lib/types";
-import { TOUR_DATA, getTourEstimates, ALBUM_MIN_TRACKS, ALBUM_SHORT_MAX, ALBUM_LONG_MIN, computeAlbumStrategy, evaluateAlbumApproval } from "@/lib/engine";
+import { TOUR_DATA, getTourEstimates, ALBUM_MIN_TRACKS, ALBUM_SHORT_MAX, ALBUM_LONG_MIN, ALBUM_CYCLE_TURNS, ALBUM_YEAR_TURNS, HIGH_WORK_ETHIC_THRESHOLD, computeAlbumStrategy, evaluateAlbumApproval } from "@/lib/engine";
 
 const TIER_BADGE: Record<string, string> = {
   underground: "bg-gray-200 text-gray-600",
@@ -33,6 +33,8 @@ export default function StudioPanel() {
   const [featGenreFilter, setFeatGenreFilter] = useState<string>("all");
   const [albumDashboard, setAlbumDashboard] = useState<Album | null>(null);
   const [releaseModal, setReleaseModal] = useState<Album | null>(null);
+  const [producerGenreFilter, setProducerGenreFilter] = useState<string>("auto");
+  const [producerSort, setProducerSort] = useState<"fit" | "quality" | "cost">("fit");
 
   const signedArtists = artists.filter((a) => a.signed && !a.onTour);
   const unreleased = songs.filter((s) => !s.released && !s.albumId);
@@ -40,6 +42,46 @@ export default function StudioPanel() {
 
   // Feature artist data (depends on selectedArtist)
   const selectedArtistObj = artists.find((a) => a.id === selectedArtist);
+
+  // Producer genre filtering & sorting
+  const artistGenre = selectedArtistObj?.genre;
+  const effectiveGenreFilter = producerGenreFilter === "auto" ? (artistGenre ?? "all") : producerGenreFilter;
+  const GENRE_FIT: Record<string, Record<string, "strong" | "good" | "neutral" | "poor">> = {
+    trap:         { trap: "strong", drill: "good", "pop-rap": "good", "boom-bap": "neutral", "r-and-b": "neutral", experimental: "poor" },
+    "boom-bap":   { "boom-bap": "strong", experimental: "good", "pop-rap": "neutral", trap: "neutral", drill: "neutral", "r-and-b": "neutral" },
+    drill:        { drill: "strong", trap: "good", "boom-bap": "neutral", "pop-rap": "neutral", "r-and-b": "poor", experimental: "neutral" },
+    "r-and-b":    { "r-and-b": "strong", "pop-rap": "good", "boom-bap": "neutral", trap: "neutral", experimental: "neutral", drill: "poor" },
+    "pop-rap":    { "pop-rap": "strong", "r-and-b": "good", trap: "good", "boom-bap": "neutral", drill: "neutral", experimental: "neutral" },
+    experimental: { experimental: "strong", "boom-bap": "good", trap: "neutral", "pop-rap": "neutral", drill: "neutral", "r-and-b": "neutral" },
+  };
+  function getProducerFit(p: Producer): "strong" | "good" | "neutral" | "poor" {
+    if (!artistGenre) return "neutral";
+    return GENRE_FIT[artistGenre]?.[p.specialty] ?? "neutral";
+  }
+  const FIT_SCORE: Record<string, number> = { strong: 3, good: 2, neutral: 1, poor: 0 };
+  const FIT_LABEL: Record<string, { text: string; cls: string }> = {
+    strong: { text: "Strong Fit", cls: "text-green-600" },
+    good:   { text: "Good Fit",   cls: "text-blue-600" },
+    neutral:{ text: "Neutral",    cls: "text-gray-400" },
+    poor:   { text: "Poor Fit",   cls: "text-red-500" },
+  };
+  const filteredProducers = producers
+    .filter((p) => {
+      if (effectiveGenreFilter === "all") return true;
+      return p.specialty === effectiveGenreFilter;
+    })
+    .sort((a, b) => {
+      switch (producerSort) {
+        case "fit": {
+          const diff = FIT_SCORE[getProducerFit(b)] - FIT_SCORE[getProducerFit(a)];
+          return diff !== 0 ? diff : b.quality - a.quality;
+        }
+        case "quality": return b.quality - a.quality;
+        case "cost": return a.costPerSong - b.costPerSong;
+        default: return 0;
+      }
+    });
+
   const availableFeatsRaw = selectedArtist ? getAvailableFeatureArtists(gameState, selectedArtist) : null;
   const availableFeats = availableFeatsRaw
     ? [
@@ -164,11 +206,13 @@ export default function StudioPanel() {
             className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[160px]"
           >
             <option value="">Producer...</option>
-            {producers.map((p) => {
+            {filteredProducers.map((p) => {
               const unlocked = isProducerUnlocked(p, { studioLevel });
+              const fit = getProducerFit(p);
+              const fitTag = fit === "strong" ? " ★" : fit === "good" ? " ●" : fit === "poor" ? " ✗" : "";
               return (
                 <option key={p.id} value={p.id} disabled={!unlocked}>
-                  {unlocked ? "" : "[LOCKED] "}{p.name} — {p.specialty} · ${(p.costPerSong / 1000).toFixed(0)}K · Q{p.quality} [{p.tier}]
+                  {unlocked ? "" : "[LOCKED] "}{p.name} — {p.specialty} · ${(p.costPerSong / 1000).toFixed(0)}K · Q{p.quality}{fitTag}
                 </option>
               );
             })}
@@ -180,6 +224,36 @@ export default function StudioPanel() {
           >
             {addFeature ? "Record (feat.)" : "Record"}
           </button>
+        </div>
+
+        {/* Producer genre filter & sort */}
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap text-xs">
+          <span className="text-gray-400">Filter:</span>
+          <select
+            value={producerGenreFilter}
+            onChange={(e) => { setProducerGenreFilter(e.target.value); setSelectedProducer(""); }}
+            className="bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-700 text-xs focus:outline-none focus:border-blue-400"
+          >
+            <option value="auto">Auto ({artistGenre ?? "all"})</option>
+            <option value="all">All Genres</option>
+            <option value="trap">Trap</option>
+            <option value="boom-bap">Boom-Bap</option>
+            <option value="drill">Drill</option>
+            <option value="r-and-b">R&B</option>
+            <option value="pop-rap">Pop-Rap</option>
+            <option value="experimental">Experimental</option>
+          </select>
+          <span className="text-gray-400 ml-1">Sort:</span>
+          <select
+            value={producerSort}
+            onChange={(e) => setProducerSort(e.target.value as "fit" | "quality" | "cost")}
+            className="bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-700 text-xs focus:outline-none focus:border-blue-400"
+          >
+            <option value="fit">Best Fit</option>
+            <option value="quality">Quality</option>
+            <option value="cost">Cheapest</option>
+          </select>
+          <span className="text-gray-300 ml-1">({filteredProducers.length} producers)</span>
         </div>
 
         {/* Album status for selected artist — compact inline */}
@@ -212,17 +286,40 @@ export default function StudioPanel() {
           </div>
         )}
 
+        {/* Album cooldown display for selected artist */}
+        {selectedArtist && !activeAlbumForSelected && (() => {
+          const a = signedArtists.find((x) => x.id === selectedArtist);
+          if (!a || !a.lastAlbumReleaseTurn || a.lastAlbumReleaseTurn === 0) return null;
+          const turnsSince = turn - a.lastAlbumReleaseTurn;
+          const canDoSecond = a.traits.workEthic >= HIGH_WORK_ETHIC_THRESHOLD;
+          const yearCooldown = canDoSecond ? Math.floor(ALBUM_YEAR_TURNS / 2) : ALBUM_YEAR_TURNS;
+          const cycleCooldown = ALBUM_CYCLE_TURNS;
+          const weeksUntilCycle = Math.max(0, cycleCooldown - turnsSince);
+          const weeksUntilYear = Math.max(0, yearCooldown - turnsSince);
+          const weeksLeft = Math.max(weeksUntilCycle, weeksUntilYear);
+          if (weeksLeft <= 0) return null;
+          return (
+            <div className="mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1 text-xs text-amber-700">
+              Album cooldown: <span className="font-semibold">{weeksLeft} weeks</span> until {a.name} can start a new album
+              {weeksUntilCycle > 0 && weeksUntilYear > weeksUntilCycle && (
+                <span className="text-amber-500 ml-1">(cycle: {weeksUntilCycle}wk, yearly: {weeksUntilYear}wk)</span>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Selected producer detail — compact inline */}
         {selectedProducer && (() => {
           const p = producers.find((x) => x.id === selectedProducer);
           const artist = signedArtists.find((a) => a.id === selectedArtist);
           if (!p) return null;
           const unlocked = isProducerUnlocked(p, { studioLevel });
-          const compatible = !!artist && artist.genre === p.specialty;
+          const fit = getProducerFit(p);
+          const fitInfo = FIT_LABEL[fit];
           return (
             <div className="mt-1 text-xs text-gray-500">
               {p.name}: <span className="font-medium text-gray-700">{p.specialty}</span>, Q{p.quality}, ${(p.costPerSong / 1000).toFixed(0)}K/song
-              {compatible && <span className="text-green-600 font-bold ml-1">Genre Match</span>}
+              {artist && <span className={`font-bold ml-1 ${fitInfo.cls}`}>{fitInfo.text}</span>}
               {!unlocked && <span className="text-red-500 ml-1">LOCKED (Studio Lv{PRODUCER_TIER_MIN_STUDIO[p.studioTierRequired]}+)</span>}
             </div>
           );
