@@ -8,7 +8,7 @@ import ArtistSprite from "./ArtistSprite";
 
 type FaSortCol = "ovr" | "age" | "potential" | "popularity" | "genre" | "fee" | "willingness";
 type SubTab = "freeAgents" | "producers";
-type FaStatusFilter = "all" | "signable" | "declined";
+type FaStatusFilter = "all" | "willing";
 
 const SIGNING_COOLDOWN = 8;
 const REP_CHANGE_OVERRIDE = 10;
@@ -72,17 +72,13 @@ export default function ScoutingPanel() {
 
   // Compute category counts for the header
   const totalMarket = freeAgentPool.length;
-  // All discovered agents have full stats — no unscouted concept
   const discoveredCount = freeAgents.length;
-  const declinedCount = freeAgents.filter((a) => isOnCooldown(a, turn, reputation)).length;
-  const signableCount = discoveredCount - declinedCount;
+  const willingCount = freeAgents.filter((a) => !isOnCooldown(a, turn, reputation) && computeWillingness(a, reputation) >= MIN_SIGNING_WILLINGNESS).length;
 
   const filteredFreeAgents = (() => {
     let pool = freeAgents;
-    if (faStatusFilter === "signable") {
-      pool = pool.filter((a) => !isOnCooldown(a, turn, reputation));
-    } else if (faStatusFilter === "declined") {
-      pool = pool.filter((a) => isOnCooldown(a, turn, reputation));
+    if (faStatusFilter === "willing") {
+      pool = pool.filter((a) => !isOnCooldown(a, turn, reputation) && computeWillingness(a, reputation) >= MIN_SIGNING_WILLINGNESS);
     }
     // "all" — show everything, declined pushed to end
 
@@ -193,7 +189,7 @@ export default function ScoutingPanel() {
           </div>
 
           {/* Market stats */}
-          <div className="grid grid-cols-3 gap-1.5 mb-2">
+          <div className="grid grid-cols-2 gap-1.5 mb-2">
             <div className="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-center">
               <div className="text-gray-900 font-bold text-sm">{totalMarket}</div>
               <div className="text-gray-400 text-[10px]">Total Market</div>
@@ -202,25 +198,20 @@ export default function ScoutingPanel() {
               <div className="text-blue-700 font-bold text-sm">{discoveredCount}</div>
               <div className="text-blue-400 text-[10px]">Discovered</div>
             </div>
-            <div className={`rounded px-2 py-1.5 text-center ${declinedCount > 0 ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-gray-200"}`}>
-              <div className={`font-bold text-sm ${declinedCount > 0 ? "text-amber-700" : "text-gray-400"}`}>{declinedCount}</div>
-              <div className={`text-[10px] ${declinedCount > 0 ? "text-amber-400" : "text-gray-400"}`}>Declined</div>
-            </div>
           </div>
 
           {/* Status filter tabs */}
           <div className="flex gap-0.5 mb-1.5">
             {([
               { key: "all" as FaStatusFilter, label: "All", count: discoveredCount },
-              { key: "signable" as FaStatusFilter, label: "Signable", count: signableCount },
-              ...(declinedCount > 0 ? [{ key: "declined" as FaStatusFilter, label: "Declined", count: declinedCount }] : []),
+              { key: "willing" as FaStatusFilter, label: "Willing to Sign", count: willingCount },
             ]).map((f) => (
               <button
                 key={f.key}
                 onClick={() => setFaStatusFilter(f.key)}
                 className={`px-2 py-1 text-[11px] font-medium rounded transition ${
                   faStatusFilter === f.key
-                    ? f.key === "declined" ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"
+                    ? "bg-indigo-100 text-indigo-700"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}
               >
@@ -305,16 +296,16 @@ export default function ScoutingPanel() {
                       statusText = `Declined · ${cooldownWks}wk`;
                       statusColor = "text-amber-600 bg-amber-50";
                     } else if (tooUnwilling) {
-                      statusText = "Not interested";
+                      statusText = "Not Interested";
                       statusColor = "text-gray-400";
                     } else if (willingness >= 70) {
-                      statusText = `${willingness}% willing`;
+                      statusText = `Willing · ${willingness}%`;
                       statusColor = "text-green-600";
                     } else if (willingness >= 45) {
-                      statusText = `${willingness}% willing`;
+                      statusText = `Hesitant · ${willingness}%`;
                       statusColor = "text-yellow-600";
                     } else {
-                      statusText = `${willingness}% willing`;
+                      statusText = `Reluctant · ${willingness}%`;
                       statusColor = "text-red-500";
                     }
 

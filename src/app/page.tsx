@@ -9,10 +9,8 @@ export default function Home() {
   const activeSlot = useGameStore((s) => s.activeSlot);
   const setActiveSlot = useGameStore((s) => s.setActiveSlot);
 
-  // Game is running — show the game
-  if (gameStarted) return <GameLayout />;
-
-  // No slot selected — show save slot picker
+  // No slot selected — show save slot picker (takes priority over gameStarted
+  // so that returning to main menu via setActiveSlot(null) always works)
   if (!activeSlot) {
     return (
       <SaveSlotScreen
@@ -20,6 +18,9 @@ export default function Home() {
       />
     );
   }
+
+  // Game is running — show the game
+  if (gameStarted) return <GameLayout />;
 
   // Slot selected but game not started — show label name input
   return <StartScreen />;
