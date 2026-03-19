@@ -8,6 +8,24 @@ import ArtistSprite from "./ArtistSprite";
 
 type FaSortCol = "ovr" | "age" | "potential" | "popularity" | "genre" | "fee" | "willingness";
 type SubTab = "freeAgents" | "producers";
+type FaStatusFilter = "all" | "scouted" | "unscouted" | "declined";
+
+const SIGNING_COOLDOWN = 8;
+const REP_CHANGE_OVERRIDE = 10;
+
+function isOnCooldown(a: Artist, turn: number, reputation: number): boolean {
+  return !!(
+    a.lastOfferOutcome === "declined" &&
+    a.lastOfferTurn &&
+    (turn - a.lastOfferTurn) < SIGNING_COOLDOWN &&
+    (reputation - (a.lastOfferReputation ?? 0)) < REP_CHANGE_OVERRIDE
+  );
+}
+
+function getCooldownWeeks(a: Artist, turn: number): number {
+  if (!a.lastOfferTurn) return 0;
+  return Math.max(0, SIGNING_COOLDOWN - (turn - a.lastOfferTurn));
+}
 
 const TIER_BADGE: Record<string, string> = {
   underground: "bg-gray-200 text-gray-600",
@@ -39,7 +57,7 @@ export default function ScoutingPanel() {
   const [faMaxAge, setFaMaxAge] = useState<number>(99);
   const [faSortBy, setFaSortBy] = useState<FaSortCol>("ovr");
   const [faSortDesc, setFaSortDesc] = useState(true);
-  const [faHideUnwilling, setFaHideUnwilling] = useState(false);
+  const [faStatusFilter, setFaStatusFilter] = useState<FaStatusFilter>("all");
   const [faPage, setFaPage] = useState(0);
   const FA_PER_PAGE = 40;
 
@@ -52,17 +70,41 @@ export default function ScoutingPanel() {
     }
   }
 
+  // Compute category counts for the header
+  const totalMarket = freeAgentPool.length;
+  const discoveredCount = freeAgents.length;
+  const scoutedCount = freeAgents.filter((a) => a.scouted).length;
+  const declinedCount = freeAgents.filter((a) => isOnCooldown(a, turn, reputation)).length;
+  const unscoutedCount = discoveredCount - scoutedCount;
+
   const filteredFreeAgents = (() => {
-    const scouted = freeAgents.filter((a) => a.scouted);
-    const unscouted = freeAgents.filter((a) => !a.scouted);
+    // Status-based filtering first
+    let pool = freeAgents;
+    if (faStatusFilter === "scouted") {
+      pool = pool.filter((a) => a.scouted && !isOnCooldown(a, turn, reputation));
+    } else if (faStatusFilter === "unscouted") {
+      pool = pool.filter((a) => !a.scouted);
+    } else if (faStatusFilter === "declined") {
+      pool = pool.filter((a) => isOnCooldown(a, turn, reputation));
+    } else {
+      // "all" — show everything, but declined artists go to the end
+    }
+
+    const scouted = pool.filter((a) => a.scouted);
+    const unscouted = pool.filter((a) => !a.scouted);
 
     const dir = faSortDesc ? -1 : 1;
     const filteredScouted = scouted
       .filter((a) => faGenreFilter === "all" || a.genre === faGenreFilter)
       .filter((a) => a.overallRating >= faMinOvr)
       .filter((a) => a.age <= faMaxAge)
-      .filter((a) => !faHideUnwilling || computeWillingness(a, reputation) >= MIN_SIGNING_WILLINGNESS)
       .sort((a, b) => {
+        // In "all" mode, push declined to end of scouted
+        if (faStatusFilter === "all") {
+          const aCd = isOnCooldown(a, turn, reputation) ? 1 : 0;
+          const bCd = isOnCooldown(b, turn, reputation) ? 1 : 0;
+          if (aCd !== bCd) return aCd - bCd;
+        }
         if (faSortBy === "ovr") return (a.overallRating - b.overallRating) * dir;
         if (faSortBy === "age") return (a.age - b.age) * dir;
         if (faSortBy === "potential") return (a.potential - b.potential) * dir;
@@ -72,7 +114,7 @@ export default function ScoutingPanel() {
         return (a.popularity - b.popularity) * dir;
       });
 
-    const filteredUnscouted = faHideUnwilling ? [] : unscouted
+    const filteredUnscouted = faStatusFilter === "declined" ? [] : unscouted
       .filter((a) => faGenreFilter === "all" || a.genre === faGenreFilter)
       .filter((a) => a.age <= faMaxAge);
 
@@ -83,7 +125,7 @@ export default function ScoutingPanel() {
   const clampedPage = Math.min(faPage, totalFaPages - 1);
   const pagedFreeAgents = filteredFreeAgents.slice(clampedPage * FA_PER_PAGE, (clampedPage + 1) * FA_PER_PAGE);
 
-  useEffect(() => { setFaPage(0); }, [faGenreFilter, faMinOvr, faMaxAge, faSortBy, faSortDesc, faHideUnwilling]);
+  useEffect(() => { setFaPage(0); }, [faGenreFilter, faMinOvr, faMaxAge, faSortBy, faSortDesc, faStatusFilter]);
 
   return (
     <div className="p-2 space-y-3">
@@ -153,16 +195,59 @@ export default function ScoutingPanel() {
       {/* ── Free Agents Sub-tab ── */}
       {subTab === "freeAgents" && (
         <section>
-          <div className="flex items-center justify-between mb-1">
+          {/* Market overview header */}
+          <div className="flex items-center justify-between mb-1.5">
             <div>
-              <h2 className="text-gray-900 font-bold text-sm">Free Agents ({filteredFreeAgents.length})</h2>
+              <h2 className="text-gray-900 font-bold text-sm">Free Agency Market</h2>
               <p className="text-gray-400 text-[11px]">
-                Scouting Lv.{scoutingLevel} · {freeAgents.filter(a => a.scouted).length}/{freeAgents.length} visible · {freeAgentPool.length} total in market
+                Scouting Lv.{scoutingLevel}
               </p>
             </div>
           </div>
 
-          {/* Filters — inline single row */}
+          {/* Three-tier market stats */}
+          <div className="grid grid-cols-4 gap-1.5 mb-2">
+            <div className="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-center">
+              <div className="text-gray-900 font-bold text-sm">{totalMarket}</div>
+              <div className="text-gray-400 text-[10px]">Total Market</div>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded px-2 py-1.5 text-center">
+              <div className="text-blue-700 font-bold text-sm">{discoveredCount}</div>
+              <div className="text-blue-400 text-[10px]">Discovered</div>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded px-2 py-1.5 text-center">
+              <div className="text-green-700 font-bold text-sm">{scoutedCount}</div>
+              <div className="text-green-400 text-[10px]">Fully Scouted</div>
+            </div>
+            <div className={`rounded px-2 py-1.5 text-center ${declinedCount > 0 ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-gray-200"}`}>
+              <div className={`font-bold text-sm ${declinedCount > 0 ? "text-amber-700" : "text-gray-400"}`}>{declinedCount}</div>
+              <div className={`text-[10px] ${declinedCount > 0 ? "text-amber-400" : "text-gray-400"}`}>Declined</div>
+            </div>
+          </div>
+
+          {/* Status filter tabs */}
+          <div className="flex gap-0.5 mb-1.5">
+            {([
+              { key: "all" as FaStatusFilter, label: "All Discovered", count: discoveredCount },
+              { key: "scouted" as FaStatusFilter, label: "Scouted", count: scoutedCount - declinedCount },
+              { key: "unscouted" as FaStatusFilter, label: "Unscouted", count: unscoutedCount },
+              ...(declinedCount > 0 ? [{ key: "declined" as FaStatusFilter, label: "Declined", count: declinedCount }] : []),
+            ]).map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFaStatusFilter(f.key)}
+                className={`px-2 py-1 text-[11px] font-medium rounded transition ${
+                  faStatusFilter === f.key
+                    ? f.key === "declined" ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                {f.label} ({f.count})
+              </button>
+            ))}
+          </div>
+
+          {/* Genre / OVR / Age filters */}
           <div className="flex items-center gap-1.5 sm:gap-1 mb-1.5 flex-wrap">
             <select
               value={faGenreFilter}
@@ -177,19 +262,21 @@ export default function ScoutingPanel() {
               <option value="pop-rap">Pop Rap</option>
               <option value="experimental">Experimental</option>
             </select>
-            <select
-              value={faMinOvr}
-              onChange={(e) => setFaMinOvr(Number(e.target.value))}
-              className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
-            >
-              <option value={0}>OVR: Any</option>
-              <option value={30}>OVR: 30+</option>
-              <option value={40}>OVR: 40+</option>
-              <option value={50}>OVR: 50+</option>
-              <option value={60}>OVR: 60+</option>
-              <option value={70}>OVR: 70+</option>
-              <option value={80}>OVR: 80+</option>
-            </select>
+            {faStatusFilter !== "unscouted" && (
+              <select
+                value={faMinOvr}
+                onChange={(e) => setFaMinOvr(Number(e.target.value))}
+                className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
+              >
+                <option value={0}>OVR: Any</option>
+                <option value={30}>OVR: 30+</option>
+                <option value={40}>OVR: 40+</option>
+                <option value={50}>OVR: 50+</option>
+                <option value={60}>OVR: 60+</option>
+                <option value={70}>OVR: 70+</option>
+                <option value={80}>OVR: 80+</option>
+              </select>
+            )}
             <select
               value={faMaxAge}
               onChange={(e) => setFaMaxAge(Number(e.target.value))}
@@ -202,15 +289,6 @@ export default function ScoutingPanel() {
               <option value={30}>Age: &le;30</option>
               <option value={35}>Age: &le;35</option>
             </select>
-            <label className="flex items-center gap-1 cursor-pointer select-none ml-1">
-              <input
-                type="checkbox"
-                checked={faHideUnwilling}
-                onChange={(e) => setFaHideUnwilling(e.target.checked)}
-                className="accent-blue-500"
-              />
-              <span className="text-[11px] text-gray-500">Hide unwilling</span>
-            </label>
           </div>
 
           {filteredFreeAgents.length === 0 && <p className="text-gray-400 text-xs">No free agents match your filters.</p>}
@@ -227,7 +305,7 @@ export default function ScoutingPanel() {
                     <SortTh col="potential" label="POT" align="center" current={faSortBy} desc={faSortDesc} onToggle={toggleFaSort} />
                     <th className="text-center py-1 px-1 font-semibold">Phase</th>
                     <SortTh col="fee" label="Ask Fee" align="right" current={faSortBy} desc={faSortDesc} onToggle={toggleFaSort} />
-                    <SortTh col="willingness" label="Willing" align="center" current={faSortBy} desc={faSortDesc} onToggle={toggleFaSort} />
+                    <th className="text-center py-1 px-1 font-semibold">Status</th>
                     <th className="text-right py-1 px-2 font-semibold"></th>
                   </tr>
                 </thead>
@@ -259,29 +337,47 @@ export default function ScoutingPanel() {
                         </tr>
                       );
                     }
+
+                    const cooldown = isOnCooldown(a, turn, reputation);
+                    const cooldownWks = getCooldownWeeks(a, turn);
                     const willingness = computeWillingness(a, reputation);
                     const tooUnwilling = willingness < MIN_SIGNING_WILLINGNESS;
-                    const willingnessColor = tooUnwilling ? "text-gray-300" : willingness >= 70 ? "text-green-600" : willingness >= 45 ? "text-yellow-600" : "text-red-500";
                     const fee1 = computeSigningFee(a, 1);
                     const ps = a.careerPhase ? phaseStyle(a.careerPhase) : null;
-                    // Signing cooldown check
-                    const SIGNING_COOLDOWN = 8;
-                    const REP_CHANGE_OVERRIDE = 10;
-                    const onCooldown = a.lastOfferOutcome === "declined" && a.lastOfferTurn
-                      && (turn - a.lastOfferTurn) < SIGNING_COOLDOWN
-                      && (reputation - (a.lastOfferReputation ?? 0)) < REP_CHANGE_OVERRIDE;
-                    const cooldownWeeks = onCooldown && a.lastOfferTurn ? SIGNING_COOLDOWN - (turn - a.lastOfferTurn) : 0;
+
+                    // Determine status display
+                    let statusText: string;
+                    let statusColor: string;
+                    if (cooldown) {
+                      statusText = `Declined · ${cooldownWks}wk`;
+                      statusColor = "text-amber-600 bg-amber-50";
+                    } else if (tooUnwilling) {
+                      statusText = "Not interested";
+                      statusColor = "text-gray-400";
+                    } else if (willingness >= 70) {
+                      statusText = `${willingness}% willing`;
+                      statusColor = "text-green-600";
+                    } else if (willingness >= 45) {
+                      statusText = `${willingness}% willing`;
+                      statusColor = "text-yellow-600";
+                    } else {
+                      statusText = `${willingness}% willing`;
+                      statusColor = "text-red-500";
+                    }
+
+                    const dimmed = cooldown || tooUnwilling;
+
                     return (
                       <tr
                         key={a.id}
-                        className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} ${tooUnwilling || onCooldown ? "opacity-50" : "hover:bg-blue-50"}`}
+                        className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} ${dimmed ? "opacity-60" : "hover:bg-blue-50"}`}
                       >
                         <td className="py-1 px-2">
                           <div className="flex items-center gap-1.5">
                             <div className="shrink-0"><ArtistSprite spriteIndex={a.spriteIndex} size={20} /></div>
                             <button
-                              onClick={tooUnwilling ? undefined : () => setProfileArtistId(a.id)}
-                              className={`font-medium text-gray-900 truncate max-w-[120px] ${!tooUnwilling ? "hover:text-indigo-600 cursor-pointer" : ""}`}
+                              onClick={dimmed ? undefined : () => setProfileArtistId(a.id)}
+                              className={`font-medium text-gray-900 truncate max-w-[120px] ${!dimmed ? "hover:text-indigo-600 cursor-pointer" : ""}`}
                             >
                               {a.name}
                             </button>
@@ -294,23 +390,21 @@ export default function ScoutingPanel() {
                         <td className="text-center py-1 px-1">
                           {ps && <span className={`${phaseStyleLight(a.careerPhase)} text-[10px] font-semibold`}>{ps.label}</span>}
                         </td>
-                        <td className="text-right py-1 px-1 text-gray-600">${(fee1 / 1000).toFixed(0)}K</td>
+                        <td className="text-right py-1 px-1 text-gray-600">{dimmed ? "--" : `$${(fee1 / 1000).toFixed(0)}K`}</td>
                         <td className="text-center py-1 px-1">
-                          <span className={`text-[10px] font-semibold ${willingnessColor}`}>
-                            {tooUnwilling ? "No" : `${willingness}%`}
+                          <span className={`text-[10px] font-semibold ${statusColor} ${cooldown ? "px-1 py-0.5 rounded" : ""}`}>
+                            {statusText}
                           </span>
                         </td>
                         <td className="text-right py-1 px-2">
-                          {onCooldown ? (
-                            <span className="text-[10px] text-amber-500 font-medium">{cooldownWeeks}wk</span>
-                          ) : !tooUnwilling ? (
+                          {!cooldown && !tooUnwilling && (
                             <button
                               onClick={() => setSigningArtist(a)}
                               className="text-[11px] text-green-600 hover:text-green-500 font-semibold"
                             >
                               Sign
                             </button>
-                          ) : null}
+                          )}
                         </td>
                       </tr>
                     );
