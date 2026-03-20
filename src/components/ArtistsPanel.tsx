@@ -6,6 +6,16 @@ import { ALBUM_CYCLE_TURNS } from "@/lib/engine";
 import { STUDIO_DATA } from "@/lib/data";
 import ArtistSprite from "./ArtistSprite";
 
+function StatDelta({ delta, turn: changeTurn, currentTurn }: { delta?: number; turn?: number; currentTurn: number }) {
+  if (!delta || delta === 0 || !changeTurn || currentTurn - changeTurn > 3) return null;
+  const isPositive = delta > 0;
+  return (
+    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-500"}`}>
+      {isPositive ? "\u25B2" : "\u25BC"}{Math.abs(delta)}
+    </span>
+  );
+}
+
 export default function ArtistsPanel() {
   const store = useGameStore();
   const { artists, money, songs, albums, producers, turn, reputation, fanbase,
@@ -173,6 +183,7 @@ export default function ArtistsPanel() {
                       index={i}
                       status={status}
                       phase={ps}
+                      turn={turn}
                       onViewProfile={() => setProfileArtistId(a.id)}
                       onRename={(newName) => renameArtist(a.id, newName)}
                       onDrop={() => { if (window.confirm(`Are you sure you want to drop ${a.name}?`)) dropArtist(a.id); }}
@@ -245,6 +256,7 @@ function RosterRow({
   index,
   status,
   phase,
+  turn,
   onViewProfile,
   onRename,
   onDrop,
@@ -253,6 +265,7 @@ function RosterRow({
   index: number;
   status: { text: string; color: string };
   phase: { label: string; color: string } | null;
+  turn: number;
   onViewProfile: () => void;
   onRename: (newName: string) => void;
   onDrop: () => void;
@@ -304,8 +317,8 @@ function RosterRow({
       </td>
       <td className="text-center py-1 px-1 text-gray-600">{a.age}</td>
       <td className="py-1 px-1 text-gray-600">{a.genre}</td>
-      <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}</td>
-      <td className="text-center py-1 px-1 text-gray-600">{a.potential}</td>
+      <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}<StatDelta delta={a.ovrChangeDelta} turn={a.ovrChangeTurn} currentTurn={turn} /></td>
+      <td className="text-center py-1 px-1 text-gray-600">{a.potential}<StatDelta delta={a.potChangeDelta} turn={a.potChangeTurn} currentTurn={turn} /></td>
       <td className="text-center py-1 px-1">
         {a.contractAlbumsLeft === 0
           ? <span className="text-red-500 font-semibold">Expired</span>
@@ -537,7 +550,7 @@ function ArtistProfileModal({
           {/* Attributes */}
           <div>
             <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">
-              Attributes <span className="text-gray-300 font-normal normal-case">OVR {artist.overallRating}</span>
+              Attributes <span className="text-gray-300 font-normal normal-case">OVR {artist.overallRating}<StatDelta delta={artist.ovrChangeDelta} turn={artist.ovrChangeTurn} currentTurn={turn} /></span>
             </h3>
             <div className="space-y-1.5">
               {Object.entries(ATTRIBUTE_GROUPS).map(([group, keys]) => (

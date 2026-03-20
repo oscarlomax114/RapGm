@@ -7,6 +7,16 @@ import type { Artist, Genre } from "@/lib/types";
 import { getVisibleFreeAgents } from "@/lib/engine";
 import type { GameState } from "@/lib/types";
 
+function StatDelta({ delta, turn: changeTurn, currentTurn }: { delta?: number; turn?: number; currentTurn: number }) {
+  if (!delta || delta === 0 || !changeTurn || currentTurn - changeTurn > 3) return null;
+  const isPositive = delta > 0;
+  return (
+    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-500"}`}>
+      {isPositive ? "\u25B2" : "\u25BC"}{Math.abs(delta)}
+    </span>
+  );
+}
+
 const GENRE_COLORS: Record<string, string> = {
   trap: "bg-orange-50 text-orange-700",
   "boom-bap": "bg-yellow-50 text-yellow-700",
@@ -83,7 +93,7 @@ function ComparisonBar({ label, a, b, max }: { label: string; a: number; b: numb
 // ── Main panel ───────────────────────────────────────────────────────────────
 export default function RankingsPanel() {
   const store = useGameStore();
-  const { artists, rivalLabels, labelName, songs } = store;
+  const { artists, rivalLabels, labelName, songs, turn } = store;
 
   // Sub-tab
   const [subTab, setSubTab] = useState<SubTab>("all");
@@ -348,12 +358,12 @@ export default function RankingsPanel() {
                       <td className={`px-2 py-1.5 font-semibold tabular-nums ${
                         a.overallRating >= 80 ? "text-green-600" : a.overallRating >= 60 ? "text-gray-800" : "text-gray-500"
                       }`}>
-                        {Math.round(a.overallRating)}
+                        {Math.round(a.overallRating)}<StatDelta delta={a.ovrChangeDelta} turn={a.ovrChangeTurn} currentTurn={turn} />
                       </td>
                       <td className={`px-2 py-1.5 tabular-nums ${
                         a.potential >= 85 ? "text-purple-600 font-semibold" : a.potential >= 70 ? "text-gray-700" : "text-gray-500"
                       }`}>
-                        {a.potential}
+                        {a.potential}<StatDelta delta={a.potChangeDelta} turn={a.potChangeTurn} currentTurn={turn} />
                       </td>
                       <td className="px-2 py-1.5 text-gray-600 tabular-nums">{a.popularity}</td>
                       <td className="px-2 py-1.5 text-gray-600 tabular-nums">{formatNumber(a.fanbase)}</td>

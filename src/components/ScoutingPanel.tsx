@@ -6,6 +6,16 @@ import { computeWillingness, MIN_SIGNING_WILLINGNESS } from "@/lib/engine";
 import { isProducerUnlocked, PRODUCER_TIER_MIN_STUDIO } from "@/lib/data";
 import ArtistSprite from "./ArtistSprite";
 
+function StatDelta({ delta, turn: changeTurn, currentTurn }: { delta?: number; turn?: number; currentTurn: number }) {
+  if (!delta || delta === 0 || !changeTurn || currentTurn - changeTurn > 3) return null;
+  const isPositive = delta > 0;
+  return (
+    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-500"}`}>
+      {isPositive ? "\u25B2" : "\u25BC"}{Math.abs(delta)}
+    </span>
+  );
+}
+
 type FaSortCol = "ovr" | "age" | "potential" | "popularity" | "genre" | "fee" | "willingness";
 type SubTab = "freeAgents" | "producers";
 type FaStatusFilter = "all" | "willing";
@@ -120,6 +130,7 @@ export default function ScoutingPanel() {
           songs={songs}
           albums={albums}
           producers={producers}
+          turn={turn}
           onClose={() => setProfileArtistId(null)}
         />
       )}
@@ -353,8 +364,8 @@ export default function ScoutingPanel() {
                         </td>
                         <td className="text-center py-1 px-1 text-gray-600">{a.age}</td>
                         <td className="py-1 px-1 text-gray-600">{a.genre}</td>
-                        <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}</td>
-                        <td className="text-center py-1 px-1 text-gray-600">{a.potential}</td>
+                        <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}<StatDelta delta={a.ovrChangeDelta} turn={a.ovrChangeTurn} currentTurn={turn} /></td>
+                        <td className="text-center py-1 px-1 text-gray-600">{a.potential}<StatDelta delta={a.potChangeDelta} turn={a.potChangeTurn} currentTurn={turn} /></td>
                         <td className="text-center py-1 px-1">
                           {ps && <span className={`${phaseStyleLight(a.careerPhase)} text-[10px] font-semibold`}>{ps.label}</span>}
                         </td>
@@ -546,12 +557,14 @@ function ArtistProfileModal({
   songs,
   albums,
   producers,
+  turn,
   onClose,
 }: {
   artist: Artist;
   songs: Song[];
   albums: Album[];
   producers: Producer[];
+  turn: number;
   onClose: () => void;
 }) {
   const artistSongs = songs
@@ -622,7 +635,7 @@ function ArtistProfileModal({
           {/* Attributes */}
           <div>
             <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">
-              Attributes <span className="text-gray-300 font-normal normal-case">OVR {artist.overallRating}</span>
+              Attributes <span className="text-gray-300 font-normal normal-case">OVR {artist.overallRating}<StatDelta delta={artist.ovrChangeDelta} turn={artist.ovrChangeTurn} currentTurn={turn} /></span>
             </h3>
             <div className="space-y-1.5">
               {Object.entries(ATTRIBUTE_GROUPS).map(([group, keys]) => (

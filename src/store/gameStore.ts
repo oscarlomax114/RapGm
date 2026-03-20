@@ -273,7 +273,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
   activeSlot: null,
 
   setActiveSlot: (slot) => {
-    set({ activeSlot: slot });
+    // When switching to a new slot (or clearing), reset game state to prevent
+    // stale data from a previously loaded game bleeding into a new one
+    if (slot === null) {
+      set({ gameStarted: false, gameOver: false, activeSlot: null });
+    } else {
+      // Reset to clean default state before activating new slot
+      // This prevents deleted-then-recreated slots from loading old data
+      set({
+        labelName: "", money: 0, reputation: 0, fanbase: 0, turn: 0,
+        artists: [], songs: [], albums: [], chart: [], recentEvents: [],
+        gameStarted: false, gameOver: false, activeSlot: slot,
+      });
+    }
   },
 
   loadSaveState: (state, slot) => {
@@ -326,7 +338,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get() as GameState;
     const artist = [...state.artists, ...state.freeAgentPool].find((a) => a.id === artistId);
     const { newState, error } = signArtist(state, artistId, fee, albumCount);
-    if (error) return error;
+    if (error) {
+      // Still apply state changes on decline — the artist's lastOfferOutcome/cooldown
+      // fields are updated in newState even when the offer is rejected
+      set(newState);
+      return error;
+    }
     set(addTx(newState, { turn: state.turn, type: "signing", description: `Signed ${artist?.name ?? "?"} to ${albumCount}-album deal`, amount: -fee, category: "expense", artistName: artist?.name, details: `${albumCount}-album contract` }));
     return null;
   },

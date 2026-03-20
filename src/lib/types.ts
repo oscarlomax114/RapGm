@@ -76,6 +76,7 @@ export interface Artist {
   attributes: ArtistAttributes; // 15 skill attributes
   overallRating: number;    // average of all 15 attributes; drives song quality
   potential: number;        // talent ceiling (0–100)
+  baseOVR: number;          // immutable talent ceiling set at generation (drives potential)
   age: number;
   peakAge: number;          // age at which talent peaks (26–32)
 
@@ -123,6 +124,12 @@ export interface Artist {
   yearlyControversies: number;      // scandals/beefs this year
   lastProgressionTurn: number;      // last turn yearly progression was applied
   peakOverall: number;              // highest OVR ever reached (for decline detection)
+
+  // ── Rating change indicators (temporary UI display) ──────────
+  ovrChangeDelta?: number;       // most recent OVR change magnitude (+/-)
+  ovrChangeTurn?: number;        // turn when the change happened
+  potChangeDelta?: number;       // most recent potential change magnitude (+/-)
+  potChangeTurn?: number;        // turn when the change happened
 
   // ── Legal / Jail state ──────────────────────────────────────────
   legalState?: LegalState;          // undefined = no legal trouble

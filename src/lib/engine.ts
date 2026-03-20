@@ -18,6 +18,14 @@ function uid() {
   return Math.random().toString(36).slice(2, 9);
 }
 
+// ── Safe baseOVR accessor (backward-compat for saves without baseOVR) ────────
+// For existing artists missing baseOVR, estimate from potential + age.
+function safeBaseOVR(artist: { baseOVR?: number; potential: number; overallRating: number; peakOverall?: number }): number {
+  if (artist.baseOVR !== undefined && artist.baseOVR > 0) return artist.baseOVR;
+  // Best estimate: use the higher of potential and peakOverall as a proxy for the talent ceiling
+  return Math.max(artist.potential, artist.peakOverall ?? artist.overallRating);
+}
+
 // ── Diminishing returns for reputation gains ──────────────────────────────────
 // At low rep, gains are full. Above 50, gains taper. Above 80, gains are heavily reduced.
 // This prevents snowballing past mid-game and makes elite reputation feel earned.
@@ -283,15 +291,13 @@ export function applyAlbumDevelopment(artist: Artist, artistDevLevel = 0): {
     newOverall = computeOverall(updated);
   }
 
-  // Potential should be stable — it represents the artist's ceiling, not a recalculated value.
-  // Only reduce potential slightly if the artist is old and declining (prevents infinite growth).
-  let newPotential = potential;
+  // Recalculate potential using the true talent ceiling (baseOVR)
+  const stage = artist.careerPhase ?? "unknown";
+  let newPotential = computeDynamicPotential(newOverall, age, safeBaseOVR(artist), artist.archetype, stage);
+  // Slight ceiling erosion on decline after 30
   if (age >= 30 && delta < 0) {
-    // Slight ceiling erosion on decline: lose 1 potential point per decline event after 30
-    newPotential = Math.max(newOverall, potential - 1);
+    newPotential = Math.max(newOverall, newPotential - 1);
   }
-  // Potential should never be below current OVR
-  newPotential = Math.max(newOverall, newPotential);
 
   return { overallRating: newOverall, potential: newPotential, attributes: updated, event };
 }
@@ -428,7 +434,7 @@ export function applyYearlyProgression(
 
   // ── Dynamic potential update ──
   const newPotential = computeDynamicPotential(
-    newOverall, age, artist.peakOverall ?? newOverall, archetype, stage,
+    newOverall, age, safeBaseOVR(artist), archetype, stage,
   );
 
   // ── Archetype transitions ──
@@ -749,7 +755,7 @@ export function releaseSong(state: GameState, songId: string): GameState {
   if (!song.albumId) {
     const artist = state.artists.find((a) => a.id === song.artistId);
     if (artist && artist.age <= 30 && Math.random() < 0.15) {
-      const pot = computePotential(artist.overallRating, artist.age);
+      const pot = artist.potential;
       const keys = Object.keys(artist.attributes) as (keyof ArtistAttributes)[];
       const selected = [...keys].sort(() => Math.random() - 0.5).slice(0, 2);
       const updated = { ...artist.attributes };
@@ -757,9 +763,22 @@ export function releaseSong(state: GameState, songId: string): GameState {
         updated[k] = Math.min(Math.min(pot + 5, 100), updated[k] + 1);
       }
       const newOvr = computeOverall(updated);
+      const newPot = computeDynamicPotential(newOvr, artist.age, safeBaseOVR(artist), artist.archetype, artist.careerPhase);
+      const singleOvrDelta = newOvr - artist.overallRating;
+      const singlePotDelta = newPot - artist.potential;
       updatedArtists = state.artists.map((a) =>
         a.id === artist.id
-          ? { ...a, attributes: updated, overallRating: newOvr, potential: computePotential(newOvr, a.age), minSongQuality: Math.floor(newOvr * (0.50 + a.traits.competitiveness / 200)) }
+          ? {
+              ...a,
+              attributes: updated,
+              overallRating: newOvr,
+              potential: newPot,
+              peakOverall: Math.max(a.peakOverall, newOvr),
+              minSongQuality: Math.floor(newOvr * (0.50 + a.traits.competitiveness / 200)),
+              // Rating change indicators
+              ...(singleOvrDelta !== 0 ? { ovrChangeDelta: singleOvrDelta, ovrChangeTurn: state.turn } : {}),
+              ...(singlePotDelta !== 0 ? { potChangeDelta: singlePotDelta, potChangeTurn: state.turn } : {}),
+            }
           : a
       );
     }
@@ -1170,6 +1189,17 @@ export function sendOnTour(
   const t = TOUR_DATA[tourType];
   if (t.requiresHQ && state.studioLevel < 7)
     return { newState: state, error: `Need Studio Level 7+ to book a ${t.label}.` };
+
+  // Fan base gating: tour size must be proportional to artist draw
+  const fanbase = artist.fanbase;
+  if (tourType === "world_tour" && fanbase < 500000)
+    return { newState: state, error: `${artist.name} needs 500K+ fans for a World Tour (current: ${fanbase >= 1000 ? `${(fanbase / 1000).toFixed(0)}K` : fanbase}).` };
+  if (tourType === "major_tour" && fanbase < 100000)
+    return { newState: state, error: `${artist.name} needs 100K+ fans for a Major Tour (current: ${fanbase >= 1000 ? `${(fanbase / 1000).toFixed(0)}K` : fanbase}).` };
+  if (tourType === "national_tour" && fanbase < 25000)
+    return { newState: state, error: `${artist.name} needs 25K+ fans for a National Tour (current: ${fanbase >= 1000 ? `${(fanbase / 1000).toFixed(0)}K` : fanbase}).` };
+  if (tourType === "regional_tour" && fanbase < 5000)
+    return { newState: state, error: `${artist.name} needs 5K+ fans for a Regional Tour (current: ${fanbase.toLocaleString()}).` };
 
   // National/Major/World tours have a cooldown tracked via lastMajorTourTurn
   if (t.cooldown > 0 && artist.lastMajorTourTurn > 0) {
@@ -1957,11 +1987,13 @@ export function advanceTurn(state: GameState): GameState {
       }, 0) * (0.8 + Math.random() * 0.4))
     : 0;
 
-  // Brand deal / endorsement revenue — unlocks at rep 50+ AND requires meaningful artist roster
-  // Requires at least one artist with 25K+ fans or popularity 40+ to attract brand interest
-  const hasMarketableArtist = s.artists.some(a => a.signed && (a.fanbase >= 25000 || a.popularity >= 40));
-  const brandDealRevenue = s.reputation >= 50 && hasMarketableArtist
-    ? Math.floor((s.reputation - 40) * (s.fanbase / 100000) * 150 * (1 + s.turn / 520) * (0.8 + Math.random() * 0.4))
+  // Brand deal / endorsement revenue — unlocks at rep 70+ AND requires a star artist
+  // Requires at least one artist with 50K+ fans AND popularity 50+ to attract brand interest
+  // Deals only trigger ~40% of weeks (not routine income)
+  const hasMarketableArtist = s.artists.some(a => a.signed && a.fanbase >= 50000 && a.popularity >= 50);
+  const brandDealRoll = Math.random();
+  const brandDealRevenue = s.reputation >= 70 && hasMarketableArtist && brandDealRoll < 0.40
+    ? Math.floor((s.reputation - 60) * (s.fanbase / 150000) * 120 * (1 + s.turn / 520) * (0.8 + Math.random() * 0.4))
     : 0;
 
   // Per-week tour payouts + artist updates
@@ -1987,7 +2019,7 @@ export function advanceTurn(state: GameState): GameState {
       let potential = a.potential;
       if (s.turn % 52 === 0) {
         age += 1;
-        potential = computePotential(a.overallRating, age);
+        potential = computeDynamicPotential(a.overallRating, age, safeBaseOVR(a), a.archetype, a.careerPhase);
       }
       return { ...a, age, potential };
     }
@@ -2001,7 +2033,7 @@ export function advanceTurn(state: GameState): GameState {
     // Age advances every 52 turns (one in-game year)
     if (s.turn % 52 === 0) {
       age += 1;
-      potential = computePotential(overallRating, age);
+      potential = computeDynamicPotential(overallRating, age, safeBaseOVR(a), a.archetype, a.careerPhase);
 
       // Retirement warning for artists age 38+
       if (age >= 38 && age < 40) {
@@ -2518,6 +2550,8 @@ export function advanceTurn(state: GameState): GameState {
         });
       }
 
+      const ovrDelta = result.overallRating - a.overallRating;
+      const potDelta = result.potential - a.potential;
       return {
         ...a,
         overallRating: result.overallRating,
@@ -2526,6 +2560,9 @@ export function advanceTurn(state: GameState): GameState {
         archetype: result.archetype,
         peakOverall: Math.max(a.peakOverall ?? result.overallRating, result.overallRating),
         lastProgressionTurn: s.turn,
+        // Rating change indicators
+        ...(ovrDelta !== 0 ? { ovrChangeDelta: ovrDelta, ovrChangeTurn: s.turn } : {}),
+        ...(potDelta !== 0 ? { potChangeDelta: potDelta, potChangeTurn: s.turn } : {}),
         // Reset yearly tracking for the new year
         yearlyReleasesQuality: [],
         yearlyChartsWeeks: 0,
@@ -3167,12 +3204,15 @@ export function releaseAlbum(
   const updatedArtists = state.artists.map((a) => {
     if (a.id !== album.artistId) return a;
     const newOvr = devResult ? devResult.overallRating : a.overallRating;
+    const newPot = devResult ? devResult.potential : a.potential;
+    const albumOvrDelta = newOvr - a.overallRating;
+    const albumPotDelta = newPot - a.potential;
     return {
       ...a,
       contractAlbumsLeft: Math.max(0, a.contractAlbumsLeft - 1),
       popularity: clamp(a.popularity + Math.floor(qualityScore * 0.1), 0, 100),
       overallRating: newOvr,
-      potential: devResult ? devResult.potential : a.potential,
+      potential: newPot,
       attributes: devResult ? devResult.attributes : a.attributes,
       morale: clamp(a.morale + (approval?.moralePenalty ?? 0), 0, 100),
       lastAlbumReleaseTurn: state.turn,
@@ -3181,6 +3221,9 @@ export function releaseAlbum(
       momentum: clamp((a.momentum ?? 50) + Math.floor(qualityScore * 0.15), 0, 100),
       buzz: clamp((a.buzz ?? 30) + Math.floor(qualityScore * 0.10), 0, 100),
       yearlyReleasesQuality: [...(a.yearlyReleasesQuality ?? []), qualityScore],
+      // Rating change indicators
+      ...(albumOvrDelta !== 0 ? { ovrChangeDelta: albumOvrDelta, ovrChangeTurn: state.turn } : {}),
+      ...(albumPotDelta !== 0 ? { potChangeDelta: albumPotDelta, potChangeTurn: state.turn } : {}),
     };
   });
 

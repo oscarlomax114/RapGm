@@ -765,6 +765,7 @@ export function generateArtist(id: string, signed = false): Artist {
     attributes,
     overallRating,
     potential,
+    baseOVR,
     age,
     peakAge,
     fatigue: 0,

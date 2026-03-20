@@ -162,6 +162,7 @@ export default function StudioPanel() {
           onRemove={(songId) => removeSongFromAlbum(albumDashboard.id, songId)}
           onSetStatus={(songId, status) => setSongAlbumStatus(songId, status)}
           onScrap={(songId) => scrapSong(songId)}
+          onReleaseSingle={(songId) => releaseTrack(songId)}
           onDropAlbum={() => { setReleaseModal(albumDashboard); setAlbumDashboard(null); }}
           onClose={() => setAlbumDashboard(null)}
         />
@@ -884,6 +885,7 @@ function AlbumDashboardModal({
   onRemove,
   onSetStatus,
   onScrap,
+  onReleaseSingle,
   onDropAlbum,
   onClose,
 }: {
@@ -895,6 +897,7 @@ function AlbumDashboardModal({
   onRemove: (songId: string) => string | null;
   onSetStatus: (songId: string, status: AlbumStatus) => void;
   onScrap: (songId: string) => string | null;
+  onReleaseSingle: (songId: string) => string | null;
   onDropAlbum: () => void;
   onClose: () => void;
 }) {
@@ -930,6 +933,7 @@ function AlbumDashboardModal({
   );
   const standaloneAvailable = unreleasedNotOnAlbum.filter((s) => s.wasStandalone);
   const otherAlbumAvailable = unreleasedNotOnAlbum.filter((s) => !s.wasStandalone && s.albumId && s.albumId !== album.id);
+  const unassignedAvailable = unreleasedNotOnAlbum.filter((s) => !s.wasStandalone && !s.albumId);
 
   const confirmedCount = confirmed.length;
   const metrics = computeAlbumMetrics(confirmed, artist?.popularity ?? 0);
@@ -995,6 +999,9 @@ function AlbumDashboardModal({
           )}
           {bucket !== "scrap" && (
             <button onClick={() => onSetStatus(s.id, "scrap")} className="text-[10px] px-1 py-0.5 rounded border border-red-200 text-red-500 hover:bg-red-100 transition">Scrap</button>
+          )}
+          {!isSingle && bucket === "confirmed" && releasedFromAlbum < maxSingles && (
+            <button onClick={() => act(() => onReleaseSingle(s.id))} className="text-[10px] px-1 py-0.5 rounded border border-blue-200 text-blue-600 hover:bg-blue-100 transition" title="Release as single">Single</button>
           )}
           <button onClick={() => act(() => onRemove(s.id))} className="text-[10px] px-1 py-0.5 rounded border border-gray-200 text-gray-400 hover:text-gray-700 transition" title="Remove from album">✕</button>
         </div>
@@ -1124,6 +1131,36 @@ function AlbumDashboardModal({
             <div>
               <div className="text-red-500 text-xs font-medium uppercase tracking-wider mb-1">Scrap ({scrapped.length})</div>
               <div className="space-y-1">{scrapped.map((s, i) => <SongRow key={s.id} s={s} i={confirmed.length + maybe.length + i} bucket="scrap" />)}</div>
+            </div>
+          )}
+
+          {/* Unreleased unassigned songs available to add */}
+          {unassignedAvailable.length > 0 && (
+            <div>
+              <div className="text-indigo-600 text-xs font-medium uppercase tracking-wider mb-1">
+                Available Songs ({unassignedAvailable.length})
+              </div>
+              <div className="space-y-1">
+                {unassignedAvailable.map((s) => {
+                  const belowStandard = minQ > 0 && s.quality < minQ;
+                  return (
+                    <div key={s.id} className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 rounded px-2 py-1 text-xs">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-gray-700 font-medium">{s.title}</span>
+                        <span className={`ml-1 ${belowStandard ? "text-red-500" : "text-gray-400"}`}>
+                          Q{s.quality}{belowStandard ? " !" : ""} VP{s.viralPotential}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => act(() => onAdd(s.id))}
+                        className="text-[10px] text-indigo-600 hover:text-indigo-500 border border-indigo-300 hover:border-indigo-500 px-1.5 py-0.5 rounded transition shrink-0"
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
