@@ -11,7 +11,7 @@ function StatDelta({ delta, turn: changeTurn, currentTurn }: { delta?: number; t
   if (!delta || delta === 0 || !changeTurn || currentTurn - changeTurn > 3) return null;
   const isPositive = delta > 0;
   return (
-    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-500"}`}>
+    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-400"}`}>
       {isPositive ? "\u25B2" : "\u25BC"}{Math.abs(delta)}
     </span>
   );
@@ -20,7 +20,7 @@ function StatDelta({ delta, turn: changeTurn, currentTurn }: { delta?: number; t
 const GENRE_COLORS: Record<string, string> = {
   trap: "bg-orange-50 text-orange-700",
   "boom-bap": "bg-yellow-50 text-yellow-700",
-  drill: "bg-red-50 text-red-700",
+  drill: "bg-red-950/50 text-red-400",
   "r-and-b": "bg-pink-50 text-pink-700",
   "pop-rap": "bg-purple-50 text-purple-700",
   experimental: "bg-cyan-50 text-cyan-700",
@@ -62,10 +62,10 @@ function ComparisonBar({ label, a, b, max }: { label: string; a: number; b: numb
     <div className="grid grid-cols-[1fr_80px_1fr] items-center gap-2 text-xs py-1">
       {/* left value */}
       <div className="flex items-center justify-end gap-2">
-        <span className={`font-semibold tabular-nums ${aWins ? "text-green-600" : bWins ? "text-red-500" : "text-gray-600"}`}>
+        <span className={`font-semibold tabular-nums ${aWins ? "text-green-400" : bWins ? "text-red-400" : "text-neutral-400"}`}>
           {typeof a === "number" ? a.toLocaleString() : a}
         </span>
-        <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="w-24 h-2 bg-neutral-900 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full ${aWins ? "bg-green-400" : bWins ? "bg-red-300" : "bg-gray-300"}`}
             style={{ width: `${Math.min(pctA, 100)}%`, marginLeft: "auto" }}
@@ -73,16 +73,16 @@ function ComparisonBar({ label, a, b, max }: { label: string; a: number; b: numb
         </div>
       </div>
       {/* label */}
-      <span className="text-center text-gray-500 font-medium">{label}</span>
+      <span className="text-center text-neutral-500 font-medium">{label}</span>
       {/* right value */}
       <div className="flex items-center gap-2">
-        <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="w-24 h-2 bg-neutral-900 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full ${bWins ? "bg-green-400" : aWins ? "bg-red-300" : "bg-gray-300"}`}
             style={{ width: `${Math.min(pctB, 100)}%` }}
           />
         </div>
-        <span className={`font-semibold tabular-nums ${bWins ? "text-green-600" : aWins ? "text-red-500" : "text-gray-600"}`}>
+        <span className={`font-semibold tabular-nums ${bWins ? "text-green-400" : aWins ? "text-red-400" : "text-neutral-400"}`}>
           {typeof b === "number" ? b.toLocaleString() : b}
         </span>
       </div>
@@ -198,7 +198,7 @@ export default function RankingsPanel() {
   // ── Column header button ──────────────────────────────────────────────────
   const ColHeader = ({ label, sortKeyName, className }: { label: string; sortKeyName: SortKey; className?: string }) => (
     <th
-      className={`px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-800 select-none whitespace-nowrap ${className ?? ""}`}
+      className={`px-2 py-2 text-left text-[10px] font-semibold text-neutral-500 uppercase tracking-wide cursor-pointer hover:text-gray-800 select-none whitespace-nowrap ${className ?? ""}`}
       onClick={() => toggleSort(sortKeyName)}
     >
       {label}
@@ -209,13 +209,13 @@ export default function RankingsPanel() {
   return (
     <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
       {/* Sub-tab bar */}
-      <div className="flex gap-1 bg-gray-100 rounded-md p-1 w-fit">
+      <div className="flex gap-1 bg-neutral-900 rounded-md p-1 w-fit">
         {(["all", "compare"] as SubTab[]).map((t) => (
           <button
             key={t}
             onClick={() => setSubTab(t)}
             className={`px-4 py-1.5 text-xs font-medium rounded transition-colors ${
-              subTab === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              subTab === t ? "bg-neutral-950 text-gray-100 shadow-sm" : "text-neutral-500 hover:text-neutral-300"
             }`}
           >
             {t === "all" ? "All Artists" : "Compare"}
@@ -225,12 +225,12 @@ export default function RankingsPanel() {
 
       {/* ── ALL ARTISTS TAB ──────────────────────────────────────────────────── */}
       {subTab === "all" && (
-        <section className="bg-white border border-gray-200 rounded-md">
+        <section className="bg-neutral-950 border border-neutral-800 rounded-md">
           {/* Filter bar */}
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-neutral-800/50 bg-black/50">
             {/* Pool filter */}
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-gray-500 font-medium">Pool:</span>
+              <span className="text-neutral-500 font-medium">Pool:</span>
               {(["all", "signed", "freeAgent"] as PoolFilter[]).map((p) => (
                 <button
                   key={p}
@@ -238,7 +238,7 @@ export default function RankingsPanel() {
                   className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                     poolFilter === p
                       ? "bg-blue-100 text-blue-700"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                      : "bg-neutral-900 text-neutral-500 hover:bg-neutral-800"
                   }`}
                 >
                   {p === "all" ? "All" : p === "signed" ? "Signed Only" : "Free Agents"}
@@ -248,11 +248,11 @@ export default function RankingsPanel() {
 
             {/* Genre */}
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-gray-500 font-medium">Genre:</span>
+              <span className="text-neutral-500 font-medium">Genre:</span>
               <select
                 value={genreFilter}
                 onChange={(e) => { setGenreFilter(e.target.value); setPage(0); }}
-                className="border border-gray-200 rounded px-2 py-1 text-xs bg-white text-gray-700"
+                className="border border-neutral-800 rounded px-2 py-1 text-xs bg-neutral-950 text-neutral-300"
               >
                 <option value="All">All</option>
                 {ALL_GENRES.map((g) => (
@@ -263,7 +263,7 @@ export default function RankingsPanel() {
 
             {/* Min OVR */}
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-gray-500 font-medium">Min OVR:</span>
+              <span className="text-neutral-500 font-medium">Min OVR:</span>
               <input
                 type="range"
                 min={0}
@@ -278,36 +278,36 @@ export default function RankingsPanel() {
                 max={99}
                 value={minOvr}
                 onChange={(e) => { setMinOvr(Math.max(0, Math.min(99, Number(e.target.value)))); setPage(0); }}
-                className="w-10 border border-gray-200 rounded px-1 py-0.5 text-xs text-center bg-white text-gray-700"
+                className="w-10 border border-neutral-800 rounded px-1 py-0.5 text-xs text-center bg-neutral-950 text-neutral-300"
               />
             </div>
 
             {/* Max Age */}
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-gray-500 font-medium">Max Age:</span>
+              <span className="text-neutral-500 font-medium">Max Age:</span>
               <input
                 type="number"
                 min={14}
                 max={99}
                 value={maxAge}
                 onChange={(e) => { setMaxAge(Math.max(14, Math.min(99, Number(e.target.value)))); setPage(0); }}
-                className="w-12 border border-gray-200 rounded px-1 py-0.5 text-xs text-center bg-white text-gray-700"
+                className="w-12 border border-neutral-800 rounded px-1 py-0.5 text-xs text-center bg-neutral-950 text-neutral-300"
               />
             </div>
 
             {/* Count */}
-            <span className="text-[10px] text-gray-400 ml-auto">{filtered.length} artists</span>
+            <span className="text-[10px] text-neutral-500 ml-auto">{filtered.length} artists</span>
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide w-8">#</th>
+                <tr className="border-b border-neutral-800/50">
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-neutral-500 uppercase tracking-wide w-8">#</th>
                   <th className="px-1 py-2 w-8"></th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Label</th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-neutral-500 uppercase tracking-wide">Name</th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-neutral-500 uppercase tracking-wide">Label</th>
                   <ColHeader label="Genre" sortKeyName="genre" />
                   <ColHeader label="Age" sortKeyName="age" />
                   <ColHeader label="OVR" sortKeyName="overallRating" />
@@ -315,14 +315,14 @@ export default function RankingsPanel() {
                   <ColHeader label="POP" sortKeyName="popularity" />
                   <ColHeader label="Fans" sortKeyName="fanbase" />
                   <ColHeader label="MOM" sortKeyName="momentum" />
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Phase</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Hits</th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-neutral-500 uppercase tracking-wide">Phase</th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-neutral-500 uppercase tracking-wide">Hits</th>
                 </tr>
               </thead>
               <tbody>
                 {pageSlice.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="px-4 py-8 text-center text-gray-400">No artists match the current filters.</td>
+                    <td colSpan={13} className="px-4 py-8 text-center text-neutral-500">No artists match the current filters.</td>
                   </tr>
                 )}
                 {pageSlice.map((a, idx) => {
@@ -333,47 +333,47 @@ export default function RankingsPanel() {
                       key={`${a.id}-${a.label}`}
                       className={`border-b border-gray-50 ${
                         isPlayer
-                          ? "bg-blue-50/60"
+                          ? "bg-purple-950/50/60"
                           : idx % 2 === 0
-                          ? "bg-white"
-                          : "bg-gray-50/40"
+                          ? "bg-neutral-950"
+                          : "bg-black/60"
                       }`}
                     >
-                      <td className="px-2 py-1.5 text-gray-400 font-medium tabular-nums">{rank}</td>
+                      <td className="px-2 py-1.5 text-neutral-500 font-medium tabular-nums">{rank}</td>
                       <td className="px-1 py-1">
                         <ArtistSprite spriteIndex={a.spriteIndex} size={24} />
                       </td>
-                      <td className="px-2 py-1.5 text-gray-900 font-medium truncate max-w-[140px]">{a.name}</td>
+                      <td className="px-2 py-1.5 text-gray-100 font-medium truncate max-w-[140px]">{a.name}</td>
                       <td className={`px-2 py-1.5 truncate max-w-[120px] ${
-                        isPlayer ? "text-blue-600 font-medium" : a.label === "Free Agent" ? "text-gray-400 italic" : "text-gray-600"
+                        isPlayer ? "text-purple-400 font-medium" : a.label === "Free Agent" ? "text-neutral-500 italic" : "text-neutral-400"
                       }`}>
                         {a.label}
                       </td>
                       <td className="px-2 py-1.5">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${GENRE_COLORS[a.genre] ?? "bg-gray-100 text-gray-600"}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${GENRE_COLORS[a.genre] ?? "bg-neutral-900 text-neutral-400"}`}>
                           {a.genre}
                         </span>
                       </td>
-                      <td className="px-2 py-1.5 text-gray-600 tabular-nums">{a.age}</td>
+                      <td className="px-2 py-1.5 text-neutral-400 tabular-nums">{a.age}</td>
                       <td className={`px-2 py-1.5 font-semibold tabular-nums ${
-                        a.overallRating >= 80 ? "text-green-600" : a.overallRating >= 60 ? "text-gray-800" : "text-gray-500"
+                        a.overallRating >= 80 ? "text-green-400" : a.overallRating >= 60 ? "text-gray-800" : "text-neutral-500"
                       }`}>
                         {Math.round(a.overallRating)}<StatDelta delta={a.ovrChangeDelta} turn={a.ovrChangeTurn} currentTurn={turn} />
                       </td>
                       <td className={`px-2 py-1.5 tabular-nums ${
-                        a.potential >= 85 ? "text-purple-600 font-semibold" : a.potential >= 70 ? "text-gray-700" : "text-gray-500"
+                        a.potential >= 85 ? "text-purple-600 font-semibold" : a.potential >= 70 ? "text-neutral-300" : "text-neutral-500"
                       }`}>
                         {a.potential}<StatDelta delta={a.potChangeDelta} turn={a.potChangeTurn} currentTurn={turn} />
                       </td>
-                      <td className="px-2 py-1.5 text-gray-600 tabular-nums">{a.popularity}</td>
-                      <td className="px-2 py-1.5 text-gray-600 tabular-nums">{formatNumber(a.fanbase)}</td>
+                      <td className="px-2 py-1.5 text-neutral-400 tabular-nums">{a.popularity}</td>
+                      <td className="px-2 py-1.5 text-neutral-400 tabular-nums">{formatNumber(a.fanbase)}</td>
                       <td className={`px-2 py-1.5 tabular-nums ${
-                        a.momentum >= 70 ? "text-amber-600 font-semibold" : a.momentum >= 40 ? "text-gray-700" : "text-gray-500"
+                        a.momentum >= 70 ? "text-amber-600 font-semibold" : a.momentum >= 40 ? "text-neutral-300" : "text-neutral-500"
                       }`}>
                         {a.momentum}
                       </td>
-                      <td className="px-2 py-1.5 text-gray-500 truncate max-w-[90px]">{phaseLabel(a.careerPhase)}</td>
-                      <td className="px-2 py-1.5 text-gray-600 tabular-nums">{a.chartHits}</td>
+                      <td className="px-2 py-1.5 text-neutral-500 truncate max-w-[90px]">{phaseLabel(a.careerPhase)}</td>
+                      <td className="px-2 py-1.5 text-neutral-400 tabular-nums">{a.chartHits}</td>
                     </tr>
                   );
                 })}
@@ -383,21 +383,21 @@ export default function RankingsPanel() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100 bg-gray-50/50">
+            <div className="flex items-center justify-between px-4 py-2 border-t border-neutral-800/50 bg-black/50">
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={safePage === 0}
-                className="px-3 py-1 text-xs font-medium rounded bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-xs font-medium rounded bg-neutral-900 text-neutral-400 hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Prev
               </button>
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-neutral-500">
                 Page {safePage + 1} of {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={safePage >= totalPages - 1}
-                className="px-3 py-1 text-xs font-medium rounded bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-xs font-medium rounded bg-neutral-900 text-neutral-400 hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -408,16 +408,16 @@ export default function RankingsPanel() {
 
       {/* ── COMPARE TAB ──────────────────────────────────────────────────────── */}
       {subTab === "compare" && (
-        <section className="bg-white border border-gray-200 rounded-md p-5 space-y-5">
+        <section className="bg-neutral-950 border border-neutral-800 rounded-md p-5 space-y-5">
           {/* Artist pickers */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Artist A */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Artist A</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Artist A</label>
               <select
                 value={compareA}
                 onChange={(e) => setCompareA(e.target.value)}
-                className="w-full border border-gray-200 rounded px-2 py-1.5 text-xs bg-white text-gray-700"
+                className="w-full border border-neutral-800 rounded px-2 py-1.5 text-xs bg-neutral-950 text-neutral-300"
               >
                 <option value="">Select artist...</option>
                 {allArtists
@@ -431,11 +431,11 @@ export default function RankingsPanel() {
             </div>
             {/* Artist B */}
             <div>
-              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Artist B</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Artist B</label>
               <select
                 value={compareB}
                 onChange={(e) => setCompareB(e.target.value)}
-                className="w-full border border-gray-200 rounded px-2 py-1.5 text-xs bg-white text-gray-700"
+                className="w-full border border-neutral-800 rounded px-2 py-1.5 text-xs bg-neutral-950 text-neutral-300"
               >
                 <option value="">Select artist...</option>
                 {allArtists
@@ -456,21 +456,21 @@ export default function RankingsPanel() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[artistA, artistB].map((artist) => (
                   <div key={`card-${artist.id}-${artist.label}`} className={`flex items-center gap-3 p-3 rounded-md border ${
-                    playerArtistIds.has(artist.id) ? "border-blue-200 bg-blue-50/40" : "border-gray-200 bg-gray-50/40"
+                    playerArtistIds.has(artist.id) ? "border-blue-200 bg-purple-950/50/40" : "border-neutral-800 bg-black/60"
                   }`}>
                     <ArtistSprite spriteIndex={artist.spriteIndex} size={64} />
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-gray-900 truncate">{artist.name}</div>
+                      <div className="text-sm font-semibold text-gray-100 truncate">{artist.name}</div>
                       <div className={`text-xs ${
-                        playerArtistIds.has(artist.id) ? "text-blue-600" : artist.label === "Free Agent" ? "text-gray-400 italic" : "text-gray-500"
+                        playerArtistIds.has(artist.id) ? "text-purple-400" : artist.label === "Free Agent" ? "text-neutral-500 italic" : "text-neutral-500"
                       }`}>
                         {artist.label}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${GENRE_COLORS[artist.genre] ?? "bg-gray-100 text-gray-600"}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${GENRE_COLORS[artist.genre] ?? "bg-neutral-900 text-neutral-400"}`}>
                           {artist.genre}
                         </span>
-                        <span className="text-[10px] text-gray-500">Age {artist.age}</span>
+                        <span className="text-[10px] text-neutral-500">Age {artist.age}</span>
                       </div>
                     </div>
                   </div>
@@ -478,8 +478,8 @@ export default function RankingsPanel() {
               </div>
 
               {/* Core stats comparison */}
-              <div className="border border-gray-200 rounded-md p-4">
-                <h3 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-3">Core Stats</h3>
+              <div className="border border-neutral-800 rounded-md p-4">
+                <h3 className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-3">Core Stats</h3>
                 <ComparisonBar label="OVR" a={Math.round(artistA.overallRating)} b={Math.round(artistB.overallRating)} max={100} />
                 <ComparisonBar label="POT" a={artistA.potential} b={artistB.potential} max={100} />
                 <ComparisonBar label="POP" a={artistA.popularity} b={artistB.popularity} max={100} />
@@ -491,46 +491,46 @@ export default function RankingsPanel() {
               </div>
 
               {/* Career comparison */}
-              <div className="border border-gray-200 rounded-md p-4">
-                <h3 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-3">Career</h3>
+              <div className="border border-neutral-800 rounded-md p-4">
+                <h3 className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-3">Career</h3>
                 <div className="grid grid-cols-[1fr_80px_1fr] text-xs gap-y-2">
                   {/* Phase */}
-                  <div className="text-right text-gray-700">{phaseLabel(artistA.careerPhase)}</div>
-                  <div className="text-center text-gray-500 font-medium">Phase</div>
-                  <div className="text-left text-gray-700">{phaseLabel(artistB.careerPhase)}</div>
+                  <div className="text-right text-neutral-300">{phaseLabel(artistA.careerPhase)}</div>
+                  <div className="text-center text-neutral-500 font-medium">Phase</div>
+                  <div className="text-left text-neutral-300">{phaseLabel(artistB.careerPhase)}</div>
                   {/* Chart Hits */}
-                  <div className={`text-right font-semibold tabular-nums ${artistA.chartHits > artistB.chartHits ? "text-green-600" : artistA.chartHits < artistB.chartHits ? "text-red-500" : "text-gray-600"}`}>
+                  <div className={`text-right font-semibold tabular-nums ${artistA.chartHits > artistB.chartHits ? "text-green-400" : artistA.chartHits < artistB.chartHits ? "text-red-400" : "text-neutral-400"}`}>
                     {artistA.chartHits}
                   </div>
-                  <div className="text-center text-gray-500 font-medium">Chart Hits</div>
-                  <div className={`text-left font-semibold tabular-nums ${artistB.chartHits > artistA.chartHits ? "text-green-600" : artistB.chartHits < artistA.chartHits ? "text-red-500" : "text-gray-600"}`}>
+                  <div className="text-center text-neutral-500 font-medium">Chart Hits</div>
+                  <div className={`text-left font-semibold tabular-nums ${artistB.chartHits > artistA.chartHits ? "text-green-400" : artistB.chartHits < artistA.chartHits ? "text-red-400" : "text-neutral-400"}`}>
                     {artistB.chartHits}
                   </div>
                   {/* Singles */}
-                  <div className={`text-right font-semibold tabular-nums ${artistA.totalSinglesReleased > artistB.totalSinglesReleased ? "text-green-600" : artistA.totalSinglesReleased < artistB.totalSinglesReleased ? "text-red-500" : "text-gray-600"}`}>
+                  <div className={`text-right font-semibold tabular-nums ${artistA.totalSinglesReleased > artistB.totalSinglesReleased ? "text-green-400" : artistA.totalSinglesReleased < artistB.totalSinglesReleased ? "text-red-400" : "text-neutral-400"}`}>
                     {artistA.totalSinglesReleased}
                   </div>
-                  <div className="text-center text-gray-500 font-medium">Singles</div>
-                  <div className={`text-left font-semibold tabular-nums ${artistB.totalSinglesReleased > artistA.totalSinglesReleased ? "text-green-600" : artistB.totalSinglesReleased < artistA.totalSinglesReleased ? "text-red-500" : "text-gray-600"}`}>
+                  <div className="text-center text-neutral-500 font-medium">Singles</div>
+                  <div className={`text-left font-semibold tabular-nums ${artistB.totalSinglesReleased > artistA.totalSinglesReleased ? "text-green-400" : artistB.totalSinglesReleased < artistA.totalSinglesReleased ? "text-red-400" : "text-neutral-400"}`}>
                     {artistB.totalSinglesReleased}
                   </div>
                   {/* Albums */}
-                  <div className={`text-right font-semibold tabular-nums ${artistA.totalAlbumsReleased > artistB.totalAlbumsReleased ? "text-green-600" : artistA.totalAlbumsReleased < artistB.totalAlbumsReleased ? "text-red-500" : "text-gray-600"}`}>
+                  <div className={`text-right font-semibold tabular-nums ${artistA.totalAlbumsReleased > artistB.totalAlbumsReleased ? "text-green-400" : artistA.totalAlbumsReleased < artistB.totalAlbumsReleased ? "text-red-400" : "text-neutral-400"}`}>
                     {artistA.totalAlbumsReleased}
                   </div>
-                  <div className="text-center text-gray-500 font-medium">Albums</div>
-                  <div className={`text-left font-semibold tabular-nums ${artistB.totalAlbumsReleased > artistA.totalAlbumsReleased ? "text-green-600" : artistB.totalAlbumsReleased < artistA.totalAlbumsReleased ? "text-red-500" : "text-gray-600"}`}>
+                  <div className="text-center text-neutral-500 font-medium">Albums</div>
+                  <div className={`text-left font-semibold tabular-nums ${artistB.totalAlbumsReleased > artistA.totalAlbumsReleased ? "text-green-400" : artistB.totalAlbumsReleased < artistA.totalAlbumsReleased ? "text-red-400" : "text-neutral-400"}`}>
                     {artistB.totalAlbumsReleased}
                   </div>
                   {/* Durability */}
-                  <div className="text-right text-gray-700 capitalize">{artistA.durability}</div>
-                  <div className="text-center text-gray-500 font-medium">Durability</div>
-                  <div className="text-left text-gray-700 capitalize">{artistB.durability}</div>
+                  <div className="text-right text-neutral-300 capitalize">{artistA.durability}</div>
+                  <div className="text-center text-neutral-500 font-medium">Durability</div>
+                  <div className="text-left text-neutral-300 capitalize">{artistB.durability}</div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-center py-12 text-gray-400 text-sm">
+            <div className="text-center py-12 text-neutral-500 text-sm">
               Select two artists above to compare them side by side.
             </div>
           )}

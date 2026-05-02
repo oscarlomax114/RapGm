@@ -59,9 +59,9 @@ const HOF_TIER_LABELS: Record<HoFTier, string> = {
 };
 
 const HOF_TIER_COLORS: Record<HoFTier, string> = {
-  first_ballot: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  strong_candidate: "bg-blue-100 text-blue-800 border-blue-300",
-  eligible: "bg-gray-100 text-gray-700 border-gray-300",
+  first_ballot: "bg-yellow-900/50 text-yellow-400 border-yellow-700",
+  strong_candidate: "bg-blue-900/50 text-blue-400 border-blue-700",
+  eligible: "bg-neutral-800 text-neutral-300 border-neutral-700",
 };
 
 const TIER_SYMBOLS = ["", "I", "II", "III", "IV", "V", "VI", "VII"];
@@ -107,7 +107,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-2 sm:p-3 space-y-2 sm:space-y-3">
-      {/* Stat cards — tighter padding */}
+      {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <Card label="Signed Artists" value={signedArtists.length} sub={`of ${STUDIO_DATA[studioLevel].rosterCap} slots`} />
         <Card label="Songs Released" value={releasedSongs.length} sub={`${charting.length} charting`} />
@@ -121,12 +121,12 @@ export default function Dashboard() {
 
       {/* Signed Artists */}
       {signedArtists.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
-          <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Signed Artists ({signedArtists.length})</h3>
-          <div className="border border-gray-200 rounded overflow-x-auto">
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2.5">
+          <h3 className="text-neutral-500 text-xs font-semibold uppercase tracking-wider mb-2">Signed Artists ({signedArtists.length})</h3>
+          <div className="border border-neutral-800 rounded overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-100 text-gray-500 border-b border-gray-200">
+                <tr className="bg-neutral-900 text-neutral-500 border-b border-neutral-800">
                   <th className="text-left py-1 px-2 font-semibold">Name</th>
                   <th className="text-center py-1 px-1 font-semibold">Age</th>
                   <th className="text-left py-1 px-1 font-semibold">Genre</th>
@@ -142,36 +142,36 @@ export default function Dashboard() {
               <tbody>
                 {signedArtists.map((a: Artist, i: number) => {
                   const status = a.jailed
-                    ? { text: `Jailed (${a.jailTurnsLeft ?? "?"}wk)`, color: "text-red-700" }
+                    ? { text: `Jailed (${a.jailTurnsLeft ?? "?"}wk)`, color: "text-red-400" }
                     : a.legalState && a.legalState.stage !== "resolved"
-                    ? { text: "Legal Issue", color: "text-red-500" }
+                    ? { text: "Legal Issue", color: "text-red-400" }
                     : a.onTour
-                    ? { text: `Tour (${a.tourTurnsLeft}wk)`, color: "text-yellow-600" }
+                    ? { text: `Tour (${a.tourTurnsLeft}wk)`, color: "text-yellow-400" }
                     : a.contractAlbumsLeft === 0
-                    ? { text: "Expired", color: "text-red-500" }
+                    ? { text: "Expired", color: "text-red-400" }
                     : a.fatigue > 70
-                    ? { text: "Fatigued", color: "text-orange-500" }
-                    : { text: "Active", color: "text-green-600" };
+                    ? { text: "Fatigued", color: "text-orange-400" }
+                    : { text: "Active", color: "text-green-400" };
                   return (
-                    <tr key={a.id} className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} border-b border-gray-100`}>
+                    <tr key={a.id} className={`${i % 2 === 0 ? "bg-neutral-950" : "bg-neutral-900/50"} border-b border-neutral-800/50`}>
                       <td className="py-1 px-2">
                         <div className="flex items-center gap-1.5">
                           <ArtistSprite spriteIndex={a.spriteIndex} size={18} />
-                          <span className="font-medium text-gray-900 truncate max-w-[120px]">{a.name}</span>
+                          <span className="font-medium text-gray-100 truncate max-w-[120px]">{a.name}</span>
                         </div>
                       </td>
-                      <td className="text-center py-1 px-1 text-gray-600">{a.age}</td>
-                      <td className="py-1 px-1 text-gray-600">{a.genre}</td>
-                      <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}</td>
-                      <td className="text-center py-1 px-1 text-gray-600">{a.popularity}</td>
+                      <td className="text-center py-1 px-1 text-neutral-400">{a.age}</td>
+                      <td className="py-1 px-1 text-neutral-400">{a.genre}</td>
+                      <td className="text-center py-1 px-1 font-semibold text-gray-100">{a.overallRating}</td>
+                      <td className="text-center py-1 px-1 text-neutral-400">{a.popularity}</td>
                       <td className="text-center py-1 px-1">
-                        <span className={`font-semibold ${(a.momentum ?? 0) >= 60 ? "text-green-600" : (a.momentum ?? 0) >= 40 ? "text-yellow-600" : "text-red-500"}`}>
+                        <span className={`font-semibold ${(a.momentum ?? 0) >= 60 ? "text-green-400" : (a.momentum ?? 0) >= 40 ? "text-yellow-400" : "text-red-400"}`}>
                           {a.momentum ?? 0}
                         </span>
                       </td>
-                      <td className="text-center py-1 px-1 text-gray-600">{a.morale}</td>
-                      <td className={`text-center py-1 px-1 ${a.fatigue > 70 ? "text-red-500 font-semibold" : "text-gray-600"}`}>{a.fatigue}</td>
-                      <td className="text-right py-1 px-2 text-gray-600">
+                      <td className="text-center py-1 px-1 text-neutral-400">{a.morale}</td>
+                      <td className={`text-center py-1 px-1 ${a.fatigue > 70 ? "text-red-400 font-semibold" : "text-neutral-400"}`}>{a.fatigue}</td>
+                      <td className="text-right py-1 px-2 text-neutral-400">
                         {a.fanbase >= 1000 ? `${(a.fanbase / 1000).toFixed(0)}K` : a.fanbase}
                       </td>
                       <td className="text-center py-1 px-1">
@@ -188,13 +188,13 @@ export default function Dashboard() {
 
       {/* Dynasty Tracker */}
       {(dynastyYears ?? 0) > 0 && (
-        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-md px-3 py-2 flex items-center gap-2">
-          <span className="text-amber-600 text-xs font-bold">👑</span>
-          <span className="text-xs font-semibold text-amber-800">
+        <div className="bg-gradient-to-r from-yellow-950/50 to-amber-950/50 border border-yellow-800/50 rounded-md px-3 py-2 flex items-center gap-2">
+          <span className="text-amber-400 text-xs font-bold">👑</span>
+          <span className="text-xs font-semibold text-amber-400">
             Dynasty: {dynastyYears} yr{dynastyYears !== 1 ? "s" : ""} as #1 label
           </span>
-          {dynastyYears >= 5 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-semibold ml-auto">Era Defining</span>}
-          {dynastyYears >= 3 && dynastyYears < 5 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold ml-auto">Builder</span>}
+          {dynastyYears >= 5 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300 font-semibold ml-auto">Era Defining</span>}
+          {dynastyYears >= 3 && dynastyYears < 5 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-400 font-semibold ml-auto">Builder</span>}
         </div>
       )}
 
@@ -203,16 +203,16 @@ export default function Dashboard() {
 
       {/* Achievements Section */}
       {totalAch > 0 && (
-        <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2.5">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Achievements</h3>
-            <span className="text-xs text-gray-400">{totalUnlocked}/{totalAch}</span>
+            <h3 className="text-neutral-500 text-xs font-semibold uppercase tracking-wider">Achievements</h3>
+            <span className="text-xs text-neutral-500">{totalUnlocked}/{totalAch}</span>
           </div>
 
           {/* Overall progress bar */}
-          <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2.5">
+          <div className="w-full bg-neutral-800 rounded-full h-1.5 mb-2.5">
             <div
-              className="h-1.5 rounded-full bg-indigo-500 transition-all"
+              className="h-1.5 rounded-full bg-purple-500 transition-all"
               style={{ width: `${totalAch > 0 ? (totalUnlocked / totalAch) * 100 : 0}%` }}
             />
           </div>
@@ -225,22 +225,22 @@ export default function Dashboard() {
               return (
                 <div key={cat} className="flex items-center gap-1.5">
                   <div className={`w-1.5 h-1.5 rounded-full ${ACH_CATEGORY_COLORS[cat]}`} />
-                  <span className="text-[10px] text-gray-500 w-16 truncate">{ACH_CATEGORY_LABELS[cat]}</span>
-                  <div className="flex-1 bg-gray-100 rounded-full h-1">
+                  <span className="text-[10px] text-neutral-500 w-16 truncate">{ACH_CATEGORY_LABELS[cat]}</span>
+                  <div className="flex-1 bg-neutral-800 rounded-full h-1">
                     <div
                       className={`h-1 rounded-full ${ACH_CATEGORY_COLORS[cat]} transition-all`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-gray-400 w-7 text-right">{unlocked}/{total}</span>
+                  <span className="text-[10px] text-neutral-500 w-7 text-right">{unlocked}/{total}</span>
                 </div>
               );
             })}
           </div>
 
-          {/* Recently unlocked achievements — compact badges */}
+          {/* Recently unlocked achievements */}
           {totalUnlocked > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-100">
+            <div className="mt-2 pt-2 border-t border-neutral-800">
               <div className="flex flex-wrap gap-1">
                 {ACHIEVEMENT_DEFS
                   .filter((d) => unlockedSet.has(d.id))
@@ -253,15 +253,15 @@ export default function Dashboard() {
                   .map((def) => (
                     <span
                       key={def.id}
-                      className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-700"
+                      className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border border-neutral-700 bg-neutral-900 text-neutral-300"
                       title={def.description}
                     >
-                      <span className="text-gray-400 font-mono">{TIER_SYMBOLS[def.tier] ?? def.tier}</span>
+                      <span className="text-neutral-500 font-mono">{TIER_SYMBOLS[def.tier] ?? def.tier}</span>
                       <span className="font-medium">{def.name}</span>
                     </span>
                   ))}
                 {totalUnlocked > 12 && (
-                  <span className="text-[10px] text-gray-400 px-1 py-0.5">+{totalUnlocked - 12} more</span>
+                  <span className="text-[10px] text-neutral-500 px-1 py-0.5">+{totalUnlocked - 12} more</span>
                 )}
               </div>
             </div>
@@ -271,10 +271,10 @@ export default function Dashboard() {
 
       {/* Hall of Fame Section */}
       {(hallOfFame ?? []).length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2.5">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Hall of Fame</h3>
-            <span className="text-xs text-gray-400">{hallOfFame.length} inductee{hallOfFame.length !== 1 ? "s" : ""}</span>
+            <h3 className="text-neutral-500 text-xs font-semibold uppercase tracking-wider">Hall of Fame</h3>
+            <span className="text-xs text-neutral-500">{hallOfFame.length} inductee{hallOfFame.length !== 1 ? "s" : ""}</span>
           </div>
           <div className="space-y-1 max-h-32 overflow-y-auto">
             {hallOfFame
@@ -286,12 +286,12 @@ export default function Dashboard() {
                     <span className={`text-[10px] px-1 py-0.5 rounded border font-semibold ${HOF_TIER_COLORS[entry.tier]}`}>
                       {HOF_TIER_LABELS[entry.tier]}
                     </span>
-                    <span className="text-gray-900 font-medium">{entry.artistName}</span>
+                    <span className="text-gray-100 font-medium">{entry.artistName}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                  <div className="flex items-center gap-2 text-[10px] text-neutral-500">
                     <span>{entry.stats.numberOneSongs} #1s</span>
                     <span>{entry.stats.awards} awards</span>
-                    <span className="font-semibold text-gray-500">{entry.score}pts</span>
+                    <span className="font-semibold text-neutral-400">{entry.score}pts</span>
                   </div>
                 </div>
               ))}
@@ -299,18 +299,18 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Recent Events — denser */}
+      {/* Recent Events */}
       {recentEvents.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
-          <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Recent Events</h3>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2.5">
+          <h3 className="text-neutral-500 text-xs font-semibold uppercase tracking-wider mb-2">Recent Events</h3>
           <div className="space-y-1 max-h-36 overflow-y-auto">
             {recentEvents.slice(0, 10).map((ev) => (
               <div key={ev.id} className="flex items-start gap-1.5 text-xs">
                 <span className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${eventDotColor(ev.type)}`} />
                 <div className="min-w-0">
-                  <span className="text-gray-900 font-medium">{ev.title}</span>
-                  <span className="text-gray-400 ml-1.5">{ev.description}</span>
-                  <span className="text-gray-300 ml-1.5 text-[10px]">W{ev.turn}</span>
+                  <span className="text-gray-100 font-medium">{ev.title}</span>
+                  <span className="text-neutral-500 ml-1.5">{ev.description}</span>
+                  <span className="text-neutral-600 ml-1.5 text-[10px]">W{ev.turn}</span>
                 </div>
               </div>
             ))}
@@ -318,18 +318,18 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Label History — denser */}
+      {/* Label History */}
       {labelMilestones.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
-          <h3 className="text-gray-900 font-semibold text-xs mb-2">Label History</h3>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2.5">
+          <h3 className="text-gray-100 font-semibold text-xs mb-2">Label History</h3>
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {labelMilestones.slice(0, 20).map((m) => (
               <div key={m.id} className="flex items-start gap-1.5 text-xs">
-                <span className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${MILESTONE_COLORS[m.type] ?? "bg-gray-300"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${MILESTONE_COLORS[m.type] ?? "bg-neutral-600"}`} />
                 <div className="min-w-0">
-                  <span className="text-gray-900 font-medium">{m.title}</span>
-                  <span className="text-gray-400 text-[10px] ml-1.5">{m.description}</span>
-                  <span className="text-gray-300 text-[10px] ml-1.5">W{m.turn}</span>
+                  <span className="text-gray-100 font-medium">{m.title}</span>
+                  <span className="text-neutral-500 text-[10px] ml-1.5">{m.description}</span>
+                  <span className="text-neutral-600 text-[10px] ml-1.5">W{m.turn}</span>
                 </div>
               </div>
             ))}
@@ -337,25 +337,25 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Vault — denser */}
+      {/* Vault */}
       {vault.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2.5">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-900 font-semibold text-xs">Vault</h3>
-            <span className="text-gray-400 text-[10px]">{vault.length} item{vault.length !== 1 ? "s" : ""} -- ${vault.reduce((s, i) => s + i.price, 0).toLocaleString()} total</span>
+            <h3 className="text-gray-100 font-semibold text-xs">Vault</h3>
+            <span className="text-neutral-500 text-[10px]">{vault.length} item{vault.length !== 1 ? "s" : ""} -- ${vault.reduce((s, i) => s + i.price, 0).toLocaleString()} total</span>
           </div>
           <div className="space-y-2.5">
             {(Object.keys(vaultByCategory) as MallCategory[]).map((cat) => (
               <div key={cat}>
-                <div className="text-gray-500 text-[10px] font-semibold uppercase tracking-wider mb-1">{CATEGORY_LABELS[cat]}</div>
-                <div className="border border-gray-200 rounded-md divide-y divide-gray-100">
+                <div className="text-neutral-500 text-[10px] font-semibold uppercase tracking-wider mb-1">{CATEGORY_LABELS[cat]}</div>
+                <div className="border border-neutral-800 rounded-md divide-y divide-neutral-800">
                   {vaultByCategory[cat].map((item) => (
                     <div key={item.uid} className="px-2 py-1.5 flex items-center justify-between">
                       <div>
-                        <span className="text-gray-900 text-[10px] font-semibold">{item.name}</span>
-                        <span className="text-gray-400 text-[10px] ml-1.5">W{item.purchasedTurn}</span>
+                        <span className="text-gray-100 text-[10px] font-semibold">{item.name}</span>
+                        <span className="text-neutral-600 text-[10px] ml-1.5">W{item.purchasedTurn}</span>
                       </div>
-                      <span className="text-gray-500 text-[10px]">${item.price.toLocaleString()}</span>
+                      <span className="text-neutral-400 text-[10px]">${item.price.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -370,10 +370,10 @@ export default function Dashboard() {
 
 function Card({ label, value, sub }: { label: string; value: string | number; sub: string }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
-      <div className="text-gray-500 text-[10px] font-semibold uppercase tracking-wider mb-0.5">{label}</div>
-      <div className="text-xl font-semibold text-gray-900">{value}</div>
-      <div className="text-gray-400 text-[10px] mt-0.5">{sub}</div>
+    <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2.5">
+      <div className="text-neutral-500 text-[10px] font-semibold uppercase tracking-wider mb-0.5">{label}</div>
+      <div className="text-xl font-semibold text-gray-100">{value}</div>
+      <div className="text-neutral-500 text-[10px] mt-0.5">{sub}</div>
     </div>
   );
 }
@@ -391,11 +391,11 @@ function RevenueBreakdown({ rev, money }: { rev: RevenueHistory; money: number }
   const weeklyNet = weeklyIncome - rev.weeklyOverhead;
 
   const sources = [
-    { label: "Streaming",   weekly: rev.weeklyStreaming,   total: rev.streaming,   color: "bg-blue-500",   textColor: "text-blue-600" },
-    { label: "Touring",     weekly: rev.weeklyTouring,     total: rev.touring,     color: "bg-green-500",  textColor: "text-green-600" },
-    { label: "Merch",       weekly: rev.weeklyMerch,       total: rev.merch,       color: "bg-yellow-500", textColor: "text-yellow-600" },
-    { label: "Brand Deals", weekly: rev.weeklyBrandDeals,  total: rev.brandDeals,  color: "bg-purple-500", textColor: "text-purple-600" },
-    { label: "Awards",      weekly: 0,                     total: rev.awards,      color: "bg-amber-500",  textColor: "text-amber-600" },
+    { label: "Streaming",   weekly: rev.weeklyStreaming,   total: rev.streaming,   color: "bg-blue-500",   textColor: "text-blue-400" },
+    { label: "Touring",     weekly: rev.weeklyTouring,     total: rev.touring,     color: "bg-green-500",  textColor: "text-green-400" },
+    { label: "Merch",       weekly: rev.weeklyMerch,       total: rev.merch,       color: "bg-yellow-500", textColor: "text-yellow-400" },
+    { label: "Brand Deals", weekly: rev.weeklyBrandDeals,  total: rev.brandDeals,  color: "bg-purple-500", textColor: "text-purple-400" },
+    { label: "Awards",      weekly: 0,                     total: rev.awards,      color: "bg-amber-500",  textColor: "text-amber-400" },
   ];
 
   const milestones = [
@@ -410,11 +410,11 @@ function RevenueBreakdown({ rev, money }: { rev: RevenueHistory; money: number }
   if (totalAllTime === 0) return null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5">
+    <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2.5">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Revenue Breakdown</h3>
+        <h3 className="text-neutral-500 text-xs font-semibold uppercase tracking-wider">Revenue Breakdown</h3>
         {currentMilestone && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-900 font-semibold">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 border border-neutral-700 text-gray-100 font-semibold">
             {currentMilestone.label}
           </span>
         )}
@@ -423,16 +423,16 @@ function RevenueBreakdown({ rev, money }: { rev: RevenueHistory; money: number }
       {/* Weekly summary */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="text-center">
-          <div className="text-gray-400 text-[10px]">Weekly Income</div>
-          <div className="text-green-600 font-semibold text-xs">{fmt(weeklyIncome)}</div>
+          <div className="text-neutral-500 text-[10px]">Weekly Income</div>
+          <div className="text-green-400 font-semibold text-xs">{fmt(weeklyIncome)}</div>
         </div>
         <div className="text-center">
-          <div className="text-gray-400 text-[10px]">Weekly Overhead</div>
-          <div className="text-red-600 font-semibold text-xs">-{fmt(rev.weeklyOverhead)}</div>
+          <div className="text-neutral-500 text-[10px]">Weekly Overhead</div>
+          <div className="text-red-400 font-semibold text-xs">-{fmt(rev.weeklyOverhead)}</div>
         </div>
         <div className="text-center">
-          <div className="text-gray-400 text-[10px]">Net / Week</div>
-          <div className={`font-semibold text-xs ${weeklyNet >= 0 ? "text-green-600" : "text-red-600"}`}>
+          <div className="text-neutral-500 text-[10px]">Net / Week</div>
+          <div className={`font-semibold text-xs ${weeklyNet >= 0 ? "text-green-400" : "text-red-400"}`}>
             {weeklyNet >= 0 ? "+" : ""}{fmt(weeklyNet)}
           </div>
         </div>
@@ -440,7 +440,7 @@ function RevenueBreakdown({ rev, money }: { rev: RevenueHistory; money: number }
 
       {/* Revenue bar */}
       {weeklyIncome > 0 && (
-        <div className="w-full h-1.5 rounded-full overflow-hidden flex mb-2 bg-gray-100">
+        <div className="w-full h-1.5 rounded-full overflow-hidden flex mb-2 bg-neutral-800">
           {sources.filter(s => s.weekly > 0).map((s) => (
             <div
               key={s.label}
@@ -457,33 +457,33 @@ function RevenueBreakdown({ rev, money }: { rev: RevenueHistory; money: number }
           <div key={s.label} className="flex items-center justify-between text-[10px]">
             <div className="flex items-center gap-1">
               <div className={`w-1.5 h-1.5 rounded-full ${s.color}`} />
-              <span className="text-gray-500">{s.label}</span>
+              <span className="text-neutral-500">{s.label}</span>
             </div>
             <div className="text-right">
               {s.weekly > 0 && <span className={`${s.textColor} font-semibold`}>{fmt(s.weekly)}/w</span>}
-              {s.weekly === 0 && s.total > 0 && <span className="text-gray-400">{fmt(s.total)} total</span>}
-              {s.weekly === 0 && s.total === 0 && <span className="text-gray-300">--</span>}
+              {s.weekly === 0 && s.total > 0 && <span className="text-neutral-500">{fmt(s.total)} total</span>}
+              {s.weekly === 0 && s.total === 0 && <span className="text-neutral-600">--</span>}
             </div>
           </div>
         ))}
       </div>
 
       {/* All-time total */}
-      <div className="mt-2 pt-2 border-t border-gray-200 flex items-center justify-between">
-        <span className="text-gray-500 text-[10px]">All-Time Revenue</span>
-        <span className="text-gray-900 font-semibold text-xs">{fmt(totalAllTime)}</span>
+      <div className="mt-2 pt-2 border-t border-neutral-800 flex items-center justify-between">
+        <span className="text-neutral-500 text-[10px]">All-Time Revenue</span>
+        <span className="text-gray-100 font-semibold text-xs">{fmt(totalAllTime)}</span>
       </div>
 
       {/* Next milestone progress */}
       {nextMilestone && (
         <div className="mt-2">
-          <div className="flex items-center justify-between text-[10px] text-gray-400 mb-0.5">
+          <div className="flex items-center justify-between text-[10px] text-neutral-500 mb-0.5">
             <span>Next: {nextMilestone.label}</span>
             <span>{fmt(money)} / {fmt(nextMilestone.target)}</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-1">
+          <div className="w-full bg-neutral-800 rounded-full h-1">
             <div
-              className="h-1 rounded-full bg-blue-600 transition-all"
+              className="h-1 rounded-full bg-purple-500 transition-all"
               style={{ width: `${Math.min(100, (money / nextMilestone.target) * 100)}%` }}
             />
           </div>
@@ -503,9 +503,9 @@ function eventDotColor(type: string) {
     label_deal: "bg-blue-500",
     chart_surge: "bg-green-400",
     radio_play: "bg-blue-400",
-    revenue: "bg-gray-400",
-    milestone: "bg-blue-600",
+    revenue: "bg-neutral-500",
+    milestone: "bg-purple-500",
     album_release: "bg-purple-400",
   };
-  return colors[type] ?? "bg-gray-300";
+  return colors[type] ?? "bg-neutral-600";
 }

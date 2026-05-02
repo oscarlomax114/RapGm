@@ -22,7 +22,7 @@ function LevelBar({ level, max = 10, affordable }: { level: number; max?: number
       ? "bg-emerald-500"
       : "bg-red-400";
   return (
-    <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+    <div className="w-20 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
       <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -237,56 +237,56 @@ export default function UpgradesPanel() {
       {/* Total overhead banner */}
       <div className="flex items-center justify-between mb-3 px-2">
         <h2 className="text-sm font-semibold text-gray-800">Department Upgrades</h2>
-        <div className="text-xs text-gray-500">
-          Weekly overhead: <span className="font-semibold text-gray-900">{fmt(totalWeeklyCost)}</span>/wk
+        <div className="text-xs text-neutral-500">
+          Weekly overhead: <span className="font-semibold text-gray-100">{fmt(totalWeeklyCost)}</span>/wk
         </div>
       </div>
 
       {/* Department table */}
-      <div className="border border-gray-200 rounded-md overflow-hidden overflow-x-auto bg-white">
+      <div className="border border-neutral-800 rounded-md overflow-hidden overflow-x-auto bg-neutral-950">
         {/* Header row */}
-        <div className="grid grid-cols-[1fr_80px_90px_70px_70px_72px] gap-0 px-3 py-1.5 bg-gray-100 border-b border-gray-200">
-          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Department</div>
-          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-center">Level</div>
-          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-right">Key Stat</div>
-          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-right">Cost/Wk</div>
-          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-right">Next</div>
-          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider text-center"></div>
+        <div className="grid grid-cols-[1fr_80px_90px_70px_70px_72px] gap-0 px-3 py-1.5 bg-neutral-900 border-b border-neutral-800">
+          <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">Department</div>
+          <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider text-center">Level</div>
+          <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider text-right">Key Stat</div>
+          <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider text-right">Cost/Wk</div>
+          <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider text-right">Next</div>
+          <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider text-center"></div>
         </div>
 
         {departments.map((dept, idx) => {
           const isExpanded = expanded === dept.id;
           const isMaxed = dept.level >= 10;
-          const rowBg = idx % 2 === 0 ? "bg-white" : "bg-gray-50/60";
+          const rowBg = idx % 2 === 0 ? "bg-neutral-950" : "bg-black/60";
 
           return (
-            <div key={dept.id} className={`border-b border-gray-100 last:border-b-0 ${rowBg}`}>
+            <div key={dept.id} className={`border-b border-neutral-800/50 last:border-b-0 ${rowBg}`}>
               {/* Main row */}
               <div
-                className="grid grid-cols-[1fr_80px_90px_70px_70px_72px] gap-0 px-3 py-2 items-center cursor-pointer hover:bg-blue-50/40 transition-colors"
+                className="grid grid-cols-[1fr_80px_90px_70px_70px_72px] gap-0 px-3 py-2 items-center cursor-pointer hover:bg-purple-950/50/40 transition-colors"
                 onClick={() => setExpanded(isExpanded ? null : dept.id)}
               >
                 {/* Department name + expand indicator */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-gray-400 select-none">{isExpanded ? "\u25BC" : "\u25B6"}</span>
+                  <span className="text-[10px] text-neutral-500 select-none">{isExpanded ? "\u25BC" : "\u25B6"}</span>
                   <span className="text-xs font-medium text-gray-800">{dept.name}</span>
                 </div>
 
                 {/* Level bar + label */}
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[10px] text-gray-600 tabular-nums">{dept.level}/10</span>
+                  <span className="text-[10px] text-neutral-400 tabular-nums">{dept.level}/10</span>
                   <LevelBar level={dept.level} affordable={dept.affordable} />
                 </div>
 
                 {/* Key stat */}
-                <div className="text-xs text-gray-700 text-right tabular-nums">{dept.keyStat}</div>
+                <div className="text-xs text-neutral-300 text-right tabular-nums">{dept.keyStat}</div>
 
                 {/* Weekly cost */}
-                <div className="text-xs text-gray-600 text-right tabular-nums">{fmt(dept.weeklyCost)}</div>
+                <div className="text-xs text-neutral-400 text-right tabular-nums">{fmt(dept.weeklyCost)}</div>
 
                 {/* Next upgrade cost */}
                 <div className={`text-xs text-right tabular-nums font-medium ${
-                  isMaxed ? "text-gray-300" : dept.affordable ? "text-emerald-600" : "text-red-500"
+                  isMaxed ? "text-neutral-600" : dept.affordable ? "text-emerald-600" : "text-red-400"
                 }`}>
                   {isMaxed ? "--" : fmt(dept.nextCost!)}
                 </div>
@@ -302,7 +302,7 @@ export default function UpgradesPanel() {
                       className={`text-[10px] font-semibold px-2.5 py-0.5 rounded transition
                         ${dept.affordable
                           ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
                         }`}
                     >
                       Upgrade
@@ -314,13 +314,13 @@ export default function UpgradesPanel() {
               {/* Expanded detail row */}
               {isExpanded && (
                 <div className="px-4 pb-2.5 pt-0.5">
-                  <div className="bg-gray-50 border border-gray-200 rounded p-2.5 grid grid-cols-2 gap-x-6 gap-y-0.5">
+                  <div className="bg-black border border-neutral-800 rounded p-2.5 grid grid-cols-2 gap-x-6 gap-y-0.5">
                     {/* Current stats column */}
                     <div>
-                      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Current (Lv {dept.level})</div>
+                      <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider mb-1">Current (Lv {dept.level})</div>
                       {dept.detail.current.map(([label, value]) => (
                         <div key={label} className="flex justify-between text-xs py-0.5">
-                          <span className="text-gray-500">{label}</span>
+                          <span className="text-neutral-500">{label}</span>
                           <span className="text-gray-800 font-medium tabular-nums">{value}</span>
                         </div>
                       ))}
@@ -330,15 +330,15 @@ export default function UpgradesPanel() {
                     <div>
                       {dept.detail.next ? (
                         <>
-                          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                          <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider mb-1">
                             Next (Lv {dept.level + 1})
-                            <span className={`ml-1.5 ${dept.affordable ? "text-emerald-600" : "text-red-500"}`}>
+                            <span className={`ml-1.5 ${dept.affordable ? "text-emerald-600" : "text-red-400"}`}>
                               {fmt(dept.nextCost!)}
                             </span>
                           </div>
                           {dept.detail.next.map(([label, value]) => (
                             <div key={label} className="flex justify-between text-xs py-0.5">
-                              <span className="text-gray-500">{label}</span>
+                              <span className="text-neutral-500">{label}</span>
                               <span className="text-blue-700 font-medium tabular-nums">{value}</span>
                             </div>
                           ))}

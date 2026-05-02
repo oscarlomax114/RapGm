@@ -31,16 +31,16 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
       <div
-        className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl w-full sm:max-w-sm shadow-lg"
+        className="bg-neutral-950 border border-neutral-800 sm:rounded-lg rounded-t-xl w-full sm:max-w-sm shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-neutral-800">
           <button
             onClick={() => { setMode("signin"); setError(null); setSuccess(false); }}
             className={`flex-1 py-2.5 text-sm font-medium transition border-b-2 ${
-              mode === "signin" ? "border-blue-600 text-gray-900" : "border-transparent text-gray-400"
+              mode === "signin" ? "border-purple-500 text-gray-100" : "border-transparent text-neutral-500"
             }`}
           >
             Sign In
@@ -48,7 +48,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={() => { setMode("signup"); setError(null); setSuccess(false); }}
             className={`flex-1 py-2.5 text-sm font-medium transition border-b-2 ${
-              mode === "signup" ? "border-blue-600 text-gray-900" : "border-transparent text-gray-400"
+              mode === "signup" ? "border-purple-500 text-gray-100" : "border-transparent text-neutral-500"
             }`}
           >
             Create Account
@@ -58,12 +58,12 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={handleSubmit} className="p-5 space-y-3">
           {success ? (
             <div className="text-center py-4">
-              <p className="text-green-600 font-medium text-sm mb-1">Account created!</p>
-              <p className="text-gray-500 text-xs">Check your email to confirm, then sign in.</p>
+              <p className="text-green-400 font-medium text-sm mb-1">Account created!</p>
+              <p className="text-neutral-400 text-xs">Check your email to confirm, then sign in.</p>
               <button
                 type="button"
                 onClick={() => { setMode("signin"); setSuccess(false); }}
-                className="mt-3 text-blue-600 hover:text-blue-500 text-sm font-medium"
+                className="mt-3 text-purple-400 hover:text-purple-300 text-sm font-medium"
               >
                 Go to Sign In
               </button>
@@ -71,33 +71,33 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
           ) : (
             <>
               <div>
-                <label className="block text-gray-700 text-xs font-semibold mb-1">Email</label>
+                <label className="block text-neutral-300 text-xs font-semibold mb-1">Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-sm text-gray-100 placeholder-neutral-500 focus:outline-none focus:border-purple-500"
                   placeholder="you@email.com"
                 />
               </div>
               <div>
-                <label className="block text-gray-700 text-xs font-semibold mb-1">Password</label>
+                <label className="block text-neutral-300 text-xs font-semibold mb-1">Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-sm text-gray-100 placeholder-neutral-500 focus:outline-none focus:border-purple-500"
                   placeholder="Min 6 characters"
                 />
               </div>
-              {error && <p className="text-red-500 text-xs">{error}</p>}
+              {error && <p className="text-red-400 text-xs">{error}</p>}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 rounded text-sm transition"
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-medium py-2 rounded text-sm transition"
               >
                 {loading ? "..." : mode === "signin" ? "Sign In" : "Create Account"}
               </button>
@@ -106,7 +106,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
         </form>
 
         <div className="px-5 pb-4">
-          <p className="text-gray-400 text-[10px] text-center">
+          <p className="text-neutral-500 text-[10px] text-center">
             {mode === "signin"
               ? "Sign in to sync your saves across devices."
               : "Create an account to save your progress permanently."}

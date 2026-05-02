@@ -10,7 +10,7 @@ function StatDelta({ delta, turn: changeTurn, currentTurn }: { delta?: number; t
   if (!delta || delta === 0 || !changeTurn || currentTurn - changeTurn > 3) return null;
   const isPositive = delta > 0;
   return (
-    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-500"}`}>
+    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-400"}`}>
       {isPositive ? "\u25B2" : "\u25BC"}{Math.abs(delta)}
     </span>
   );
@@ -25,11 +25,11 @@ export default function ArtistsPanel() {
 
   const signed = artists.filter((a) => a.signed);
   const expiredContracts = signed.filter(
-    (a) => a.contractAlbumsLeft === 0 &&
+    (a) => a.contractAlbumsTotal > 0 && a.contractAlbumsLeft === 0 &&
       (a.lastAlbumReleaseTurn === 0 || turn - a.lastAlbumReleaseTurn >= ALBUM_CYCLE_TURNS)
   );
   const cycleLockedContracts = signed.filter(
-    (a) => a.contractAlbumsLeft === 0 &&
+    (a) => a.contractAlbumsTotal > 0 && a.contractAlbumsLeft === 0 &&
       a.lastAlbumReleaseTurn > 0 && turn - a.lastAlbumReleaseTurn < ALBUM_CYCLE_TURNS
   );
 
@@ -44,12 +44,12 @@ export default function ArtistsPanel() {
   }
 
   function getStatusLabel(a: Artist): { text: string; color: string } {
-    if (a.jailed) return { text: `Jailed (${a.jailTurnsLeft ?? "?"}wk)`, color: "text-red-700" };
-    if (a.legalState && a.legalState.stage !== "resolved") return { text: `Legal: ${a.legalState.stage.replace("_", " ")}`, color: "text-red-500" };
-    if (a.onTour) return { text: `Tour (${a.tourTurnsLeft}wk left)`, color: "text-yellow-600" };
-    if (a.contractAlbumsLeft === 0) return { text: "Expired", color: "text-red-500" };
-    if (a.fatigue > 70) return { text: "Fatigued", color: "text-orange-500" };
-    return { text: "Active", color: "text-green-600" };
+    if (a.jailed) return { text: `Jailed (${a.jailTurnsLeft ?? "?"}wk)`, color: "text-red-400" };
+    if (a.legalState && a.legalState.stage !== "resolved") return { text: `Legal: ${a.legalState.stage.replace("_", " ")}`, color: "text-red-400" };
+    if (a.onTour) return { text: `Tour (${a.tourTurnsLeft}wk left)`, color: "text-yellow-400" };
+    if (a.contractAlbumsTotal > 0 && a.contractAlbumsLeft === 0) return { text: "Expired", color: "text-red-400" };
+    if (a.fatigue > 70) return { text: "Fatigued", color: "text-orange-400" };
+    return { text: "Active", color: "text-green-400" };
   }
 
   return (
@@ -80,11 +80,11 @@ export default function ArtistsPanel() {
 
       {riskResult && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
-          <div className="bg-white border border-gray-200 rounded-t-xl sm:rounded-lg p-5 max-w-sm w-full text-center shadow-lg">
-            <h3 className="text-gray-900 font-bold text-sm mb-1">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-t-xl sm:rounded-lg p-5 max-w-sm w-full text-center shadow-lg">
+            <h3 className="text-gray-100 font-bold text-sm mb-1">
               {riskResult.stayed ? `${riskResult.name} Stays!` : `${riskResult.name} Walked`}
             </h3>
-            <p className="text-gray-500 text-xs mb-4">
+            <p className="text-neutral-500 text-xs mb-4">
               {riskResult.stayed
                 ? "Their loyalty kept them around. Contract extended by 1 album."
                 : "They felt undervalued and left the label."}
@@ -101,13 +101,13 @@ export default function ArtistsPanel() {
 
       {/* Cycle-locked contracts — compact alert bar */}
       {cycleLockedContracts.length > 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 flex items-center gap-2 flex-wrap text-xs">
-          <span className="font-semibold text-gray-500">Album Cycle In Progress:</span>
+        <div className="bg-black border border-neutral-800 rounded px-2 py-1.5 flex items-center gap-2 flex-wrap text-xs">
+          <span className="font-semibold text-neutral-500">Album Cycle In Progress:</span>
           {cycleLockedContracts.map((a) => {
             const weeksLeft = ALBUM_CYCLE_TURNS - (turn - a.lastAlbumReleaseTurn);
             return (
-              <span key={a.id} className="text-gray-600">
-                <span className="font-medium text-gray-900">{a.name}</span> — eval in {weeksLeft}wk{weeksLeft !== 1 ? "s" : ""}
+              <span key={a.id} className="text-neutral-400">
+                <span className="font-medium text-gray-100">{a.name}</span> — eval in {weeksLeft}wk{weeksLeft !== 1 ? "s" : ""}
               </span>
             );
           })}
@@ -116,12 +116,12 @@ export default function ArtistsPanel() {
 
       {/* Expired Contracts — compact alert bar */}
       {expiredContracts.length > 0 && (
-        <div className="bg-amber-50 border border-amber-300 rounded px-2 py-1.5 space-y-1">
-          <div className="text-xs font-semibold text-amber-800">Contract Expirations — Action Required</div>
+        <div className="bg-amber-950/40 border border-amber-300 rounded px-2 py-1.5 space-y-1">
+          <div className="text-xs font-semibold text-amber-400">Contract Expirations — Action Required</div>
           {expiredContracts.map((a) => (
             <div key={a.id} className="flex items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-900">{a.name}</span>
+                <span className="font-medium text-gray-100">{a.name}</span>
                 <span className="text-amber-700">Fulfilled {a.contractAlbumsTotal}-album deal</span>
               </div>
               <div className="flex gap-1 shrink-0">
@@ -133,13 +133,13 @@ export default function ArtistsPanel() {
                 </button>
                 <button
                   onClick={() => handleRisk(a)}
-                  className="text-[11px] bg-amber-500 hover:bg-amber-400 text-white px-2 py-0.5 rounded transition"
+                  className="text-[11px] bg-amber-950/400 hover:bg-amber-400 text-white px-2 py-0.5 rounded transition"
                 >
                   Risk ({a.traits.loyalty}%)
                 </button>
                 <button
                   onClick={() => { if (window.confirm(`Are you sure you want to release ${a.name}?`)) dropArtist(a.id); }}
-                  className="text-[11px] bg-red-600 hover:bg-red-500 text-white px-2 py-0.5 rounded transition"
+                  className="text-[11px] bg-red-600 hover:bg-red-950/500 text-white px-2 py-0.5 rounded transition"
                 >
                   Release
                 </button>
@@ -151,13 +151,13 @@ export default function ArtistsPanel() {
 
       {/* Signed Roster — compact table */}
       <section>
-        <h2 className="text-gray-900 font-bold text-sm mb-1">Signed Roster ({signed.length}/{STUDIO_DATA[studioLevel].rosterCap})</h2>
-        {signed.length === 0 && <p className="text-gray-400 text-xs">No signed artists yet.</p>}
+        <h2 className="text-gray-100 font-bold text-sm mb-1">Signed Roster ({signed.length}/{STUDIO_DATA[studioLevel].rosterCap})</h2>
+        {signed.length === 0 && <p className="text-neutral-500 text-xs">No signed artists yet.</p>}
         {signed.length > 0 && (
-          <div className="border border-gray-200 rounded overflow-x-auto">
+          <div className="border border-neutral-800 rounded overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-100 text-gray-500 border-b border-gray-200">
+                <tr className="bg-neutral-900 text-neutral-500 border-b border-neutral-800">
                   <th className="text-left py-1 px-2 font-semibold">Name</th>
                   <th className="text-center py-1 px-1 font-semibold">Age</th>
                   <th className="text-left py-1 px-1 font-semibold">Genre</th>
@@ -199,11 +199,11 @@ export default function ArtistsPanel() {
       {/* Quick Actions — Recording & Rest */}
       {signed.length > 0 && (
         <section>
-          <h2 className="text-gray-900 font-bold text-sm mb-1">Quick Actions</h2>
-          <div className="border border-gray-200 rounded overflow-x-auto">
+          <h2 className="text-gray-100 font-bold text-sm mb-1">Quick Actions</h2>
+          <div className="border border-neutral-800 rounded overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-100 text-gray-500 border-b border-gray-200">
+                <tr className="bg-neutral-900 text-neutral-500 border-b border-neutral-800">
                   <th className="text-left py-1 px-2 font-semibold">Artist</th>
                   <th className="text-center py-1 px-1 font-semibold">FTG</th>
                   <th className="text-center py-1 px-1 font-semibold">MRL</th>
@@ -217,23 +217,23 @@ export default function ArtistsPanel() {
                   const recordedThisTurn = songs.filter((s) => s.artistId === a.id && s.turnRecorded === turn).length;
                   const canRecord = recordedThisTurn < weekLimit && a.fatigue < 90;
                   return (
-                    <tr key={a.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="py-1 px-2 font-medium text-gray-900">{a.name}</td>
-                      <td className={`text-center py-1 px-1 ${a.fatigue > 70 ? "text-red-500" : "text-gray-600"}`}>{a.fatigue}</td>
-                      <td className="text-center py-1 px-1 text-gray-600">{a.morale}</td>
+                    <tr key={a.id} className={i % 2 === 0 ? "bg-neutral-950" : "bg-black"}>
+                      <td className="py-1 px-2 font-medium text-gray-100">{a.name}</td>
+                      <td className={`text-center py-1 px-1 ${a.fatigue > 70 ? "text-red-400" : "text-neutral-400"}`}>{a.fatigue}</td>
+                      <td className="text-center py-1 px-1 text-neutral-400">{a.morale}</td>
                       <td className="text-center py-1 px-1">
-                        <span className="text-[10px] text-gray-500">{recordedThisTurn}/{weekLimit} this week</span>
+                        <span className="text-[10px] text-neutral-500">{recordedThisTurn}/{weekLimit} this week</span>
                       </td>
                       <td className="text-right py-1 px-2">
                         <span className="inline-flex gap-1">
                           {canRecord && (
-                            <span className="text-[10px] text-green-600 font-medium">Ready</span>
+                            <span className="text-[10px] text-green-400 font-medium">Ready</span>
                           )}
                           {!canRecord && a.fatigue >= 90 && (
-                            <span className="text-[10px] text-red-500 font-medium">Exhausted</span>
+                            <span className="text-[10px] text-red-400 font-medium">Exhausted</span>
                           )}
                           {!canRecord && recordedThisTurn >= weekLimit && a.fatigue < 90 && (
-                            <span className="text-[10px] text-gray-400 font-medium">Done</span>
+                            <span className="text-[10px] text-neutral-500 font-medium">Done</span>
                           )}
                         </span>
                       </td>
@@ -282,7 +282,7 @@ function RosterRow({
   }
 
   return (
-    <tr className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 border-b border-gray-100`}>
+    <tr className={`${index % 2 === 0 ? "bg-neutral-950" : "bg-black"} hover:bg-purple-950/50 border-b border-neutral-800/50`}>
       <td className="py-1 px-2">
         <div className="flex items-center gap-1.5">
           <div className="shrink-0"><ArtistSprite spriteIndex={a.spriteIndex} size={20} /></div>
@@ -293,20 +293,20 @@ function RosterRow({
               onChange={(e) => setNameInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenaming(false); }}
               onBlur={commitRename}
-              className="bg-white border border-indigo-400 rounded px-1 py-0 text-gray-900 text-xs font-medium w-24 focus:outline-none"
+              className="bg-neutral-950 border border-indigo-400 rounded px-1 py-0 text-gray-100 text-xs font-medium w-24 focus:outline-none"
               maxLength={32}
             />
           ) : (
             <div className="flex items-center gap-1">
               <button
                 onClick={onViewProfile}
-                className="font-medium text-gray-900 hover:text-indigo-600 cursor-pointer truncate max-w-[120px]"
+                className="font-medium text-gray-100 hover:text-indigo-600 cursor-pointer truncate max-w-[120px]"
               >
                 {a.name}
               </button>
               <button
                 onClick={() => { setNameInput(a.name); setRenaming(true); }}
-                className="text-gray-300 hover:text-gray-500 transition shrink-0 text-[10px] leading-none"
+                className="text-neutral-600 hover:text-neutral-500 transition shrink-0 text-[10px] leading-none"
                 title="Rename"
               >
                 ✎
@@ -315,14 +315,16 @@ function RosterRow({
           )}
         </div>
       </td>
-      <td className="text-center py-1 px-1 text-gray-600">{a.age}</td>
-      <td className="py-1 px-1 text-gray-600">{a.genre}</td>
-      <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}<StatDelta delta={a.ovrChangeDelta} turn={a.ovrChangeTurn} currentTurn={turn} /></td>
-      <td className="text-center py-1 px-1 text-gray-600">{a.potential}<StatDelta delta={a.potChangeDelta} turn={a.potChangeTurn} currentTurn={turn} /></td>
+      <td className="text-center py-1 px-1 text-neutral-400">{a.age}</td>
+      <td className="py-1 px-1 text-neutral-400">{a.genre}</td>
+      <td className="text-center py-1 px-1 font-semibold text-gray-100">{a.overallRating}<StatDelta delta={a.ovrChangeDelta} turn={a.ovrChangeTurn} currentTurn={turn} /></td>
+      <td className="text-center py-1 px-1 text-neutral-400">{a.potential}<StatDelta delta={a.potChangeDelta} turn={a.potChangeTurn} currentTurn={turn} /></td>
       <td className="text-center py-1 px-1">
-        {a.contractAlbumsLeft === 0
-          ? <span className="text-red-500 font-semibold">Expired</span>
-          : <span className="text-gray-600">{a.contractAlbumsLeft}/{a.contractAlbumsTotal}</span>}
+        {a.contractAlbumsTotal > 0 && a.contractAlbumsLeft === 0
+          ? <span className="text-red-400 font-semibold">Expired</span>
+          : a.contractAlbumsTotal > 0
+            ? <span className="text-neutral-400">{a.contractAlbumsLeft}/{a.contractAlbumsTotal}</span>
+            : <span className="text-neutral-500">—</span>}
       </td>
       <td className="text-center py-1 px-1">
         <span className={`text-[10px] font-semibold ${status.color}`}>{status.text}</span>
@@ -330,15 +332,15 @@ function RosterRow({
       <td className="text-center py-1 px-1">
         <span className={`font-semibold ${momentumBar(a.momentum ?? 0)}`}>{a.momentum ?? 0}</span>
       </td>
-      <td className="text-center py-1 px-1 text-gray-600">{a.morale}</td>
-      <td className={`text-center py-1 px-1 ${a.fatigue > 70 ? "text-red-500 font-semibold" : "text-gray-600"}`}>{a.fatigue}</td>
-      <td className="text-right py-1 px-1 text-gray-600">
+      <td className="text-center py-1 px-1 text-neutral-400">{a.morale}</td>
+      <td className={`text-center py-1 px-1 ${a.fatigue > 70 ? "text-red-400 font-semibold" : "text-neutral-400"}`}>{a.fatigue}</td>
+      <td className="text-right py-1 px-1 text-neutral-400">
         {a.fanbase >= 1000 ? `${(a.fanbase / 1000).toFixed(0)}K` : a.fanbase}
       </td>
       <td className="text-right py-1 px-2">
         <button
           onClick={onDrop}
-          className="text-[11px] text-red-400 hover:text-red-600 font-medium"
+          className="text-[11px] text-red-400 hover:text-red-400 font-medium"
         >
           Drop
         </button>
@@ -371,14 +373,14 @@ function RenegotiationModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
-      <div className="bg-white border border-gray-200 rounded-t-xl sm:rounded-lg w-full max-w-sm h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto shadow-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-neutral-950 border border-neutral-800 rounded-t-xl sm:rounded-lg w-full max-w-sm h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800">
           <div>
-            <h3 className="text-gray-900 font-bold text-sm">Renegotiate — {artist.name}</h3>
-            <div className="text-gray-400 text-[11px]">Contract fulfilled. Extend the deal.</div>
+            <h3 className="text-gray-100 font-bold text-sm">Renegotiate — {artist.name}</h3>
+            <div className="text-neutral-500 text-[11px]">Contract fulfilled. Extend the deal.</div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-900 transition text-sm">✕</button>
+          <button onClick={onClose} className="text-neutral-500 hover:text-gray-100 transition text-sm">✕</button>
         </div>
 
         <div className="px-3 py-2 space-y-2">
@@ -389,11 +391,11 @@ function RenegotiationModal({
                 <button
                   key={n}
                   onClick={() => setAlbumCount(n)}
-                  className={`w-full text-left px-2 py-1.5 rounded border transition text-xs ${albumCount === n ? "border-indigo-400 bg-indigo-50" : "border-gray-200 bg-white hover:border-gray-300"}`}
+                  className={`w-full text-left px-2 py-1.5 rounded border transition text-xs ${albumCount === n ? "border-indigo-400 bg-indigo-50" : "border-neutral-800 bg-neutral-950 hover:border-neutral-700"}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-900 font-medium">{ALBUM_LABELS[n]}</span>
-                    <span className={`font-bold ${gameState.money >= f ? "text-green-600" : "text-red-500"}`}>
+                    <span className="text-gray-100 font-medium">{ALBUM_LABELS[n]}</span>
+                    <span className={`font-bold ${gameState.money >= f ? "text-green-400" : "text-red-400"}`}>
                       ${(f / 1000).toFixed(0)}K
                     </span>
                   </div>
@@ -402,15 +404,15 @@ function RenegotiationModal({
             })}
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-[11px] text-gray-500 space-y-0.5">
-            <div className="flex justify-between"><span>Renegotiation Fee</span><span className="text-gray-900">${fee.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span>New Albums</span><span className="text-gray-900">{albumCount}</span></div>
-            <div className="flex justify-between"><span>Loyalty</span><span className="text-gray-900">{artist.traits.loyalty}</span></div>
+          <div className="bg-black border border-neutral-800 rounded px-2 py-1.5 text-[11px] text-neutral-500 space-y-0.5">
+            <div className="flex justify-between"><span>Renegotiation Fee</span><span className="text-gray-100">${fee.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span>New Albums</span><span className="text-gray-100">{albumCount}</span></div>
+            <div className="flex justify-between"><span>Loyalty</span><span className="text-gray-100">{artist.traits.loyalty}</span></div>
           </div>
 
-          <p className="text-gray-400 text-[10px]">Fee reflects popularity, fan base, label reputation, and release quality.</p>
+          <p className="text-neutral-500 text-[10px]">Fee reflects popularity, fan base, label reputation, and release quality.</p>
 
-          {!canAfford && <p className="text-red-500 text-[11px]">Not enough money.</p>}
+          {!canAfford && <p className="text-red-400 text-[11px]">Not enough money.</p>}
 
           <button
             onClick={() => onRenegotiate(albumCount)}
@@ -456,38 +458,38 @@ function ArtistProfileModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-2"
+      className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-2"
       onClick={onClose}
     >
       <div
-        className="bg-white border border-gray-200 rounded-t-xl sm:rounded-lg w-full max-w-2xl h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto shadow-lg"
+        className="bg-neutral-950 border border-neutral-800 rounded-t-xl sm:rounded-lg w-full max-w-2xl h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-3 py-2 border-b border-gray-200">
+        <div className="flex items-start justify-between px-3 py-2 border-b border-neutral-800">
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-gray-900 font-bold text-sm">{artist.name}</h2>
+              <h2 className="text-gray-100 font-bold text-sm">{artist.name}</h2>
               {artist.careerPhase && (() => { const ps = phaseStyle(artist.careerPhase); return (
                 <span className={`${phaseStyleLight(artist.careerPhase)} border px-1.5 py-0 rounded text-[10px] font-semibold`}>{ps.label}</span>
               ); })()}
             </div>
-            <div className="text-gray-400 text-[11px]">{artist.persona} · {artist.genre}</div>
+            <div className="text-neutral-500 text-[11px]">{artist.persona} · {artist.genre}</div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-900 text-sm transition">✕</button>
+          <button onClick={onClose} className="text-neutral-500 hover:text-gray-100 text-sm transition">✕</button>
         </div>
 
         <div className="px-3 py-2 space-y-3">
           {/* Legal / Jail status badges */}
           {artist.jailed && (
-            <div className="bg-red-50 border border-red-300 rounded px-3 py-2 flex items-center gap-2">
-              <span className="text-red-700 font-bold text-xs">JAILED</span>
-              <span className="text-red-600 text-xs">{artist.jailTurnsLeft ?? 0} weeks remaining · {artist.jailSentenceType ?? "unknown"} sentence</span>
+            <div className="bg-red-950/50 border border-red-300 rounded px-3 py-2 flex items-center gap-2">
+              <span className="text-red-400 font-bold text-xs">JAILED</span>
+              <span className="text-red-400 text-xs">{artist.jailTurnsLeft ?? 0} weeks remaining · {artist.jailSentenceType ?? "unknown"} sentence</span>
               {artist.legalState?.offense && <span className="text-red-400 text-[10px] ml-auto">{artist.legalState.offense}</span>}
             </div>
           )}
           {!artist.jailed && artist.legalState && artist.legalState.stage !== "resolved" && (
-            <div className="bg-amber-50 border border-amber-300 rounded px-3 py-2 flex items-center gap-2">
+            <div className="bg-amber-950/40 border border-amber-300 rounded px-3 py-2 flex items-center gap-2">
               <span className="text-amber-700 font-bold text-xs">LEGAL TROUBLE</span>
               <span className="text-amber-600 text-xs capitalize">{artist.legalState.stage.replace("_", " ")} · Severity {artist.legalState.severity}/10</span>
               {artist.legalState.offense && <span className="text-amber-400 text-[10px] ml-auto">{artist.legalState.offense}</span>}
@@ -498,7 +500,7 @@ function ArtistProfileModal({
           {artist.onTour && artist.tourType && (
             <div className="bg-yellow-50 border border-yellow-200 rounded px-3 py-2 flex items-center gap-2">
               <span className="text-yellow-700 font-bold text-xs">ON TOUR</span>
-              <span className="text-yellow-600 text-xs">{artist.tourTurnsLeft} weeks remaining · {(artist.tourType ?? "").replace("_", " ")}</span>
+              <span className="text-yellow-400 text-xs">{artist.tourTurnsLeft} weeks remaining · {(artist.tourType ?? "").replace("_", " ")}</span>
             </div>
           )}
           {!artist.onTour && artist.lastTourEndTurn > 0 && (() => {
@@ -506,11 +508,11 @@ function ArtistProfileModal({
             const cooldownNeeded = artist.lastMajorTourTurn > 0 ? 16 : 0;
             const weeksUntilEligible = cooldownNeeded > 0 ? Math.max(0, cooldownNeeded - (turn - artist.lastMajorTourTurn)) : 0;
             return weeksUntilEligible > 0 ? (
-              <div className="bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs text-gray-500">
-                Tour cooldown: <span className="font-semibold text-gray-700">{weeksUntilEligible} weeks</span> until next major tour eligible
+              <div className="bg-black border border-neutral-800 rounded px-3 py-1.5 text-xs text-neutral-500">
+                Tour cooldown: <span className="font-semibold text-neutral-300">{weeksUntilEligible} weeks</span> until next major tour eligible
               </div>
             ) : sinceTour < 4 ? (
-              <div className="bg-green-50 border border-green-200 rounded px-3 py-1.5 text-xs text-green-600">
+              <div className="bg-green-50 border border-green-200 rounded px-3 py-1.5 text-xs text-green-400">
                 Tour eligible — last tour ended {sinceTour} week{sinceTour !== 1 ? "s" : ""} ago
               </div>
             ) : null;
@@ -518,7 +520,7 @@ function ArtistProfileModal({
 
           {/* Character sprite + core stats side by side */}
           <div className="flex flex-col sm:flex-row gap-3 items-start">
-            <div className="shrink-0 bg-gray-50 rounded border border-gray-200 p-2">
+            <div className="shrink-0 bg-black rounded border border-neutral-800 p-2">
               <ArtistSprite spriteIndex={artist.spriteIndex} size={144} />
             </div>
             <div className="flex-1 grid grid-cols-2 gap-1 w-full">
@@ -532,7 +534,7 @@ function ArtistProfileModal({
           {/* Career ecosystem */}
           {artist.careerPhase && (
             <div>
-              <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career</h3>
+              <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
                 <MiniStat label="Phase" value={phaseStyle(artist.careerPhase).label} />
                 <MiniStat label="Momentum" value={String(artist.momentum ?? 0)} />
@@ -549,21 +551,21 @@ function ArtistProfileModal({
 
           {/* Attributes */}
           <div>
-            <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">
-              Attributes <span className="text-gray-300 font-normal normal-case">OVR {artist.overallRating}<StatDelta delta={artist.ovrChangeDelta} turn={artist.ovrChangeTurn} currentTurn={turn} /></span>
+            <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">
+              Attributes <span className="text-neutral-600 font-normal normal-case">OVR {artist.overallRating}<StatDelta delta={artist.ovrChangeDelta} turn={artist.ovrChangeTurn} currentTurn={turn} /></span>
             </h3>
             <div className="space-y-1.5">
               {Object.entries(ATTRIBUTE_GROUPS).map(([group, keys]) => (
                 <div key={group}>
-                  <div className="text-gray-400 text-[10px] font-semibold uppercase tracking-wider mb-0.5">{group}</div>
+                  <div className="text-neutral-500 text-[10px] font-semibold uppercase tracking-wider mb-0.5">{group}</div>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-1">
                     {keys.map((k) => {
                       const val = artist.attributes[k];
-                      const color = val >= 70 ? "text-green-600" : val >= 50 ? "text-gray-900" : val >= 30 ? "text-gray-400" : "text-red-500";
+                      const color = val >= 70 ? "text-green-400" : val >= 50 ? "text-gray-100" : val >= 30 ? "text-neutral-500" : "text-red-400";
                       return (
-                        <div key={k} className="bg-gray-50 border border-gray-100 rounded px-1 py-0.5 text-center">
+                        <div key={k} className="bg-black border border-neutral-800/50 rounded px-1 py-0.5 text-center">
                           <div className={`text-xs font-bold ${color}`}>{val}</div>
-                          <div className="text-gray-400 text-[9px] leading-tight">{ATTRIBUTE_LABELS[k]}</div>
+                          <div className="text-neutral-500 text-[9px] leading-tight">{ATTRIBUTE_LABELS[k]}</div>
                         </div>
                       );
                     })}
@@ -575,7 +577,7 @@ function ArtistProfileModal({
 
           {/* Personality */}
           <div>
-            <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Personality</h3>
+            <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Personality</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
               <MiniStat label="Loyalty" value={String(artist.traits.loyalty)} />
               <MiniStat label="Work Ethic" value={String(artist.traits.workEthic)} />
@@ -588,7 +590,7 @@ function ArtistProfileModal({
 
           {/* Career stats */}
           <div>
-            <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career Stats</h3>
+            <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career Stats</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
               <MiniStat label="Songs" value={String(artistSongs.length)} />
               <MiniStat label="Albums" value={String(artistAlbums.length)} />
@@ -606,11 +608,11 @@ function ArtistProfileModal({
           {/* Albums */}
           {artistAlbums.length > 0 && (
             <div>
-              <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Albums ({artistAlbums.length})</h3>
-              <div className="border border-gray-200 rounded overflow-x-auto">
+              <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Albums ({artistAlbums.length})</h3>
+              <div className="border border-neutral-800 rounded overflow-x-auto">
                 <table className="w-full text-[11px]">
                   <thead>
-                    <tr className="bg-gray-50 text-gray-400 border-b border-gray-200">
+                    <tr className="bg-black text-neutral-500 border-b border-neutral-800">
                       <th className="text-left py-1 px-2 font-semibold">Title</th>
                       <th className="text-center py-1 px-1 font-semibold">Week</th>
                       <th className="text-center py-1 px-1 font-semibold">Tracks</th>
@@ -620,12 +622,12 @@ function ArtistProfileModal({
                   </thead>
                   <tbody>
                     {artistAlbums.map((al, i) => (
-                      <tr key={al.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="py-1 px-2 font-medium text-gray-900">&ldquo;{al.title}&rdquo;</td>
-                        <td className="text-center py-1 px-1 text-gray-500">Wk {al.turnReleased}</td>
-                        <td className="text-center py-1 px-1 text-gray-500">{al.songIds.length}</td>
+                      <tr key={al.id} className={i % 2 === 0 ? "bg-neutral-950" : "bg-black"}>
+                        <td className="py-1 px-2 font-medium text-gray-100">&ldquo;{al.title}&rdquo;</td>
+                        <td className="text-center py-1 px-1 text-neutral-500">Wk {al.turnReleased}</td>
+                        <td className="text-center py-1 px-1 text-neutral-500">{al.songIds.length}</td>
                         <td className="text-center py-1 px-1 text-indigo-600 font-semibold">{al.qualityScore}</td>
-                        <td className="text-right py-1 px-2 text-green-600">${(al.totalRevenue / 1000).toFixed(1)}K</td>
+                        <td className="text-right py-1 px-2 text-green-400">${(al.totalRevenue / 1000).toFixed(1)}K</td>
                       </tr>
                     ))}
                   </tbody>
@@ -636,14 +638,14 @@ function ArtistProfileModal({
 
           {/* Release history */}
           <div>
-            <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Releases</h3>
+            <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Releases</h3>
             {artistSongs.length === 0 ? (
-              <p className="text-gray-400 text-xs">No releases yet.</p>
+              <p className="text-neutral-500 text-xs">No releases yet.</p>
             ) : (
-              <div className="border border-gray-200 rounded overflow-x-auto">
+              <div className="border border-neutral-800 rounded overflow-x-auto">
                 <table className="w-full text-[11px]">
                   <thead>
-                    <tr className="bg-gray-50 text-gray-400 border-b border-gray-200">
+                    <tr className="bg-black text-neutral-500 border-b border-neutral-800">
                       <th className="text-left py-1 px-2 font-semibold">Song</th>
                       <th className="text-left py-1 px-1 font-semibold">Producer</th>
                       <th className="text-right py-1 px-1 font-semibold">Wk</th>
@@ -656,21 +658,21 @@ function ArtistProfileModal({
                     {artistSongs.map((s, i) => {
                       const producer = producers.find((p) => p.id === s.producerId);
                       return (
-                        <tr key={s.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <td className="py-1 px-2 font-medium text-gray-900">{s.title}</td>
-                          <td className="py-1 px-1 text-gray-500">{producer?.name ?? "Unknown"}</td>
-                          <td className="py-1 px-1 text-right text-gray-500">{s.turnReleased}</td>
-                          <td className="py-1 px-1 text-right text-gray-700">
+                        <tr key={s.id} className={i % 2 === 0 ? "bg-neutral-950" : "bg-black"}>
+                          <td className="py-1 px-2 font-medium text-gray-100">{s.title}</td>
+                          <td className="py-1 px-1 text-neutral-500">{producer?.name ?? "Unknown"}</td>
+                          <td className="py-1 px-1 text-right text-neutral-500">{s.turnReleased}</td>
+                          <td className="py-1 px-1 text-right text-neutral-300">
                             {s.streamsTotal >= 1000000
                               ? `${(s.streamsTotal / 1000000).toFixed(1)}M`
                               : s.streamsTotal >= 1000
                               ? `${(s.streamsTotal / 1000).toFixed(0)}K`
                               : s.streamsTotal}
                           </td>
-                          <td className="py-1 px-1 text-right text-gray-500">
+                          <td className="py-1 px-1 text-right text-neutral-500">
                             {s.chartPosition ? `#${s.chartPosition}` : s.weeksOnChart > 0 ? "—" : "—"}
                           </td>
-                          <td className="py-1 px-2 text-right text-green-600">${(s.revenue / 1000).toFixed(1)}K</td>
+                          <td className="py-1 px-2 text-right text-green-400">${(s.revenue / 1000).toFixed(1)}K</td>
                         </tr>
                       );
                     })}
@@ -689,14 +691,14 @@ function ArtistProfileModal({
 
 function MiniStat({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: "green" | "indigo" }) {
   const valueColor =
-    highlight === "green" ? "text-green-600"
+    highlight === "green" ? "text-green-400"
     : highlight === "indigo" ? "text-indigo-600"
-    : "text-gray-900";
+    : "text-gray-100";
   return (
-    <div className="bg-gray-50 border border-gray-100 rounded px-1.5 py-1">
-      <div className="text-gray-400 text-[10px] leading-tight">{label}</div>
+    <div className="bg-black border border-neutral-800/50 rounded px-1.5 py-1">
+      <div className="text-neutral-500 text-[10px] leading-tight">{label}</div>
       <div className={`font-bold text-xs ${valueColor}`}>{value}</div>
-      {sub && <div className="text-gray-400 text-[9px]">{sub}</div>}
+      {sub && <div className="text-neutral-500 text-[9px]">{sub}</div>}
     </div>
   );
 }
@@ -718,7 +720,7 @@ function phaseStyle(phase: string): { label: string; color: string } {
     case "emerging": return { label: "Emerging", color: "text-cyan-400 border-cyan-700" };
     case "legacy": return { label: "Legacy", color: "text-amber-400 border-amber-700" };
     case "declining": return { label: "Declining", color: "text-red-400 border-red-700" };
-    case "washed": return { label: "Washed", color: "text-red-600 border-red-800" };
+    case "washed": return { label: "Washed", color: "text-red-400 border-red-800" };
     case "unknown": return { label: "Unknown", color: "text-zinc-400 border-zinc-600" };
     default: return { label: phase, color: "text-zinc-500 border-zinc-700" };
   }
@@ -726,24 +728,24 @@ function phaseStyle(phase: string): { label: string; color: string } {
 
 function phaseStyleLight(phase: string): string {
   switch (phase) {
-    case "peak": return "text-yellow-600 border-yellow-300";
-    case "established": return "text-green-600 border-green-300";
+    case "peak": return "text-yellow-400 border-yellow-300";
+    case "established": return "text-green-400 border-green-300";
     case "breakout": return "text-emerald-600 border-emerald-300";
-    case "buzzing": return "text-blue-600 border-blue-300";
+    case "buzzing": return "text-purple-400 border-blue-300";
     case "emerging": return "text-cyan-600 border-cyan-300";
     case "legacy": return "text-amber-600 border-amber-300";
-    case "declining": return "text-red-500 border-red-300";
-    case "washed": return "text-red-600 border-red-400";
-    case "unknown": return "text-gray-400 border-gray-300";
-    default: return "text-gray-500 border-gray-300";
+    case "declining": return "text-red-400 border-red-300";
+    case "washed": return "text-red-400 border-red-400";
+    case "unknown": return "text-neutral-500 border-neutral-700";
+    default: return "text-neutral-500 border-neutral-700";
   }
 }
 
 function momentumBar(mom: number): string {
-  if (mom >= 80) return "text-green-600";
+  if (mom >= 80) return "text-green-400";
   if (mom >= 60) return "text-emerald-600";
-  if (mom >= 40) return "text-yellow-600";
-  if (mom >= 25) return "text-orange-500";
-  return "text-red-500";
+  if (mom >= 40) return "text-yellow-400";
+  if (mom >= 25) return "text-orange-400";
+  return "text-red-400";
 }
 

@@ -4,6 +4,7 @@ import { useAuth } from "./AuthProvider";
 import { guestListSlots, guestLoad, guestDelete, accountListSlots, accountLoad, accountDelete, type SaveSlotMeta } from "@/lib/saveManager";
 import { useGameStore } from "@/store/gameStore";
 import AuthModal from "./AuthModal";
+import Image from "next/image";
 
 export default function SaveSlotScreen({ onStartNew }: { onStartNew: (slot: number) => void }) {
   const { user, isGuest, loading: authLoading } = useAuth();
@@ -45,22 +46,22 @@ export default function SaveSlotScreen({ onStartNew }: { onStartNew: (slot: numb
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Loading...</div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-neutral-500 text-sm">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       {showAuth && <AuthModal onClose={() => { setShowAuth(false); loadSlots(); }} />}
 
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Wrap Label GM</h1>
-            <p className="text-gray-400 text-xs mt-0.5">
+            <Image src="/RL_TEXT_LOGO.png" alt="RapLabel GM" width={200} height={40} priority />
+            <p className="text-neutral-500 text-xs mt-1.5">
               {isGuest ? "Playing as Guest" : user?.email}
             </p>
           </div>
@@ -68,7 +69,7 @@ export default function SaveSlotScreen({ onStartNew }: { onStartNew: (slot: numb
             {isGuest ? (
               <button
                 onClick={() => setShowAuth(true)}
-                className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+                className="text-sm text-purple-400 hover:text-purple-300 font-medium"
               >
                 Sign In
               </button>
@@ -80,8 +81,8 @@ export default function SaveSlotScreen({ onStartNew }: { onStartNew: (slot: numb
 
         {/* Guest warning */}
         {isGuest && (
-          <div className="bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-4">
-            <p className="text-amber-800 text-xs">
+          <div className="bg-amber-950/40 border border-amber-800 rounded px-3 py-2 mb-4">
+            <p className="text-amber-400 text-xs">
               Guest saves are stored in your browser only. Create an account to save across devices.
             </p>
           </div>
@@ -92,20 +93,20 @@ export default function SaveSlotScreen({ onStartNew }: { onStartNew: (slot: numb
           {slots.map((slot) => (
             <div
               key={slot.slotNumber}
-              className={`bg-white border rounded-lg p-4 ${
-                slot.isEmpty ? "border-dashed border-gray-300" : "border-gray-200"
+              className={`bg-neutral-950 border rounded-lg p-4 ${
+                slot.isEmpty ? "border-dashed border-neutral-700" : "border-neutral-800"
               }`}
             >
-              <div className="text-gray-400 text-[10px] font-semibold uppercase tracking-wider mb-2">
+              <div className="text-neutral-500 text-[10px] font-semibold uppercase tracking-wider mb-2">
                 Slot {slot.slotNumber}
               </div>
 
               {slot.isEmpty ? (
                 <div className="space-y-3">
-                  <p className="text-gray-300 text-sm">Empty</p>
+                  <p className="text-neutral-600 text-sm">Empty</p>
                   <button
                     onClick={() => onStartNew(slot.slotNumber)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 rounded text-xs transition"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-1.5 rounded text-xs transition"
                   >
                     New Game
                   </button>
@@ -113,10 +114,10 @@ export default function SaveSlotScreen({ onStartNew }: { onStartNew: (slot: numb
               ) : (
                 <div className="space-y-2">
                   <div>
-                    <div className="text-gray-900 font-semibold text-sm truncate">{slot.labelName}</div>
-                    <div className="text-gray-500 text-xs">Week {slot.turn}</div>
+                    <div className="text-gray-100 font-semibold text-sm truncate">{slot.labelName}</div>
+                    <div className="text-neutral-400 text-xs">Week {slot.turn}</div>
                     {slot.updatedAt && (
-                      <div className="text-gray-300 text-[10px]">
+                      <div className="text-neutral-600 text-[10px]">
                         {new Date(slot.updatedAt).toLocaleDateString()}
                       </div>
                     )}
@@ -124,21 +125,21 @@ export default function SaveSlotScreen({ onStartNew }: { onStartNew: (slot: numb
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => handleLoad(slot.slotNumber)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 rounded text-xs transition"
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-1.5 rounded text-xs transition"
                     >
                       Load
                     </button>
                     <button
                       onClick={() => handleDelete(slot.slotNumber)}
                       disabled={deleting === slot.slotNumber}
-                      className="bg-red-50 hover:bg-red-100 text-red-600 font-medium py-1.5 px-2.5 rounded text-xs transition"
+                      className="bg-red-950/50 hover:bg-red-900/50 text-red-400 font-medium py-1.5 px-2.5 rounded text-xs transition"
                     >
                       {deleting === slot.slotNumber ? "..." : "Del"}
                     </button>
                   </div>
                   <button
                     onClick={() => onStartNew(slot.slotNumber)}
-                    className="w-full text-gray-400 hover:text-gray-600 text-[11px] font-medium"
+                    className="w-full text-neutral-500 hover:text-neutral-300 text-[11px] font-medium"
                   >
                     Overwrite with New Game
                   </button>
@@ -157,7 +158,7 @@ function SignOutButton() {
   return (
     <button
       onClick={async () => { await signOut(); window.location.reload(); }}
-      className="text-sm text-gray-400 hover:text-gray-600 font-medium"
+      className="text-sm text-neutral-500 hover:text-neutral-300 font-medium"
     >
       Sign Out
     </button>

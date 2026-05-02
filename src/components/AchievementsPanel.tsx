@@ -24,15 +24,15 @@ const CATEGORY_META: Record<
   AchievementCategory,
   { label: string; color: string; dot: string; bg: string; border: string; barBg: string; barFill: string }
 > = {
-  streaming:      { label: "Streaming",      color: "text-blue-400",    dot: "bg-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/30",    barBg: "bg-blue-950",    barFill: "bg-blue-500" },
+  streaming:      { label: "Streaming",      color: "text-blue-400",    dot: "bg-blue-400",    bg: "bg-purple-950/500/10",    border: "border-purple-500/30",    barBg: "bg-blue-950",    barFill: "bg-purple-950/500" },
   merch:          { label: "Merch",          color: "text-yellow-400",  dot: "bg-yellow-400",  bg: "bg-yellow-500/10",  border: "border-yellow-500/30",  barBg: "bg-yellow-950",  barFill: "bg-yellow-500" },
   touring:        { label: "Touring",        color: "text-green-400",   dot: "bg-green-400",   bg: "bg-green-500/10",   border: "border-green-500/30",   barBg: "bg-green-950",   barFill: "bg-green-500" },
   cash:           { label: "Cash",           color: "text-emerald-400", dot: "bg-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/30", barBg: "bg-emerald-950", barFill: "bg-emerald-500" },
   charts:         { label: "Charts",         color: "text-purple-400",  dot: "bg-purple-400",  bg: "bg-purple-500/10",  border: "border-purple-500/30",  barBg: "bg-purple-950",  barFill: "bg-purple-500" },
   albums:         { label: "Albums",         color: "text-indigo-400",  dot: "bg-indigo-400",  bg: "bg-indigo-500/10",  border: "border-indigo-500/30",  barBg: "bg-indigo-950",  barFill: "bg-indigo-500" },
-  awards:         { label: "Awards",         color: "text-amber-400",   dot: "bg-amber-400",   bg: "bg-amber-500/10",   border: "border-amber-500/30",   barBg: "bg-amber-950",   barFill: "bg-amber-500" },
+  awards:         { label: "Awards",         color: "text-amber-400",   dot: "bg-amber-400",   bg: "bg-amber-950/400/10",   border: "border-amber-500/30",   barBg: "bg-amber-950",   barFill: "bg-amber-950/400" },
   collaborations: { label: "Collaborations", color: "text-pink-400",    dot: "bg-pink-400",    bg: "bg-pink-500/10",    border: "border-pink-500/30",    barBg: "bg-pink-950",    barFill: "bg-pink-500" },
-  dynasty:        { label: "Dynasty",        color: "text-red-400",     dot: "bg-red-400",     bg: "bg-red-500/10",     border: "border-red-500/30",     barBg: "bg-red-950",     barFill: "bg-red-500" },
+  dynasty:        { label: "Dynasty",        color: "text-red-400",     dot: "bg-red-400",     bg: "bg-red-950/500/10",     border: "border-red-500/30",     barBg: "bg-red-950",     barFill: "bg-red-950/500" },
   hall_of_fame:   { label: "Hall of Fame",   color: "text-orange-400",  dot: "bg-orange-400",  bg: "bg-orange-500/10",  border: "border-orange-500/30",  barBg: "bg-orange-950",  barFill: "bg-orange-500" },
   narrative:      { label: "Narrative",      color: "text-cyan-400",    dot: "bg-cyan-400",    bg: "bg-cyan-500/10",    border: "border-cyan-500/30",    barBg: "bg-cyan-950",    barFill: "bg-cyan-500" },
 };
@@ -51,7 +51,7 @@ function tierColor(tier: number): string {
   if (tier === 2) return "bg-blue-700 text-blue-100";
   if (tier === 3) return "bg-yellow-600 text-yellow-100";
   if (tier === 4) return "bg-purple-700 text-purple-100";
-  return "bg-amber-500 text-amber-950"; // 5+
+  return "bg-amber-950/400 text-amber-950"; // 5+
 }
 
 // ── Current value computation ────────────────────────────────────────────────
@@ -258,7 +258,7 @@ export default function AchievementsPanel() {
       <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-bold text-white">Achievements</h2>
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-neutral-500">
             <span className="text-white font-semibold">{totalUnlocked}</span>
             <span className="mx-1">/</span>
             <span>{totalAchievements}</span>
@@ -277,7 +277,7 @@ export default function AchievementsPanel() {
       {/* ── Recently unlocked ──────────────────────────────────────── */}
       {recentlyUnlocked.length > 0 && (
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+          <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
             Recently Unlocked
           </h3>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -311,8 +311,8 @@ export default function AchievementsPanel() {
           onClick={() => setActiveFilter("all")}
           className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
             activeFilter === "all"
-              ? "bg-white text-gray-900"
-              : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
+              ? "bg-neutral-950 text-gray-100"
+              : "bg-gray-800 text-neutral-500 hover:bg-gray-700 hover:text-gray-200"
           }`}
         >
           All
@@ -328,7 +328,7 @@ export default function AchievementsPanel() {
               className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 activeFilter === cat
                   ? `${meta.bg} ${meta.color} border ${meta.border}`
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
+                  : "bg-gray-800 text-neutral-500 hover:bg-gray-700 hover:text-gray-200"
               }`}
             >
               <span className={`inline-block w-1.5 h-1.5 rounded-full ${meta.dot}`} />
@@ -354,7 +354,7 @@ export default function AchievementsPanel() {
             <div className="flex items-center gap-2">
               <span className={`inline-block w-2.5 h-2.5 rounded-full ${meta.dot}`} />
               <h3 className={`text-sm font-bold ${meta.color}`}>{meta.label}</h3>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-neutral-500">
                 {catUnlocked}/{defs.length}
               </span>
               <div className="flex-1 max-w-[120px]">
@@ -388,7 +388,7 @@ export default function AchievementsPanel() {
                     {/* Top row: icon + tier + name */}
                     <div className="flex items-center gap-1.5 mb-1">
                       {/* Lock/unlock icon */}
-                      <span className={`text-sm ${isUnlocked ? "text-green-400" : "text-gray-600"}`}>
+                      <span className={`text-sm ${isUnlocked ? "text-green-400" : "text-neutral-400"}`}>
                         {isUnlocked ? (
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -404,13 +404,13 @@ export default function AchievementsPanel() {
                         {TIER_LABELS[def.tier] ?? def.tier}
                       </span>
                       {/* Name */}
-                      <span className={`text-xs truncate ${isUnlocked ? "font-bold text-white" : "text-gray-500"}`}>
+                      <span className={`text-xs truncate ${isUnlocked ? "font-bold text-white" : "text-neutral-500"}`}>
                         {def.name}
                       </span>
                     </div>
 
                     {/* Description */}
-                    <p className="text-[11px] text-gray-500 mb-1.5 leading-tight">
+                    <p className="text-[11px] text-neutral-500 mb-1.5 leading-tight">
                       {def.description}
                     </p>
 
@@ -424,7 +424,7 @@ export default function AchievementsPanel() {
 
                     {/* Progress text + unlock info */}
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-[10px] text-gray-500">
+                      <span className="text-[10px] text-neutral-500">
                         {isMoney ? fmtMoney(currentVal) : fmtNum(currentVal)}
                         {" / "}
                         {isMoney ? fmtMoney(def.threshold) : fmtNum(def.threshold)}
@@ -435,7 +435,7 @@ export default function AchievementsPanel() {
                         </span>
                       )}
                       {!isUnlocked && (
-                        <span className="text-[10px] text-gray-600">
+                        <span className="text-[10px] text-neutral-400">
                           {pct.toFixed(0)}%
                         </span>
                       )}
@@ -450,7 +450,7 @@ export default function AchievementsPanel() {
 
       {/* ── Empty state ────────────────────────────────────────────── */}
       {totalAchievements === 0 && (
-        <div className="text-center text-gray-500 py-8 text-sm">
+        <div className="text-center text-neutral-500 py-8 text-sm">
           No achievements defined.
         </div>
       )}

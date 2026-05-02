@@ -109,29 +109,29 @@ export default function GameLayout() {
 
   if (gameOver) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white border border-gray-200 rounded-md p-8 sm:p-10 w-full max-w-md text-center shadow-sm">
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">Label Closed</h1>
-          <p className="text-gray-500 text-sm mb-6">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-8 sm:p-10 w-full max-w-md text-center shadow-sm">
+          <h1 className="text-xl font-semibold text-gray-100 mb-2">Label Closed</h1>
+          <p className="text-neutral-400 text-sm mb-6">
             {money < -50000
               ? `${labelName} went bankrupt due to unsustainable debt.`
               : `${labelName} lost all industry reputation and could not recover.`}
           </p>
           <div className="grid grid-cols-2 gap-3 mb-8 text-sm">
-            <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-              <div className="text-gray-500 text-xs">Final Cash</div>
-              <div className={`font-semibold ${money < 0 ? "text-red-600" : "text-green-600"}`}>
+            <div className="bg-neutral-900 border border-neutral-800 rounded-md p-3">
+              <div className="text-neutral-500 text-xs">Final Cash</div>
+              <div className={`font-semibold ${money < 0 ? "text-red-400" : "text-green-400"}`}>
                 ${money.toLocaleString()}
               </div>
             </div>
-            <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-              <div className="text-gray-500 text-xs">Reputation</div>
-              <div className="font-semibold text-gray-900">{reputation}/100</div>
+            <div className="bg-neutral-900 border border-neutral-800 rounded-md p-3">
+              <div className="text-neutral-500 text-xs">Reputation</div>
+              <div className="font-semibold text-gray-100">{reputation}/100</div>
             </div>
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded text-sm transition"
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 rounded text-sm transition"
           >
             Start Over
           </button>
@@ -141,7 +141,7 @@ export default function GameLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-black flex flex-col">
       {pendingAwardCeremony && (
         <CeremonyModal
           ceremony={pendingAwardCeremony}
@@ -152,27 +152,27 @@ export default function GameLayout() {
 
       {/* Main Menu Modal */}
       {showSwitchModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setShowSwitchModal(false)}>
-          <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setShowSwitchModal(false)}>
+          <div className="bg-neutral-950 border border-neutral-800 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
               <div>
-                <h3 className="text-gray-900 font-bold text-sm">Main Menu</h3>
-                <p className="text-gray-400 text-[11px]">Return to save slot selection</p>
+                <h3 className="text-gray-100 font-bold text-sm">Main Menu</h3>
+                <p className="text-neutral-500 text-[11px]">Return to save slot selection</p>
               </div>
-              <button onClick={() => setShowSwitchModal(false)} className="text-gray-400 hover:text-gray-900 text-sm p-1">✕</button>
+              <button onClick={() => setShowSwitchModal(false)} className="text-neutral-500 hover:text-gray-100 text-sm p-1">✕</button>
             </div>
             <div className="p-4 space-y-3">
-              <p className="text-gray-600 text-xs">Your progress is saved automatically. You can switch to a different save slot or start a new label.</p>
+              <p className="text-neutral-400 text-xs">Your progress is saved automatically. You can switch to a different save slot or start a new label.</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowSwitchModal(false)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded text-xs transition"
+                  className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-medium py-2 rounded text-xs transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => { setActiveSlot(null); }}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded text-xs transition"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 rounded text-xs transition"
                 >
                   Go to Main Menu
                 </button>
@@ -184,14 +184,14 @@ export default function GameLayout() {
 
       {/* Mobile side drawer */}
       {isMobile && drawerOpen && (
-        <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setDrawerOpen(false)}>
+        <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setDrawerOpen(false)}>
           <div
-            className="absolute top-0 left-0 bottom-0 w-64 bg-white shadow-lg flex flex-col"
+            className="absolute top-0 left-0 bottom-0 w-64 bg-neutral-950 shadow-lg flex flex-col border-r border-neutral-800"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-              <span className="text-gray-900 font-bold text-sm">{labelName}</span>
-              <button onClick={() => setDrawerOpen(false)} className="text-gray-400 hover:text-gray-900 p-1">✕</button>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
+              <span className="text-gray-100 font-bold text-sm">{labelName}</span>
+              <button onClick={() => setDrawerOpen(false)} className="text-neutral-500 hover:text-gray-100 p-1">✕</button>
             </div>
             <div className="overflow-y-auto flex-1 py-1">
               {TABS.map((t) => (
@@ -200,18 +200,18 @@ export default function GameLayout() {
                   onClick={() => switchTab(t.id)}
                   className={`w-full text-left px-4 py-2.5 text-sm font-medium transition flex items-center gap-2.5 ${
                     tab === t.id
-                      ? "bg-blue-50 text-blue-600 border-l-2 border-blue-600"
-                      : "text-gray-700 hover:bg-gray-50 active:bg-gray-100 border-l-2 border-transparent"
+                      ? "bg-purple-950/50 text-purple-400 border-l-2 border-purple-500"
+                      : "text-neutral-300 hover:bg-neutral-900 active:bg-neutral-800 border-l-2 border-transparent"
                   }`}
                 >
                   <span className="text-base leading-none w-5 text-center">{t.icon}</span>
                   {t.label}
                 </button>
               ))}
-              <div className="border-t border-gray-200 mt-1 pt-1">
+              <div className="border-t border-neutral-800 mt-1 pt-1">
                 <button
                   onClick={() => { setDrawerOpen(false); setShowSwitchModal(true); }}
-                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition flex items-center gap-2.5"
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-900 active:bg-neutral-800 transition flex items-center gap-2.5"
                 >
                   <span className="text-base leading-none w-5 text-center">🔄</span>
                   Main Menu
@@ -225,15 +225,15 @@ export default function GameLayout() {
       <TopBar onNextTurn={nextTurn} onSeeAllNotifications={() => switchTab("notifications")} onMenuOpen={isMobile ? () => setDrawerOpen(true) : undefined} />
 
       {/* Desktop Tab Nav — hidden on mobile */}
-      <div className="hidden sm:flex bg-white border-b border-gray-200 px-2 gap-0.5 overflow-x-auto">
+      <div className="hidden sm:flex bg-neutral-950 border-b border-neutral-800 px-2 gap-0.5 overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-3 py-2 text-xs font-medium whitespace-nowrap transition border-b-2 ${
               tab === t.id
-                ? "border-blue-600 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-900"
+                ? "border-purple-500 text-gray-100"
+                : "border-transparent text-neutral-500 hover:text-gray-100"
             }`}
           >
             {t.label}
@@ -242,7 +242,7 @@ export default function GameLayout() {
         <div className="flex-1" />
         <button
           onClick={() => setShowSwitchModal(true)}
-          className="px-3 py-2 text-xs font-medium whitespace-nowrap text-gray-400 hover:text-gray-900 transition"
+          className="px-3 py-2 text-xs font-medium whitespace-nowrap text-neutral-500 hover:text-gray-100 transition"
         >
           Main Menu
         </button>

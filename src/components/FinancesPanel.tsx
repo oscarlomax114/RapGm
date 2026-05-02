@@ -19,9 +19,9 @@ function fmt(n: number): string {
 }
 
 function amtColor(n: number): string {
-  if (n > 0) return "text-green-600";
-  if (n < 0) return "text-red-600";
-  return "text-gray-500";
+  if (n > 0) return "text-green-400";
+  if (n < 0) return "text-red-400";
+  return "text-neutral-500";
 }
 
 export default function FinancesPanel() {
@@ -138,37 +138,37 @@ export default function FinancesPanel() {
     <div className="p-2 sm:p-0 space-y-3">
       {/* ── Financial Summary Cards ─────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="bg-white border border-gray-200 rounded-md p-2">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide">Cash</div>
-          <div className={`text-sm font-bold ${money >= 0 ? "text-green-600" : "text-red-600"}`}>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-2">
+          <div className="text-[10px] text-neutral-500 uppercase tracking-wide">Cash</div>
+          <div className={`text-sm font-bold ${money >= 0 ? "text-green-400" : "text-red-400"}`}>
             {fmt(money)}
           </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-md p-2">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide">Weekly Net</div>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-2">
+          <div className="text-[10px] text-neutral-500 uppercase tracking-wide">Weekly Net</div>
           <div className={`text-sm font-bold ${amtColor(weeklyNet)}`}>
             {weeklyNet >= 0 ? "+" : ""}{fmt(weeklyNet)}
           </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-md p-2">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide">Weekly Income</div>
-          <div className="text-sm font-bold text-green-600">{fmt(weeklyIncome)}</div>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-2">
+          <div className="text-[10px] text-neutral-500 uppercase tracking-wide">Weekly Income</div>
+          <div className="text-sm font-bold text-green-400">{fmt(weeklyIncome)}</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-md p-2">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide">Weekly Overhead</div>
-          <div className="text-sm font-bold text-red-600">-{fmt(revenueHistory.weeklyOverhead)}</div>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-2">
+          <div className="text-[10px] text-neutral-500 uppercase tracking-wide">Weekly Overhead</div>
+          <div className="text-sm font-bold text-red-400">-{fmt(revenueHistory.weeklyOverhead)}</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {/* ── Revenue Sources ───────────────────────────────────── */}
-        <div className="bg-white border border-gray-200 rounded-md">
-          <div className="px-2 py-1 border-b border-gray-100">
-            <span className="text-xs font-semibold text-gray-700">Revenue Sources</span>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md">
+          <div className="px-2 py-1 border-b border-neutral-800/50">
+            <span className="text-xs font-semibold text-neutral-300">Revenue Sources</span>
           </div>
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[10px] text-gray-400 uppercase">
+              <tr className="text-[10px] text-neutral-500 uppercase">
                 <th className="text-left px-2 py-0.5 font-medium">Source</th>
                 <th className="text-right px-2 py-0.5 font-medium">This Week</th>
                 <th className="text-right px-2 py-0.5 font-medium">All-Time</th>
@@ -179,37 +179,37 @@ export default function FinancesPanel() {
               {revenueSources.map((src) => {
                 const pct = allTimeTotal > 0 ? ((src.allTime / allTimeTotal) * 100) : 0;
                 return (
-                  <tr key={src.label} className="border-t border-gray-50 hover:bg-gray-50">
-                    <td className="px-2 py-0.5 text-gray-700">{src.label}</td>
-                    <td className="px-2 py-0.5 text-right text-green-600">{fmt(src.weekly)}</td>
-                    <td className="px-2 py-0.5 text-right text-gray-700">{fmt(src.allTime)}</td>
-                    <td className="px-2 py-0.5 text-right text-gray-500">{pct.toFixed(1)}%</td>
+                  <tr key={src.label} className="border-t border-gray-50 hover:bg-black">
+                    <td className="px-2 py-0.5 text-neutral-300">{src.label}</td>
+                    <td className="px-2 py-0.5 text-right text-green-400">{fmt(src.weekly)}</td>
+                    <td className="px-2 py-0.5 text-right text-neutral-300">{fmt(src.allTime)}</td>
+                    <td className="px-2 py-0.5 text-right text-neutral-500">{pct.toFixed(1)}%</td>
                   </tr>
                 );
               })}
-              <tr className="border-t border-gray-200 font-semibold">
+              <tr className="border-t border-neutral-800 font-semibold">
                 <td className="px-2 py-0.5 text-gray-800">Total</td>
-                <td className="px-2 py-0.5 text-right text-green-600">{fmt(weeklyIncome)}</td>
+                <td className="px-2 py-0.5 text-right text-green-400">{fmt(weeklyIncome)}</td>
                 <td className="px-2 py-0.5 text-right text-gray-800">{fmt(allTimeTotal)}</td>
-                <td className="px-2 py-0.5 text-right text-gray-500">100%</td>
+                <td className="px-2 py-0.5 text-right text-neutral-500">100%</td>
               </tr>
             </tbody>
           </table>
         </div>
 
         {/* ── Expenses Breakdown ────────────────────────────────── */}
-        <div className="bg-white border border-gray-200 rounded-md">
-          <div className="px-2 py-1 border-b border-gray-100">
-            <span className="text-xs font-semibold text-gray-700">Expenses Breakdown</span>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md">
+          <div className="px-2 py-1 border-b border-neutral-800/50">
+            <span className="text-xs font-semibold text-neutral-300">Expenses Breakdown</span>
           </div>
 
           {/* Recurring */}
           <div className="px-2 pt-1">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Recurring (weekly)</div>
+            <div className="text-[10px] text-neutral-500 uppercase tracking-wide mb-0.5">Recurring (weekly)</div>
           </div>
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[10px] text-gray-400 uppercase">
+              <tr className="text-[10px] text-neutral-500 uppercase">
                 <th className="text-left px-2 py-0.5 font-medium">Dept</th>
                 <th className="text-right px-2 py-0.5 font-medium">Lvl</th>
                 <th className="text-right px-2 py-0.5 font-medium">Weekly</th>
@@ -217,24 +217,24 @@ export default function FinancesPanel() {
             </thead>
             <tbody>
               {recurringRows.map((row) => (
-                <tr key={row.label} className="border-t border-gray-50 hover:bg-gray-50">
-                  <td className="px-2 py-0.5 text-gray-700">{row.label}</td>
-                  <td className="px-2 py-0.5 text-right text-gray-500">{row.level}</td>
-                  <td className="px-2 py-0.5 text-right text-red-600">
+                <tr key={row.label} className="border-t border-gray-50 hover:bg-black">
+                  <td className="px-2 py-0.5 text-neutral-300">{row.label}</td>
+                  <td className="px-2 py-0.5 text-right text-neutral-500">{row.level}</td>
+                  <td className="px-2 py-0.5 text-right text-red-400">
                     {row.cost > 0 ? `-${fmt(row.cost)}` : "$0"}
                   </td>
                 </tr>
               ))}
-              <tr className="border-t border-gray-200 font-semibold">
+              <tr className="border-t border-neutral-800 font-semibold">
                 <td className="px-2 py-0.5 text-gray-800" colSpan={2}>Total Overhead</td>
-                <td className="px-2 py-0.5 text-right text-red-600">-{fmt(totalWeeklyOverhead)}</td>
+                <td className="px-2 py-0.5 text-right text-red-400">-{fmt(totalWeeklyOverhead)}</td>
               </tr>
             </tbody>
           </table>
 
           {/* One-time */}
           <div className="px-2 pt-2">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">One-Time Spending (all-time)</div>
+            <div className="text-[10px] text-neutral-500 uppercase tracking-wide mb-0.5">One-Time Spending (all-time)</div>
           </div>
           <table className="w-full text-xs mb-1">
             <tbody>
@@ -246,16 +246,16 @@ export default function FinancesPanel() {
                 { label: "Mall Purchases", val: expenseByType.mall },
                 { label: "Upgrades", val: expenseByType.upgrades },
               ].map((row) => (
-                <tr key={row.label} className="border-t border-gray-50 hover:bg-gray-50">
-                  <td className="px-2 py-0.5 text-gray-700">{row.label}</td>
-                  <td className="px-2 py-0.5 text-right text-red-600">
+                <tr key={row.label} className="border-t border-gray-50 hover:bg-black">
+                  <td className="px-2 py-0.5 text-neutral-300">{row.label}</td>
+                  <td className="px-2 py-0.5 text-right text-red-400">
                     {row.val > 0 ? `-${fmt(row.val)}` : "$0"}
                   </td>
                 </tr>
               ))}
-              <tr className="border-t border-gray-200 font-semibold">
+              <tr className="border-t border-neutral-800 font-semibold">
                 <td className="px-2 py-0.5 text-gray-800">Total One-Time</td>
-                <td className="px-2 py-0.5 text-right text-red-600">-{fmt(totalOneTimeExpenses)}</td>
+                <td className="px-2 py-0.5 text-right text-red-400">-{fmt(totalOneTimeExpenses)}</td>
               </tr>
             </tbody>
           </table>
@@ -263,45 +263,45 @@ export default function FinancesPanel() {
       </div>
 
       {/* ── Profit & Loss Statement ─────────────────────────────── */}
-      <div className="bg-white border border-gray-200 rounded-md">
-        <div className="px-2 py-1 border-b border-gray-100">
-          <span className="text-xs font-semibold text-gray-700">Profit & Loss (All-Time)</span>
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md">
+        <div className="px-2 py-1 border-b border-neutral-800/50">
+          <span className="text-xs font-semibold text-neutral-300">Profit & Loss (All-Time)</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-2 py-1.5">
           <div>
-            <div className="text-[10px] text-gray-400 uppercase">Total Revenue</div>
-            <div className="text-sm font-bold text-green-600">{fmt(totalRevenue)}</div>
+            <div className="text-[10px] text-neutral-500 uppercase">Total Revenue</div>
+            <div className="text-sm font-bold text-green-400">{fmt(totalRevenue)}</div>
           </div>
           <div>
-            <div className="text-[10px] text-gray-400 uppercase">Total Expenses</div>
-            <div className="text-sm font-bold text-red-600">-{fmt(totalExpenses)}</div>
+            <div className="text-[10px] text-neutral-500 uppercase">Total Expenses</div>
+            <div className="text-sm font-bold text-red-400">-{fmt(totalExpenses)}</div>
           </div>
           <div>
-            <div className="text-[10px] text-gray-400 uppercase">Net P&L</div>
+            <div className="text-[10px] text-neutral-500 uppercase">Net P&L</div>
             <div className={`text-sm font-bold ${amtColor(netPL)}`}>
               {netPL >= 0 ? "+" : ""}{fmt(netPL)}
             </div>
           </div>
         </div>
         <div className="px-2 pb-1">
-          <div className="text-[10px] text-gray-400">
+          <div className="text-[10px] text-neutral-500">
             Roster: {artists.filter((a) => a.signed).length} artists | Released songs: {songs.filter((s) => s.released).length} | Albums: {albums.filter((a) => a.status === "released").length} | Mall items: {vault.length} (spent {fmt(vault.reduce((s, v) => s + v.price, 0))})
           </div>
         </div>
       </div>
 
       {/* ── Recent Financial Transactions ───────────────────────── */}
-      <div className="bg-white border border-gray-200 rounded-md overflow-x-auto">
-        <div className="px-2 py-1 border-b border-gray-100">
-          <span className="text-xs font-semibold text-gray-700">Recent Transactions</span>
-          <span className="text-[10px] text-gray-400 ml-1">({recentTx.length})</span>
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md overflow-x-auto">
+        <div className="px-2 py-1 border-b border-neutral-800/50">
+          <span className="text-xs font-semibold text-neutral-300">Recent Transactions</span>
+          <span className="text-[10px] text-neutral-500 ml-1">({recentTx.length})</span>
         </div>
         {recentTx.length === 0 ? (
-          <div className="px-2 py-2 text-xs text-gray-400">No financial transactions yet.</div>
+          <div className="px-2 py-2 text-xs text-neutral-500">No financial transactions yet.</div>
         ) : (
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[10px] text-gray-400 uppercase">
+              <tr className="text-[10px] text-neutral-500 uppercase">
                 <th className="text-left px-2 py-0.5 font-medium w-10">Wk</th>
                 <th className="text-left px-2 py-0.5 font-medium w-20">Type</th>
                 <th className="text-left px-2 py-0.5 font-medium">Description</th>
@@ -310,11 +310,11 @@ export default function FinancesPanel() {
             </thead>
             <tbody>
               {recentTx.map((tx) => (
-                <tr key={tx.id} className="border-t border-gray-50 hover:bg-gray-50">
-                  <td className="px-2 py-0.5 text-gray-500">{tx.turn}</td>
-                  <td className="px-2 py-0.5 text-gray-600">{tx.type.replace(/_/g, " ")}</td>
-                  <td className="px-2 py-0.5 text-gray-700 truncate max-w-[200px]">{tx.description}</td>
-                  <td className={`px-2 py-0.5 text-right font-medium ${tx.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <tr key={tx.id} className="border-t border-gray-50 hover:bg-black">
+                  <td className="px-2 py-0.5 text-neutral-500">{tx.turn}</td>
+                  <td className="px-2 py-0.5 text-neutral-400">{tx.type.replace(/_/g, " ")}</td>
+                  <td className="px-2 py-0.5 text-neutral-300 truncate max-w-[200px]">{tx.description}</td>
+                  <td className={`px-2 py-0.5 text-right font-medium ${tx.amount >= 0 ? "text-green-400" : "text-red-400"}`}>
                     {tx.amount >= 0 ? "+" : ""}{fmt(tx.amount)}
                   </td>
                 </tr>

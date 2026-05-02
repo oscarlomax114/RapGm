@@ -25,7 +25,7 @@ const TIER_LABELS: Record<HoFTier, string> = {
 const TIER_COLORS: Record<HoFTier, string> = {
   first_ballot: "bg-yellow-100 text-yellow-800 border-yellow-300",
   strong_candidate: "bg-blue-100 text-blue-800 border-blue-300",
-  eligible: "bg-gray-100 text-gray-600 border-gray-300",
+  eligible: "bg-neutral-900 text-neutral-400 border-neutral-700",
 };
 
 const GENRE_LABELS: Record<Genre, string> = {
@@ -116,11 +116,11 @@ export default function HallOfFamePanel() {
   if (totalInductees === 0) {
     return (
       <div className="p-4">
-        <div className="bg-white border border-gray-200 rounded-md p-5 mb-4">
-          <h2 className="text-gray-900 font-semibold text-sm">Hall of Fame</h2>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-5 mb-4">
+          <h2 className="text-gray-100 font-semibold text-sm">Hall of Fame</h2>
         </div>
-        <div className="bg-white border border-gray-200 rounded-md p-8 text-center">
-          <p className="text-gray-500 text-sm">The Hall of Fame is empty. Retire legendary artists to see them inducted here.</p>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-8 text-center">
+          <p className="text-neutral-500 text-sm">The Hall of Fame is empty. Retire legendary artists to see them inducted here.</p>
         </div>
       </div>
     );
@@ -138,36 +138,36 @@ export default function HallOfFamePanel() {
   return (
     <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-md p-3 sm:p-5">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md p-3 sm:p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-gray-900 font-semibold text-sm">Hall of Fame</h2>
+          <h2 className="text-gray-100 font-semibold text-sm">Hall of Fame</h2>
           <div className="flex items-center gap-6">
             <div className="text-center">
-              <div className="text-gray-400 text-xs">Total</div>
-              <div className="text-gray-900 font-semibold text-lg">{totalInductees}</div>
+              <div className="text-neutral-500 text-xs">Total</div>
+              <div className="text-gray-100 font-semibold text-lg">{totalInductees}</div>
             </div>
             <div className="text-center">
-              <div className="text-gray-400 text-xs">First Ballot</div>
-              <div className="text-yellow-600 font-semibold text-lg">{firstBallotCount}</div>
+              <div className="text-neutral-500 text-xs">First Ballot</div>
+              <div className="text-yellow-400 font-semibold text-lg">{firstBallotCount}</div>
             </div>
             <div className="text-center">
-              <div className="text-gray-400 text-xs">Your Label</div>
-              <div className="text-blue-600 font-semibold text-lg">{playerCount}</div>
+              <div className="text-neutral-500 text-xs">Your Label</div>
+              <div className="text-purple-400 font-semibold text-lg">{playerCount}</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filters and Sort */}
-      <div className="bg-white border border-gray-200 rounded-md p-4">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md p-4">
         <div className="flex flex-wrap items-center gap-4">
           {/* Tier filter */}
           <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-xs font-medium">Tier:</span>
+            <span className="text-neutral-500 text-xs font-medium">Tier:</span>
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value as HoFTier | "all")}
-              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="text-xs border border-neutral-700 rounded px-2 py-1 bg-neutral-950 text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
             >
               <option value="all">All</option>
               <option value="first_ballot">First Ballot</option>
@@ -178,11 +178,11 @@ export default function HallOfFamePanel() {
 
           {/* Label filter */}
           <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-xs font-medium">Label:</span>
+            <span className="text-neutral-500 text-xs font-medium">Label:</span>
             <select
               value={labelFilter}
               onChange={(e) => setLabelFilter(e.target.value)}
-              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="text-xs border border-neutral-700 rounded px-2 py-1 bg-neutral-950 text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
             >
               <option value="all">All</option>
               <option value="__player__">Your Label</option>
@@ -196,11 +196,11 @@ export default function HallOfFamePanel() {
 
           {/* Sort */}
           <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-xs font-medium">Sort:</span>
+            <span className="text-neutral-500 text-xs font-medium">Sort:</span>
             <select
               value={sortKey}
               onChange={(e) => { setSortKey(e.target.value as SortKey); setSortAsc(false); }}
-              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="text-xs border border-neutral-700 rounded px-2 py-1 bg-neutral-950 text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.key} value={opt.key}>{opt.label}</option>
@@ -208,7 +208,7 @@ export default function HallOfFamePanel() {
             </select>
             <button
               onClick={() => setSortAsc((prev) => !prev)}
-              className="text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded px-2 py-1"
+              className="text-xs text-neutral-500 hover:text-neutral-300 border border-neutral-700 rounded px-2 py-1"
               title={sortAsc ? "Ascending" : "Descending"}
             >
               {sortAsc ? "↑" : "↓"}
@@ -216,17 +216,17 @@ export default function HallOfFamePanel() {
           </div>
 
           {/* Result count */}
-          <span className="text-gray-400 text-xs ml-auto">
+          <span className="text-neutral-500 text-xs ml-auto">
             {displayed.length} inductee{displayed.length !== 1 ? "s" : ""}
           </span>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-md overflow-x-auto">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 text-gray-500 text-left">
+            <tr className="border-b border-neutral-800 bg-black text-neutral-500 text-left">
               <th className="px-3 py-2 font-medium w-10">#</th>
               <th className="px-1 py-2 font-medium w-8"></th>
               <th className="px-3 py-2 font-medium">Name</th>
@@ -260,7 +260,7 @@ export default function HallOfFamePanel() {
           <tbody>
             {displayed.length === 0 ? (
               <tr>
-                <td colSpan={14} className="px-3 py-8 text-center text-gray-400">
+                <td colSpan={14} className="px-3 py-8 text-center text-neutral-500">
                   No inductees match these filters.
                 </td>
               </tr>
@@ -270,23 +270,23 @@ export default function HallOfFamePanel() {
                 return (
                   <tr
                     key={`${entry.artistId}-${entry.inductionTurn}`}
-                    className={`border-b border-gray-100 hover:bg-gray-50 ${isPlayer ? "bg-blue-50" : ""}`}
+                    className={`border-b border-neutral-800/50 hover:bg-black ${isPlayer ? "bg-purple-950/50" : ""}`}
                   >
-                    <td className="px-3 py-2 text-gray-400 font-medium">{idx + 1}</td>
+                    <td className="px-3 py-2 text-neutral-500 font-medium">{idx + 1}</td>
                     <td className="px-1 py-2">
                       {entry.spriteIndex != null ? (
                         <ArtistSprite spriteIndex={entry.spriteIndex} size={24} />
                       ) : (
-                        <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-[10px] font-bold">
+                        <div className="w-6 h-6 bg-neutral-800 rounded-full flex items-center justify-center text-neutral-500 text-[10px] font-bold">
                           {entry.artistName.charAt(0)}
                         </div>
                       )}
                     </td>
-                    <td className="px-3 py-2 font-medium text-gray-900 whitespace-nowrap">{entry.artistName}</td>
-                    <td className={`px-3 py-2 whitespace-nowrap ${isPlayer ? "text-blue-600 font-medium" : "text-gray-600"}`}>
+                    <td className="px-3 py-2 font-medium text-gray-100 whitespace-nowrap">{entry.artistName}</td>
+                    <td className={`px-3 py-2 whitespace-nowrap ${isPlayer ? "text-purple-400 font-medium" : "text-neutral-400"}`}>
                       {entry.labelName || "—"}
                     </td>
-                    <td className="px-3 py-2 text-gray-500 whitespace-nowrap">
+                    <td className="px-3 py-2 text-neutral-500 whitespace-nowrap">
                       {entry.genre ? GENRE_LABELS[entry.genre] : "—"}
                     </td>
                     <td className="px-3 py-2">
@@ -294,14 +294,14 @@ export default function HallOfFamePanel() {
                         {TIER_LABELS[entry.tier]}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-gray-600">{entry.inductionYear}</td>
-                    <td className="px-3 py-2 text-right text-gray-900 font-medium">{entry.stats.overallRating}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{entry.stats.awards}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{entry.stats.numberOneSongs}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{entry.stats.platinumAlbums}</td>
-                    <td className="px-3 py-2 text-right text-gray-600 whitespace-nowrap">{fmtStreams(entry.stats.totalStreams)}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{entry.stats.careerYears}</td>
-                    <td className="px-3 py-2 text-right text-gray-900 font-semibold">{entry.score}</td>
+                    <td className="px-3 py-2 text-neutral-400">{entry.inductionYear}</td>
+                    <td className="px-3 py-2 text-right text-gray-100 font-medium">{entry.stats.overallRating}</td>
+                    <td className="px-3 py-2 text-right text-neutral-400">{entry.stats.awards}</td>
+                    <td className="px-3 py-2 text-right text-neutral-400">{entry.stats.numberOneSongs}</td>
+                    <td className="px-3 py-2 text-right text-neutral-400">{entry.stats.platinumAlbums}</td>
+                    <td className="px-3 py-2 text-right text-neutral-400 whitespace-nowrap">{fmtStreams(entry.stats.totalStreams)}</td>
+                    <td className="px-3 py-2 text-right text-neutral-400">{entry.stats.careerYears}</td>
+                    <td className="px-3 py-2 text-right text-gray-100 font-semibold">{entry.score}</td>
                   </tr>
                 );
               })

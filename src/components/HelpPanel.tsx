@@ -1,19 +1,19 @@
 "use client";
 
 function Heading({ id, children }: { id: string; children: React.ReactNode }) {
-  return <h3 id={id} className="text-gray-900 font-bold text-sm mt-6 mb-1 scroll-mt-4">{children}</h3>;
+  return <h3 id={id} className="text-gray-100 font-bold text-sm mt-6 mb-1 scroll-mt-4">{children}</h3>;
 }
 
 function Sub({ children }: { children: React.ReactNode }) {
-  return <h4 className="text-gray-700 font-semibold text-xs mt-3 mb-0.5">{children}</h4>;
+  return <h4 className="text-neutral-300 font-semibold text-xs mt-3 mb-0.5">{children}</h4>;
 }
 
 function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-gray-600 text-xs leading-relaxed mb-1.5">{children}</p>;
+  return <p className="text-neutral-400 text-xs leading-relaxed mb-1.5">{children}</p>;
 }
 
 function Li({ children }: { children: React.ReactNode }) {
-  return <li className="text-gray-600 text-xs leading-relaxed ml-3">{children}</li>;
+  return <li className="text-neutral-400 text-xs leading-relaxed ml-3">{children}</li>;
 }
 
 const TOC = [
@@ -31,17 +31,17 @@ const TOC = [
 export default function HelpPanel() {
   return (
     <div className="p-2 sm:p-4 max-w-2xl mx-auto">
-      <h2 className="text-gray-900 font-bold text-base mb-3">How to Play</h2>
+      <h2 className="text-gray-100 font-bold text-base mb-3">How to Play</h2>
 
       {/* Table of contents */}
-      <nav className="bg-white border border-gray-200 rounded-md p-3 mb-4">
-        <div className="text-gray-500 text-[10px] font-semibold uppercase tracking-wide mb-1.5">Contents</div>
+      <nav className="bg-neutral-950 border border-neutral-800 rounded-md p-3 mb-4">
+        <div className="text-neutral-500 text-[10px] font-semibold uppercase tracking-wide mb-1.5">Contents</div>
         <ol className="grid grid-cols-1 sm:grid-cols-2 gap-0.5">
           {TOC.map((item, i) => (
             <li key={item.id}>
               <a
                 href={`#${item.id}`}
-                className="text-xs text-blue-600 hover:text-blue-500 hover:underline transition"
+                className="text-xs text-purple-400 hover:text-purple-300 hover:underline transition"
                 onClick={(e) => {
                   e.preventDefault();
                   document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" });
@@ -55,7 +55,7 @@ export default function HelpPanel() {
       </nav>
 
       {/* All sections in one scrollable flow */}
-      <div className="bg-white border border-gray-200 rounded-md p-3 sm:p-4 space-y-2">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md p-3 sm:p-4 space-y-2">
 
         {/* 1. Overview */}
         <Heading id="overview">Overview</Heading>

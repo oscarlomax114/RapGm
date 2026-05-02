@@ -3,7 +3,7 @@ import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
-  title: "Wrap Label GM",
+  title: "RapLabel GM",
   description: "Run a rap label empire",
 };
 
@@ -16,7 +16,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-gray-50 text-gray-900 antialiased">
+      <body className="bg-black text-gray-100 antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

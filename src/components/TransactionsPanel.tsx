@@ -18,20 +18,20 @@ function fmtSigned(n: number) {
 
 const TYPE_BADGE_COLORS: Record<TransactionType, string> = {
   signing: "bg-blue-100 text-blue-700",
-  release: "bg-gray-100 text-gray-600",
+  release: "bg-neutral-900 text-neutral-400",
   recording: "bg-purple-100 text-purple-700",
   single_release: "bg-green-100 text-green-700",
   album_release: "bg-green-100 text-green-700",
   feature_deal: "bg-pink-100 text-pink-700",
   tour_booking: "bg-yellow-100 text-yellow-800",
   upgrade: "bg-indigo-100 text-indigo-700",
-  mall_purchase: "bg-amber-100 text-amber-800",
+  mall_purchase: "bg-amber-100 text-amber-400",
   revenue: "bg-emerald-100 text-emerald-700",
-  renegotiation: "bg-gray-100 text-gray-600",
-  contract_risk: "bg-gray-100 text-gray-600",
-  scout_refresh: "bg-gray-100 text-gray-600",
-  artist_dropped: "bg-gray-100 text-gray-600",
-  overhead: "bg-gray-100 text-gray-600",
+  renegotiation: "bg-neutral-900 text-neutral-400",
+  contract_risk: "bg-neutral-900 text-neutral-400",
+  scout_refresh: "bg-neutral-900 text-neutral-400",
+  artist_dropped: "bg-neutral-900 text-neutral-400",
+  overhead: "bg-neutral-900 text-neutral-400",
 };
 
 const TYPE_LABELS: Record<TransactionType, string> = {
@@ -156,31 +156,31 @@ export default function TransactionsPanel() {
   return (
     <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
       {/* Summary bar */}
-      <div className="bg-white border border-gray-200 rounded-md p-4">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md p-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           <div>
-            <div className="text-gray-400 text-xs">Transactions</div>
-            <div className="text-gray-900 font-semibold text-lg">
+            <div className="text-neutral-500 text-xs">Transactions</div>
+            <div className="text-gray-100 font-semibold text-lg">
               {transactions.length}
             </div>
           </div>
           <div>
-            <div className="text-gray-400 text-xs">Total Income</div>
+            <div className="text-neutral-500 text-xs">Total Income</div>
             <div className="text-green-700 font-semibold text-lg">
               +{fmt(totalIncome)}
             </div>
           </div>
           <div>
-            <div className="text-gray-400 text-xs">Total Expenses</div>
-            <div className="text-red-600 font-semibold text-lg">
+            <div className="text-neutral-500 text-xs">Total Expenses</div>
+            <div className="text-red-400 font-semibold text-lg">
               -{fmt(Math.abs(totalExpenses))}
             </div>
           </div>
           <div>
-            <div className="text-gray-400 text-xs">Net</div>
+            <div className="text-neutral-500 text-xs">Net</div>
             <div
               className={`font-semibold text-lg ${
-                net > 0 ? "text-green-700" : net < 0 ? "text-red-600" : "text-gray-500"
+                net > 0 ? "text-green-700" : net < 0 ? "text-red-400" : "text-neutral-500"
               }`}
             >
               {fmtSigned(net)}
@@ -190,14 +190,14 @@ export default function TransactionsPanel() {
       </div>
 
       {/* Filter controls */}
-      <div className="bg-white border border-gray-200 rounded-md p-3">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md p-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <label className="text-gray-500 text-xs">Category</label>
+            <label className="text-neutral-500 text-xs">Category</label>
             <select
               value={categoryFilter}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="text-xs border border-neutral-800 rounded px-2 py-1 bg-neutral-950 text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
             >
               <option value="all">All</option>
               <option value="income">Income</option>
@@ -207,11 +207,11 @@ export default function TransactionsPanel() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <label className="text-gray-500 text-xs">Type</label>
+            <label className="text-neutral-500 text-xs">Type</label>
             <select
               value={typeFilter}
               onChange={(e) => handleTypeChange(e.target.value)}
-              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="text-xs border border-neutral-800 rounded px-2 py-1 bg-neutral-950 text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
             >
               <option value="all">All</option>
               <option value="signings">Signings</option>
@@ -226,25 +226,25 @@ export default function TransactionsPanel() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <label className="text-gray-500 text-xs">Weeks</label>
+            <label className="text-neutral-500 text-xs">Weeks</label>
             <input
               type="text"
               value={weekMin}
               onChange={(e) => handleWeekMinChange(e.target.value)}
               placeholder="Min"
-              className="text-xs border border-gray-200 rounded px-2 py-1 w-14 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="text-xs border border-neutral-800 rounded px-2 py-1 w-14 bg-neutral-950 text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
             />
-            <span className="text-gray-400 text-xs">–</span>
+            <span className="text-neutral-500 text-xs">–</span>
             <input
               type="text"
               value={weekMax}
               onChange={(e) => handleWeekMaxChange(e.target.value)}
               placeholder="Max"
-              className="text-xs border border-gray-200 rounded px-2 py-1 w-14 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="text-xs border border-neutral-800 rounded px-2 py-1 w-14 bg-neutral-950 text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
             />
           </div>
 
-          <div className="ml-auto text-gray-400 text-xs">
+          <div className="ml-auto text-neutral-500 text-xs">
             {filtered.length} result{filtered.length !== 1 ? "s" : ""}
             {filtered.length !== transactions.length && ` of ${transactions.length}`}
           </div>
@@ -253,38 +253,38 @@ export default function TransactionsPanel() {
 
       {/* Transaction table */}
       {transactions.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-md p-8 text-center">
-          <p className="text-gray-500 text-sm">
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-8 text-center">
+          <p className="text-neutral-500 text-sm">
             No transactions yet. Start playing to see your history here.
           </p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-md p-8 text-center">
-          <p className="text-gray-500 text-sm">
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-8 text-center">
+          <p className="text-neutral-500 text-sm">
             No transactions match your filters.
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-md overflow-hidden overflow-x-auto">
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md overflow-hidden overflow-x-auto">
           <table className="w-full text-xs min-w-[600px] sm:min-w-0">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left text-gray-500 font-medium px-3 py-2 w-14">
+              <tr className="border-b border-neutral-800 bg-black">
+                <th className="text-left text-neutral-500 font-medium px-3 py-2 w-14">
                   Week
                 </th>
-                <th className="text-left text-gray-500 font-medium px-3 py-2 w-24">
+                <th className="text-left text-neutral-500 font-medium px-3 py-2 w-24">
                   Type
                 </th>
-                <th className="text-left text-gray-500 font-medium px-3 py-2">
+                <th className="text-left text-neutral-500 font-medium px-3 py-2">
                   Description
                 </th>
-                <th className="text-left text-gray-500 font-medium px-3 py-2 w-28">
+                <th className="text-left text-neutral-500 font-medium px-3 py-2 w-28">
                   Artist
                 </th>
-                <th className="text-right text-gray-500 font-medium px-3 py-2 w-20">
+                <th className="text-right text-neutral-500 font-medium px-3 py-2 w-20">
                   Amount
                 </th>
-                <th className="text-left text-gray-500 font-medium px-3 py-2 w-36">
+                <th className="text-left text-neutral-500 font-medium px-3 py-2 w-36">
                   Details
                 </th>
               </tr>
@@ -293,15 +293,15 @@ export default function TransactionsPanel() {
               {pageSlice.map((tx) => (
                 <tr
                   key={tx.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                  className="border-b border-neutral-800/50 hover:bg-black transition-colors"
                 >
-                  <td className="px-3 py-1.5 text-gray-600 tabular-nums">
+                  <td className="px-3 py-1.5 text-neutral-400 tabular-nums">
                     {tx.turn}
                   </td>
                   <td className="px-3 py-1.5">
                     <span
                       className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium leading-tight ${
-                        TYPE_BADGE_COLORS[tx.type] ?? "bg-gray-100 text-gray-600"
+                        TYPE_BADGE_COLORS[tx.type] ?? "bg-neutral-900 text-neutral-400"
                       }`}
                     >
                       {TYPE_LABELS[tx.type] ?? tx.type}
@@ -310,7 +310,7 @@ export default function TransactionsPanel() {
                   <td className="px-3 py-1.5 text-gray-800 truncate max-w-[260px]">
                     {tx.description}
                   </td>
-                  <td className="px-3 py-1.5 text-gray-600 truncate">
+                  <td className="px-3 py-1.5 text-neutral-400 truncate">
                     {tx.artistName ?? "—"}
                   </td>
                   <td
@@ -318,8 +318,8 @@ export default function TransactionsPanel() {
                       tx.amount > 0
                         ? "text-green-700"
                         : tx.amount < 0
-                        ? "text-red-600"
-                        : "text-gray-400"
+                        ? "text-red-400"
+                        : "text-neutral-500"
                     }`}
                   >
                     {tx.amount > 0
@@ -328,7 +328,7 @@ export default function TransactionsPanel() {
                       ? `-${fmt(tx.amount)}`
                       : "—"}
                   </td>
-                  <td className="px-3 py-1.5 text-gray-500 truncate max-w-[160px]">
+                  <td className="px-3 py-1.5 text-neutral-500 truncate max-w-[160px]">
                     {tx.details ?? "—"}
                   </td>
                 </tr>
@@ -338,8 +338,8 @@ export default function TransactionsPanel() {
 
           {/* Pagination */}
           {pageCount > 1 && (
-            <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 bg-gray-50">
-              <div className="text-gray-400 text-xs">
+            <div className="flex items-center justify-between px-3 py-2 border-t border-neutral-800 bg-black">
+              <div className="text-neutral-500 text-xs">
                 Showing {safePage * PAGE_SIZE + 1}–
                 {Math.min((safePage + 1) * PAGE_SIZE, filtered.length)} of{" "}
                 {filtered.length}
@@ -348,31 +348,31 @@ export default function TransactionsPanel() {
                 <button
                   onClick={() => setPage(0)}
                   disabled={safePage === 0}
-                  className="px-2 py-0.5 text-xs rounded border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="px-2 py-0.5 text-xs rounded border border-neutral-800 bg-neutral-950 text-neutral-400 hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   First
                 </button>
                 <button
                   onClick={() => setPage(safePage - 1)}
                   disabled={safePage === 0}
-                  className="px-2 py-0.5 text-xs rounded border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="px-2 py-0.5 text-xs rounded border border-neutral-800 bg-neutral-950 text-neutral-400 hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Prev
                 </button>
-                <span className="text-gray-500 text-xs px-2">
+                <span className="text-neutral-500 text-xs px-2">
                   {safePage + 1} / {pageCount}
                 </span>
                 <button
                   onClick={() => setPage(safePage + 1)}
                   disabled={safePage >= pageCount - 1}
-                  className="px-2 py-0.5 text-xs rounded border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="px-2 py-0.5 text-xs rounded border border-neutral-800 bg-neutral-950 text-neutral-400 hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
                 <button
                   onClick={() => setPage(pageCount - 1)}
                   disabled={safePage >= pageCount - 1}
-                  className="px-2 py-0.5 text-xs rounded border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="px-2 py-0.5 text-xs rounded border border-neutral-800 bg-neutral-950 text-neutral-400 hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Last
                 </button>

@@ -18,16 +18,16 @@ function BellIcon() {
 
 function eventDot(type: GameEvent["type"]) {
   switch (type) {
-    case "scandal":          return "bg-red-500";
+    case "scandal":          return "bg-red-950/500";
     case "beef":             return "bg-red-400";
     case "burnout":          return "bg-orange-400";
     case "viral_moment":     return "bg-green-500";
     case "award_nomination": return "bg-yellow-500";
     case "chart_surge":      return "bg-green-400";
     case "radio_play":       return "bg-blue-400";
-    case "label_deal":       return "bg-blue-500";
+    case "label_deal":       return "bg-purple-950/500";
     case "revenue":          return "bg-gray-400";
-    case "milestone":        return "bg-blue-600";
+    case "milestone":        return "bg-purple-600";
     case "album_release":    return "bg-purple-400";
     default:                 return "bg-gray-300";
   }
@@ -36,7 +36,7 @@ function eventDot(type: GameEvent["type"]) {
 function deltaTag(value: number, prefix: string, suffix: string) {
   if (value === 0) return null;
   const positive = value > 0;
-  const color = positive ? "text-green-600" : "text-red-600";
+  const color = positive ? "text-green-400" : "text-red-400";
   const sign = positive ? "+" : "";
   return <span className={`text-[10px] font-semibold ${color}`}>{sign}{prefix}{value.toLocaleString()}{suffix}</span>;
 }
@@ -69,7 +69,7 @@ export default function ReputationBell({ onSeeAll }: { onSeeAll?: () => void } =
     <div className="relative" ref={ref}>
       <button
         onClick={handleOpen}
-        className="relative text-gray-400 hover:text-gray-900 transition p-1 rounded-md hover:bg-gray-100"
+        className="relative text-neutral-500 hover:text-gray-100 transition p-1 rounded-md hover:bg-neutral-900"
         aria-label="Notification log"
       >
         <BellIcon />
@@ -81,27 +81,27 @@ export default function ReputationBell({ onSeeAll }: { onSeeAll?: () => void } =
       </button>
 
       {open && (
-        <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto bottom-16 sm:bottom-auto sm:right-0 sm:mt-2 sm:w-80 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-            <span className="text-gray-900 font-semibold text-sm">Notifications</span>
-            <span className="text-gray-400 text-xs">{recentEvents.length} events</span>
+        <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto bottom-16 sm:bottom-auto sm:right-0 sm:mt-2 sm:w-80 bg-neutral-950 border border-neutral-800 rounded-md shadow-lg z-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-neutral-800 flex items-center justify-between">
+            <span className="text-gray-100 font-semibold text-sm">Notifications</span>
+            <span className="text-neutral-500 text-xs">{recentEvents.length} events</span>
           </div>
 
           {recentEvents.length === 0 ? (
-            <div className="px-4 py-6 text-gray-400 text-sm text-center">
+            <div className="px-4 py-6 text-neutral-500 text-sm text-center">
               No events yet -- advance a week to see activity.
             </div>
           ) : (
             <ul className="max-h-72 overflow-y-auto divide-y divide-gray-100">
               {recentEvents.slice(0, 15).map((event) => (
-                <li key={event.id} className="px-4 py-3 flex gap-3 items-start hover:bg-gray-50 transition">
+                <li key={event.id} className="px-4 py-3 flex gap-3 items-start hover:bg-black transition">
                   <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${eventDot(event.type)}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-gray-900 text-xs font-semibold truncate">{event.title}</span>
-                      <span className="text-gray-400 text-[10px] shrink-0">Wk {event.turn}</span>
+                      <span className="text-gray-100 text-xs font-semibold truncate">{event.title}</span>
+                      <span className="text-neutral-500 text-[10px] shrink-0">Wk {event.turn}</span>
                     </div>
-                    <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{event.description}</p>
+                    <p className="text-neutral-500 text-xs mt-0.5 line-clamp-2">{event.description}</p>
                     <div className="flex gap-2 mt-1 flex-wrap">
                       {deltaTag(event.moneyDelta, "$", "")}
                       {deltaTag(event.reputationDelta, "", " rep")}
@@ -113,10 +113,10 @@ export default function ReputationBell({ onSeeAll }: { onSeeAll?: () => void } =
             </ul>
           )}
           {recentEvents.length > 0 && onSeeAll && (
-            <div className="border-t border-gray-200 px-4 py-2">
+            <div className="border-t border-neutral-800 px-4 py-2">
               <button
                 onClick={() => { onSeeAll(); setOpen(false); }}
-                className="w-full text-center text-xs text-blue-600 hover:text-blue-500 font-medium py-1 transition"
+                className="w-full text-center text-xs text-purple-400 hover:text-purple-300 font-medium py-1 transition"
               >
                 See All Notifications ({recentEvents.length})
               </button>

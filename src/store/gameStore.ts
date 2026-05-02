@@ -289,7 +289,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   loadSaveState: (state, slot) => {
-    set({ ...state, activeSlot: slot });
+    // Patch artists from older saves that may be signed without contract fields
+    const patchedArtists = state.artists.map((a) =>
+      a.signed && (!a.contractAlbumsTotal || a.contractAlbumsTotal === 0)
+        ? { ...a, contractAlbumsTotal: 2, contractAlbumsLeft: 2 }
+        : a
+    );
+    set({ ...state, artists: patchedArtists, activeSlot: slot });
   },
 
   startGame: (labelName) => {
@@ -628,7 +634,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       .concat(playerAsRival);
 
     // Rival artists become player's signed roster
-    const newArtists = rival.rosterArtists.map((a) => ({ ...a, signed: true }));
+    const newArtists = rival.rosterArtists.map((a) => ({
+      ...a,
+      signed: true,
+      contractAlbumsTotal: a.contractAlbumsTotal || 2,
+      contractAlbumsLeft: a.contractAlbumsLeft || 2,
+    }));
 
     set({
       ...state,

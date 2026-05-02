@@ -2129,7 +2129,7 @@ export function advanceTurn(state: GameState): GameState {
     let moraleDelta = fatigue < fatigueThreshold ? 1 : -2;
     if (a.traits.fameMotivation > 60) moraleDelta += fanbase > 50000 ? 1 : fanbase < 5000 ? -1 : 0;
     // Expired contract: morale decays faster until player renegotiates or drops the artist
-    if (a.contractAlbumsLeft === 0 && a.contractAlbumsTotal > 0) moraleDelta -= 3;
+    if (a.contractAlbumsTotal > 0 && a.contractAlbumsLeft === 0) moraleDelta -= 3;
 
     // Inactivity penalty: shelved artists who aren't recording, releasing, or touring lose morale.
     // Find the last turn this artist recorded a song or completed any tour.

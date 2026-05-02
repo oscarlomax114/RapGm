@@ -10,7 +10,7 @@ function StatDelta({ delta, turn: changeTurn, currentTurn }: { delta?: number; t
   if (!delta || delta === 0 || !changeTurn || currentTurn - changeTurn > 3) return null;
   const isPositive = delta > 0;
   return (
-    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-500"}`}>
+    <span className={`text-[10px] font-semibold ml-0.5 ${isPositive ? "text-green-500" : "text-red-400"}`}>
       {isPositive ? "\u25B2" : "\u25BC"}{Math.abs(delta)}
     </span>
   );
@@ -38,7 +38,7 @@ function getCooldownWeeks(a: Artist, turn: number): number {
 }
 
 const TIER_BADGE: Record<string, string> = {
-  underground: "bg-gray-200 text-gray-600",
+  underground: "bg-neutral-800 text-neutral-400",
   "mid-tier":  "bg-blue-100 text-blue-700",
   elite:       "bg-yellow-100 text-yellow-700",
 };
@@ -156,9 +156,9 @@ export default function ScoutingPanel() {
 
       {signingError && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
-          <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl p-5 sm:max-w-sm w-full text-center shadow-lg">
-            <h3 className="text-gray-900 font-bold text-sm mb-1">Signing Failed</h3>
-            <p className="text-gray-500 text-xs mb-4">{signingError}</p>
+          <div className="bg-neutral-950 border border-neutral-800 sm:rounded-lg rounded-t-xl p-5 sm:max-w-sm w-full text-center shadow-lg">
+            <h3 className="text-gray-100 font-bold text-sm mb-1">Signing Failed</h3>
+            <p className="text-neutral-500 text-xs mb-4">{signingError}</p>
             <button
               onClick={() => setSigningError(null)}
               className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-1.5 rounded transition"
@@ -171,13 +171,13 @@ export default function ScoutingPanel() {
 
       {signingSuccess && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
-          <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl p-5 sm:max-w-sm w-full text-center shadow-lg">
-            <div className="text-green-600 text-2xl mb-2">&#10003;</div>
-            <h3 className="text-gray-900 font-bold text-sm mb-1">Artist Signed!</h3>
-            <p className="text-gray-500 text-xs mb-1">
+          <div className="bg-neutral-950 border border-neutral-800 sm:rounded-lg rounded-t-xl p-5 sm:max-w-sm w-full text-center shadow-lg">
+            <div className="text-green-400 text-2xl mb-2">&#10003;</div>
+            <h3 className="text-gray-100 font-bold text-sm mb-1">Artist Signed!</h3>
+            <p className="text-neutral-500 text-xs mb-1">
               <strong>{signingSuccess.name}</strong> has signed with your label.
             </p>
-            <p className="text-gray-400 text-[11px] mb-4">
+            <p className="text-neutral-500 text-[11px] mb-4">
               {signingSuccess.albumCount}-album deal &middot; ${signingSuccess.fee.toLocaleString()} signing fee
             </p>
             <button
@@ -191,7 +191,7 @@ export default function ScoutingPanel() {
       )}
 
       {/* Sub-tab toggle */}
-      <div className="flex gap-0 border-b border-gray-200">
+      <div className="flex gap-0 border-b border-neutral-800">
         {([
           { key: "freeAgents" as SubTab, label: "Free Agents" },
           { key: "producers" as SubTab, label: "Producers" },
@@ -202,7 +202,7 @@ export default function ScoutingPanel() {
             className={`px-3 py-1.5 text-xs font-semibold border-b-2 transition ${
               subTab === tab.key
                 ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-400 hover:text-gray-600"
+                : "border-transparent text-neutral-500 hover:text-neutral-400"
             }`}
           >
             {tab.label}
@@ -216,8 +216,8 @@ export default function ScoutingPanel() {
           {/* Market overview header */}
           <div className="flex items-center justify-between mb-1.5">
             <div>
-              <h2 className="text-gray-900 font-bold text-sm">Free Agency Market</h2>
-              <p className="text-gray-400 text-[11px]">
+              <h2 className="text-gray-100 font-bold text-sm">Free Agency Market</h2>
+              <p className="text-neutral-500 text-[11px]">
                 Scouting Lv.{scoutingLevel}
               </p>
             </div>
@@ -225,11 +225,11 @@ export default function ScoutingPanel() {
 
           {/* Market stats */}
           <div className="grid grid-cols-2 gap-1.5 mb-2">
-            <div className="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-center">
-              <div className="text-gray-900 font-bold text-sm">{totalMarket}</div>
-              <div className="text-gray-400 text-[10px]">Total Market</div>
+            <div className="bg-black border border-neutral-800 rounded px-2 py-1.5 text-center">
+              <div className="text-gray-100 font-bold text-sm">{totalMarket}</div>
+              <div className="text-neutral-500 text-[10px]">Total Market</div>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded px-2 py-1.5 text-center">
+            <div className="bg-purple-950/50 border border-blue-200 rounded px-2 py-1.5 text-center">
               <div className="text-blue-700 font-bold text-sm">{discoveredCount}</div>
               <div className="text-blue-400 text-[10px]">Discovered</div>
             </div>
@@ -247,7 +247,7 @@ export default function ScoutingPanel() {
                 className={`px-2 py-1 text-[11px] font-medium rounded transition ${
                   faStatusFilter === f.key
                     ? "bg-indigo-100 text-indigo-700"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    : "bg-neutral-900 text-neutral-500 hover:bg-neutral-800"
                 }`}
               >
                 {f.label} ({f.count})
@@ -260,7 +260,7 @@ export default function ScoutingPanel() {
             <select
               value={faGenreFilter}
               onChange={(e) => setFaGenreFilter(e.target.value)}
-              className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
+              className="bg-neutral-950 border border-neutral-800 text-neutral-300 text-[11px] rounded px-1.5 py-1 outline-none"
             >
               <option value="all">All Genres</option>
               <option value="trap">Trap</option>
@@ -273,7 +273,7 @@ export default function ScoutingPanel() {
             <select
               value={faMinOvr}
               onChange={(e) => setFaMinOvr(Number(e.target.value))}
-              className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
+              className="bg-neutral-950 border border-neutral-800 text-neutral-300 text-[11px] rounded px-1.5 py-1 outline-none"
             >
               <option value={0}>OVR: Any</option>
               <option value={30}>OVR: 30+</option>
@@ -286,7 +286,7 @@ export default function ScoutingPanel() {
             <select
               value={faMaxAge}
               onChange={(e) => setFaMaxAge(Number(e.target.value))}
-              className="bg-white border border-gray-200 text-gray-700 text-[11px] rounded px-1.5 py-1 outline-none"
+              className="bg-neutral-950 border border-neutral-800 text-neutral-300 text-[11px] rounded px-1.5 py-1 outline-none"
             >
               <option value={99}>Age: Any</option>
               <option value={21}>Age: &le;21</option>
@@ -297,13 +297,13 @@ export default function ScoutingPanel() {
             </select>
           </div>
 
-          {filteredFreeAgents.length === 0 && <p className="text-gray-400 text-xs">No free agents match your filters.</p>}
+          {filteredFreeAgents.length === 0 && <p className="text-neutral-500 text-xs">No free agents match your filters.</p>}
 
           {pagedFreeAgents.length > 0 && (
-            <div className="border border-gray-200 rounded overflow-x-auto max-h-[60vh] overflow-y-auto">
+            <div className="border border-neutral-800 rounded overflow-x-auto max-h-[60vh] overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-gray-100 text-gray-500 border-b border-gray-200">
+                  <tr className="bg-neutral-900 text-neutral-500 border-b border-neutral-800">
                     <th className="text-left py-1 px-2 font-semibold">Name</th>
                     <SortTh col="age" label="Age" align="center" current={faSortBy} desc={faSortDesc} onToggle={toggleFaSort} />
                     <SortTh col="genre" label="Genre" align="left" current={faSortBy} desc={faSortDesc} onToggle={toggleFaSort} />
@@ -329,19 +329,19 @@ export default function ScoutingPanel() {
                     let statusColor: string;
                     if (cooldown) {
                       statusText = `Declined · ${cooldownWks}wk`;
-                      statusColor = "text-amber-600 bg-amber-50";
+                      statusColor = "text-amber-600 bg-amber-950/40";
                     } else if (tooUnwilling) {
                       statusText = "Not Interested";
-                      statusColor = "text-gray-400";
+                      statusColor = "text-neutral-500";
                     } else if (willingness >= 70) {
                       statusText = `Willing · ${willingness}%`;
-                      statusColor = "text-green-600";
+                      statusColor = "text-green-400";
                     } else if (willingness >= 45) {
                       statusText = `Hesitant · ${willingness}%`;
-                      statusColor = "text-yellow-600";
+                      statusColor = "text-yellow-400";
                     } else {
                       statusText = `Reluctant · ${willingness}%`;
-                      statusColor = "text-red-500";
+                      statusColor = "text-red-400";
                     }
 
                     const dimmed = cooldown || tooUnwilling;
@@ -349,27 +349,27 @@ export default function ScoutingPanel() {
                     return (
                       <tr
                         key={a.id}
-                        className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} ${dimmed ? "opacity-60" : "hover:bg-blue-50"}`}
+                        className={`${i % 2 === 0 ? "bg-neutral-950" : "bg-black"} ${dimmed ? "opacity-60" : "hover:bg-purple-950/50"}`}
                       >
                         <td className="py-1 px-2">
                           <div className="flex items-center gap-1.5">
                             <div className="shrink-0"><ArtistSprite spriteIndex={a.spriteIndex} size={20} /></div>
                             <button
                               onClick={dimmed ? undefined : () => setProfileArtistId(a.id)}
-                              className={`font-medium text-gray-900 truncate max-w-[120px] ${!dimmed ? "hover:text-indigo-600 cursor-pointer" : ""}`}
+                              className={`font-medium text-gray-100 truncate max-w-[120px] ${!dimmed ? "hover:text-indigo-600 cursor-pointer" : ""}`}
                             >
                               {a.name}
                             </button>
                           </div>
                         </td>
-                        <td className="text-center py-1 px-1 text-gray-600">{a.age}</td>
-                        <td className="py-1 px-1 text-gray-600">{a.genre}</td>
-                        <td className="text-center py-1 px-1 font-semibold text-gray-900">{a.overallRating}<StatDelta delta={a.ovrChangeDelta} turn={a.ovrChangeTurn} currentTurn={turn} /></td>
-                        <td className="text-center py-1 px-1 text-gray-600">{a.potential}<StatDelta delta={a.potChangeDelta} turn={a.potChangeTurn} currentTurn={turn} /></td>
+                        <td className="text-center py-1 px-1 text-neutral-400">{a.age}</td>
+                        <td className="py-1 px-1 text-neutral-400">{a.genre}</td>
+                        <td className="text-center py-1 px-1 font-semibold text-gray-100">{a.overallRating}<StatDelta delta={a.ovrChangeDelta} turn={a.ovrChangeTurn} currentTurn={turn} /></td>
+                        <td className="text-center py-1 px-1 text-neutral-400">{a.potential}<StatDelta delta={a.potChangeDelta} turn={a.potChangeTurn} currentTurn={turn} /></td>
                         <td className="text-center py-1 px-1">
                           {ps && <span className={`${phaseStyleLight(a.careerPhase)} text-[10px] font-semibold`}>{ps.label}</span>}
                         </td>
-                        <td className="text-right py-1 px-1 text-gray-600">{dimmed ? "--" : `$${(fee1 / 1000).toFixed(0)}K`}</td>
+                        <td className="text-right py-1 px-1 text-neutral-400">{dimmed ? "--" : `$${(fee1 / 1000).toFixed(0)}K`}</td>
                         <td className="text-center py-1 px-1">
                           <span className={`text-[10px] font-semibold ${statusColor} ${cooldown ? "px-1 py-0.5 rounded" : ""}`}>
                             {statusText}
@@ -379,7 +379,7 @@ export default function ScoutingPanel() {
                           {!cooldown && !tooUnwilling && (
                             <button
                               onClick={() => setSigningArtist(a)}
-                              className="text-[11px] text-green-600 hover:text-green-500 font-semibold"
+                              className="text-[11px] text-green-400 hover:text-green-500 font-semibold"
                             >
                               Sign
                             </button>
@@ -399,17 +399,17 @@ export default function ScoutingPanel() {
               <button
                 onClick={() => setFaPage(Math.max(0, clampedPage - 1))}
                 disabled={clampedPage === 0}
-                className="text-[11px] text-gray-500 hover:text-gray-900 border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed px-2 py-0.5 rounded transition"
+                className="text-[11px] text-neutral-500 hover:text-gray-100 border border-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed px-2 py-0.5 rounded transition"
               >
                 Prev
               </button>
-              <span className="text-gray-400 text-[11px]">
+              <span className="text-neutral-500 text-[11px]">
                 {clampedPage + 1} / {totalFaPages}
               </span>
               <button
                 onClick={() => setFaPage(Math.min(totalFaPages - 1, clampedPage + 1))}
                 disabled={clampedPage >= totalFaPages - 1}
-                className="text-[11px] text-gray-500 hover:text-gray-900 border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed px-2 py-0.5 rounded transition"
+                className="text-[11px] text-neutral-500 hover:text-gray-100 border border-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed px-2 py-0.5 rounded transition"
               >
                 Next
               </button>
@@ -423,17 +423,17 @@ export default function ScoutingPanel() {
         <section>
           <div className="flex items-center justify-between mb-1">
             <div>
-              <h2 className="text-gray-900 font-bold text-sm">Producer Roster ({producers.length})</h2>
-              <p className="text-gray-400 text-[11px]">
+              <h2 className="text-gray-100 font-bold text-sm">Producer Roster ({producers.length})</h2>
+              <p className="text-neutral-500 text-[11px]">
                 Studio Lv.{studioLevel} · {producers.filter(p => isProducerUnlocked(p, { studioLevel })).length}/{producers.length} unlocked
               </p>
             </div>
           </div>
 
-          <div className="border border-gray-200 rounded overflow-x-auto max-h-[60vh] overflow-y-auto">
+          <div className="border border-neutral-800 rounded overflow-x-auto max-h-[60vh] overflow-y-auto">
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-gray-100 text-gray-500 border-b border-gray-200">
+                <tr className="bg-neutral-900 text-neutral-500 border-b border-neutral-800">
                   <th className="text-left py-1 px-2 font-semibold">Name</th>
                   <th className="text-left py-1 px-1 font-semibold">Tier</th>
                   <th className="text-left py-1 px-1 font-semibold">Specialty</th>
@@ -447,19 +447,19 @@ export default function ScoutingPanel() {
                   const unlocked = isProducerUnlocked(p, { studioLevel });
                   const reqLevel = PRODUCER_TIER_MIN_STUDIO[p.studioTierRequired];
                   return (
-                    <tr key={p.id} className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} ${!unlocked ? "opacity-50" : "hover:bg-blue-50"}`}>
-                      <td className="py-1 px-2 text-gray-900 font-medium">{p.name}</td>
+                    <tr key={p.id} className={`${idx % 2 === 0 ? "bg-neutral-950" : "bg-black"} ${!unlocked ? "opacity-50" : "hover:bg-purple-950/50"}`}>
+                      <td className="py-1 px-2 text-gray-100 font-medium">{p.name}</td>
                       <td className="py-1 px-1">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${TIER_BADGE[p.tier]}`}>{p.tier}</span>
                       </td>
-                      <td className="py-1 px-1 text-gray-600">{p.specialty}</td>
-                      <td className="text-center py-1 px-1 font-semibold text-gray-900">{p.quality}</td>
-                      <td className="text-right py-1 px-1 text-gray-600">${(p.costPerSong / 1000).toFixed(0)}K</td>
+                      <td className="py-1 px-1 text-neutral-400">{p.specialty}</td>
+                      <td className="text-center py-1 px-1 font-semibold text-gray-100">{p.quality}</td>
+                      <td className="text-right py-1 px-1 text-neutral-400">${(p.costPerSong / 1000).toFixed(0)}K</td>
                       <td className="text-center py-1 px-2">
                         {unlocked ? (
-                          <span className="text-green-600 text-[10px] font-semibold">Unlocked</span>
+                          <span className="text-green-400 text-[10px] font-semibold">Unlocked</span>
                         ) : (
-                          <span className="text-gray-400 text-[10px] font-semibold">Studio Lv.{reqLevel}</span>
+                          <span className="text-neutral-500 text-[10px] font-semibold">Studio Lv.{reqLevel}</span>
                         )}
                       </td>
                     </tr>
@@ -498,14 +498,14 @@ function SigningModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
-      <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl w-full sm:max-w-sm shadow-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-neutral-950 border border-neutral-800 sm:rounded-lg rounded-t-xl w-full sm:max-w-sm shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800">
           <div>
-            <h3 className="text-gray-900 font-bold text-sm">Sign {artist.name}</h3>
-            <div className="text-gray-400 text-[11px]">{artist.genre} · Pop {artist.popularity} · {(artist.fanbase / 1000).toFixed(0)}K fans</div>
+            <h3 className="text-gray-100 font-bold text-sm">Sign {artist.name}</h3>
+            <div className="text-neutral-500 text-[11px]">{artist.genre} · Pop {artist.popularity} · {(artist.fanbase / 1000).toFixed(0)}K fans</div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-900 transition text-sm">✕</button>
+          <button onClick={onClose} className="text-neutral-500 hover:text-gray-100 transition text-sm">✕</button>
         </div>
 
         <div className="px-3 py-2 space-y-2">
@@ -516,11 +516,11 @@ function SigningModal({
                 <button
                   key={n}
                   onClick={() => setAlbumCount(n)}
-                  className={`w-full text-left px-2 py-1.5 rounded border transition text-xs ${albumCount === n ? "border-indigo-400 bg-indigo-50" : "border-gray-200 bg-white hover:border-gray-300"}`}
+                  className={`w-full text-left px-2 py-1.5 rounded border transition text-xs ${albumCount === n ? "border-indigo-400 bg-indigo-50" : "border-neutral-800 bg-neutral-950 hover:border-neutral-700"}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-900 font-medium">{ALBUM_LABELS[n]}</span>
-                    <span className={`font-bold ${money >= f ? "text-green-600" : "text-red-500"}`}>
+                    <span className="text-gray-100 font-medium">{ALBUM_LABELS[n]}</span>
+                    <span className={`font-bold ${money >= f ? "text-green-400" : "text-red-400"}`}>
                       ${(f / 1000).toFixed(0)}K
                     </span>
                   </div>
@@ -529,13 +529,13 @@ function SigningModal({
             })}
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-[11px] text-gray-500 space-y-0.5">
-            <div className="flex justify-between"><span>Signing Fee</span><span className="text-gray-900">${fee.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span>Albums</span><span className="text-gray-900">{albumCount}</span></div>
-            <div className="flex justify-between"><span>Your Cash</span><span className={canAfford ? "text-green-600" : "text-red-500"}>${money.toLocaleString()}</span></div>
+          <div className="bg-black border border-neutral-800 rounded px-2 py-1.5 text-[11px] text-neutral-500 space-y-0.5">
+            <div className="flex justify-between"><span>Signing Fee</span><span className="text-gray-100">${fee.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span>Albums</span><span className="text-gray-100">{albumCount}</span></div>
+            <div className="flex justify-between"><span>Your Cash</span><span className={canAfford ? "text-green-400" : "text-red-400"}>${money.toLocaleString()}</span></div>
           </div>
 
-          {!canAfford && <p className="text-red-500 text-[11px]">Not enough money for this deal.</p>}
+          {!canAfford && <p className="text-red-400 text-[11px]">Not enough money for this deal.</p>}
 
           <button
             onClick={() => onSign(albumCount, fee)}
@@ -579,31 +579,31 @@ function ArtistProfileModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-2"
+      className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-2"
       onClick={onClose}
     >
       <div
-        className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl w-full sm:max-w-2xl h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto shadow-lg"
+        className="bg-neutral-950 border border-neutral-800 sm:rounded-lg rounded-t-xl w-full sm:max-w-2xl h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-3 py-2 border-b border-gray-200">
+        <div className="flex items-start justify-between px-3 py-2 border-b border-neutral-800">
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-gray-900 font-bold text-sm">{artist.name}</h2>
+              <h2 className="text-gray-100 font-bold text-sm">{artist.name}</h2>
               {artist.careerPhase && (() => { const ps = phaseStyle(artist.careerPhase); return (
                 <span className={`${phaseStyleLight(artist.careerPhase)} border px-1.5 py-0 rounded text-[10px] font-semibold`}>{ps.label}</span>
               ); })()}
             </div>
-            <div className="text-gray-400 text-[11px]">{artist.persona} · {artist.genre}</div>
+            <div className="text-neutral-500 text-[11px]">{artist.persona} · {artist.genre}</div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-900 text-sm transition">✕</button>
+          <button onClick={onClose} className="text-neutral-500 hover:text-gray-100 text-sm transition">✕</button>
         </div>
 
         <div className="px-3 py-2 space-y-3">
           {/* Character sprite + core stats side by side */}
           <div className="flex gap-3 items-start">
-            <div className="shrink-0 bg-gray-50 rounded border border-gray-200 p-2">
+            <div className="shrink-0 bg-black rounded border border-neutral-800 p-2">
               <ArtistSprite spriteIndex={artist.spriteIndex} size={96} />
             </div>
             <div className="flex-1 grid grid-cols-2 gap-1">
@@ -617,7 +617,7 @@ function ArtistProfileModal({
           {/* Career ecosystem */}
           {artist.careerPhase && (
             <div>
-              <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career</h3>
+              <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
                 <MiniStat label="Phase" value={phaseStyle(artist.careerPhase).label} />
                 <MiniStat label="Momentum" value={String(artist.momentum ?? 0)} />
@@ -634,21 +634,21 @@ function ArtistProfileModal({
 
           {/* Attributes */}
           <div>
-            <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">
-              Attributes <span className="text-gray-300 font-normal normal-case">OVR {artist.overallRating}<StatDelta delta={artist.ovrChangeDelta} turn={artist.ovrChangeTurn} currentTurn={turn} /></span>
+            <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">
+              Attributes <span className="text-neutral-600 font-normal normal-case">OVR {artist.overallRating}<StatDelta delta={artist.ovrChangeDelta} turn={artist.ovrChangeTurn} currentTurn={turn} /></span>
             </h3>
             <div className="space-y-1.5">
               {Object.entries(ATTRIBUTE_GROUPS).map(([group, keys]) => (
                 <div key={group}>
-                  <div className="text-gray-400 text-[10px] font-semibold uppercase tracking-wider mb-0.5">{group}</div>
+                  <div className="text-neutral-500 text-[10px] font-semibold uppercase tracking-wider mb-0.5">{group}</div>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-1">
                     {keys.map((k) => {
                       const val = artist.attributes[k];
-                      const color = val >= 70 ? "text-green-600" : val >= 50 ? "text-gray-900" : val >= 30 ? "text-gray-400" : "text-red-500";
+                      const color = val >= 70 ? "text-green-400" : val >= 50 ? "text-gray-100" : val >= 30 ? "text-neutral-500" : "text-red-400";
                       return (
-                        <div key={k} className="bg-gray-50 border border-gray-100 rounded px-1 py-0.5 text-center">
+                        <div key={k} className="bg-black border border-neutral-800/50 rounded px-1 py-0.5 text-center">
                           <div className={`text-xs font-bold ${color}`}>{val}</div>
-                          <div className="text-gray-400 text-[9px] leading-tight">{ATTRIBUTE_LABELS[k]}</div>
+                          <div className="text-neutral-500 text-[9px] leading-tight">{ATTRIBUTE_LABELS[k]}</div>
                         </div>
                       );
                     })}
@@ -660,7 +660,7 @@ function ArtistProfileModal({
 
           {/* Personality */}
           <div>
-            <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Personality</h3>
+            <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Personality</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
               <MiniStat label="Loyalty" value={String(artist.traits.loyalty)} />
               <MiniStat label="Work Ethic" value={String(artist.traits.workEthic)} />
@@ -673,7 +673,7 @@ function ArtistProfileModal({
 
           {/* Career stats */}
           <div>
-            <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career Stats</h3>
+            <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Career Stats</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
               <MiniStat label="Songs" value={String(artistSongs.length)} />
               <MiniStat label="Albums" value={String(artistAlbums.length)} />
@@ -685,11 +685,11 @@ function ArtistProfileModal({
           {/* Albums */}
           {artistAlbums.length > 0 && (
             <div>
-              <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Albums ({artistAlbums.length})</h3>
-              <div className="border border-gray-200 rounded overflow-x-auto">
+              <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Albums ({artistAlbums.length})</h3>
+              <div className="border border-neutral-800 rounded overflow-x-auto">
                 <table className="w-full text-[11px]">
                   <thead>
-                    <tr className="bg-gray-50 text-gray-400 border-b border-gray-200">
+                    <tr className="bg-black text-neutral-500 border-b border-neutral-800">
                       <th className="text-left py-1 px-2 font-semibold">Title</th>
                       <th className="text-center py-1 px-1 font-semibold">Week</th>
                       <th className="text-center py-1 px-1 font-semibold">Tracks</th>
@@ -699,12 +699,12 @@ function ArtistProfileModal({
                   </thead>
                   <tbody>
                     {artistAlbums.map((al, i) => (
-                      <tr key={al.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="py-1 px-2 font-medium text-gray-900">&ldquo;{al.title}&rdquo;</td>
-                        <td className="text-center py-1 px-1 text-gray-500">Wk {al.turnReleased}</td>
-                        <td className="text-center py-1 px-1 text-gray-500">{al.songIds.length}</td>
+                      <tr key={al.id} className={i % 2 === 0 ? "bg-neutral-950" : "bg-black"}>
+                        <td className="py-1 px-2 font-medium text-gray-100">&ldquo;{al.title}&rdquo;</td>
+                        <td className="text-center py-1 px-1 text-neutral-500">Wk {al.turnReleased}</td>
+                        <td className="text-center py-1 px-1 text-neutral-500">{al.songIds.length}</td>
                         <td className="text-center py-1 px-1 text-indigo-600 font-semibold">{al.qualityScore}</td>
-                        <td className="text-right py-1 px-2 text-green-600">${(al.totalRevenue / 1000).toFixed(1)}K</td>
+                        <td className="text-right py-1 px-2 text-green-400">${(al.totalRevenue / 1000).toFixed(1)}K</td>
                       </tr>
                     ))}
                   </tbody>
@@ -715,14 +715,14 @@ function ArtistProfileModal({
 
           {/* Release history */}
           <div>
-            <h3 className="text-gray-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Releases</h3>
+            <h3 className="text-neutral-500 font-semibold text-[11px] uppercase tracking-wider mb-1">Releases</h3>
             {artistSongs.length === 0 ? (
-              <p className="text-gray-400 text-xs">No releases yet.</p>
+              <p className="text-neutral-500 text-xs">No releases yet.</p>
             ) : (
-              <div className="border border-gray-200 rounded overflow-x-auto">
+              <div className="border border-neutral-800 rounded overflow-x-auto">
                 <table className="w-full text-[11px]">
                   <thead>
-                    <tr className="bg-gray-50 text-gray-400 border-b border-gray-200">
+                    <tr className="bg-black text-neutral-500 border-b border-neutral-800">
                       <th className="text-left py-1 px-2 font-semibold">Song</th>
                       <th className="text-left py-1 px-1 font-semibold">Producer</th>
                       <th className="text-right py-1 px-1 font-semibold">Wk</th>
@@ -735,21 +735,21 @@ function ArtistProfileModal({
                     {artistSongs.map((s, i) => {
                       const producer = producers.find((p) => p.id === s.producerId);
                       return (
-                        <tr key={s.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <td className="py-1 px-2 font-medium text-gray-900">{s.title}</td>
-                          <td className="py-1 px-1 text-gray-500">{producer?.name ?? "Unknown"}</td>
-                          <td className="py-1 px-1 text-right text-gray-500">{s.turnReleased}</td>
-                          <td className="py-1 px-1 text-right text-gray-700">
+                        <tr key={s.id} className={i % 2 === 0 ? "bg-neutral-950" : "bg-black"}>
+                          <td className="py-1 px-2 font-medium text-gray-100">{s.title}</td>
+                          <td className="py-1 px-1 text-neutral-500">{producer?.name ?? "Unknown"}</td>
+                          <td className="py-1 px-1 text-right text-neutral-500">{s.turnReleased}</td>
+                          <td className="py-1 px-1 text-right text-neutral-300">
                             {s.streamsTotal >= 1000000
                               ? `${(s.streamsTotal / 1000000).toFixed(1)}M`
                               : s.streamsTotal >= 1000
                               ? `${(s.streamsTotal / 1000).toFixed(0)}K`
                               : s.streamsTotal}
                           </td>
-                          <td className="py-1 px-1 text-right text-gray-500">
+                          <td className="py-1 px-1 text-right text-neutral-500">
                             {s.chartPosition ? `#${s.chartPosition}` : s.weeksOnChart > 0 ? "—" : "—"}
                           </td>
-                          <td className="py-1 px-2 text-right text-green-600">${(s.revenue / 1000).toFixed(1)}K</td>
+                          <td className="py-1 px-2 text-right text-green-400">${(s.revenue / 1000).toFixed(1)}K</td>
                         </tr>
                       );
                     })}
@@ -780,7 +780,7 @@ function SortTh({
   const arrow = active ? (desc ? " ▼" : " ▲") : "";
   return (
     <th
-      className={`py-1 px-1 font-semibold cursor-pointer select-none hover:text-gray-900 transition text-${align} ${active ? "text-gray-900" : "text-gray-500"}`}
+      className={`py-1 px-1 font-semibold cursor-pointer select-none hover:text-gray-100 transition text-${align} ${active ? "text-gray-100" : "text-neutral-500"}`}
       onClick={() => onToggle(col)}
     >
       {label}{arrow}
@@ -792,14 +792,14 @@ function SortTh({
 
 function MiniStat({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: "green" | "indigo" }) {
   const valueColor =
-    highlight === "green" ? "text-green-600"
+    highlight === "green" ? "text-green-400"
     : highlight === "indigo" ? "text-indigo-600"
-    : "text-gray-900";
+    : "text-gray-100";
   return (
-    <div className="bg-gray-50 border border-gray-100 rounded px-1.5 py-1">
-      <div className="text-gray-400 text-[10px] leading-tight">{label}</div>
+    <div className="bg-black border border-neutral-800/50 rounded px-1.5 py-1">
+      <div className="text-neutral-500 text-[10px] leading-tight">{label}</div>
       <div className={`font-bold text-xs ${valueColor}`}>{value}</div>
-      {sub && <div className="text-gray-400 text-[9px]">{sub}</div>}
+      {sub && <div className="text-neutral-500 text-[9px]">{sub}</div>}
     </div>
   );
 }
@@ -821,7 +821,7 @@ function phaseStyle(phase: string): { label: string; color: string } {
     case "emerging": return { label: "Emerging", color: "text-cyan-400 border-cyan-700" };
     case "legacy": return { label: "Legacy", color: "text-amber-400 border-amber-700" };
     case "declining": return { label: "Declining", color: "text-red-400 border-red-700" };
-    case "washed": return { label: "Washed", color: "text-red-600 border-red-800" };
+    case "washed": return { label: "Washed", color: "text-red-400 border-red-800" };
     case "unknown": return { label: "Unknown", color: "text-zinc-400 border-zinc-600" };
     default: return { label: phase, color: "text-zinc-500 border-zinc-700" };
   }
@@ -829,15 +829,15 @@ function phaseStyle(phase: string): { label: string; color: string } {
 
 function phaseStyleLight(phase: string): string {
   switch (phase) {
-    case "peak": return "text-yellow-600 border-yellow-300";
-    case "established": return "text-green-600 border-green-300";
+    case "peak": return "text-yellow-400 border-yellow-300";
+    case "established": return "text-green-400 border-green-300";
     case "breakout": return "text-emerald-600 border-emerald-300";
-    case "buzzing": return "text-blue-600 border-blue-300";
+    case "buzzing": return "text-purple-400 border-blue-300";
     case "emerging": return "text-cyan-600 border-cyan-300";
     case "legacy": return "text-amber-600 border-amber-300";
-    case "declining": return "text-red-500 border-red-300";
-    case "washed": return "text-red-600 border-red-400";
-    case "unknown": return "text-gray-400 border-gray-300";
-    default: return "text-gray-500 border-gray-300";
+    case "declining": return "text-red-400 border-red-300";
+    case "washed": return "text-red-400 border-red-400";
+    case "unknown": return "text-neutral-500 border-neutral-700";
+    default: return "text-neutral-500 border-neutral-700";
   }
 }

@@ -50,12 +50,12 @@ export default function MallPanel() {
     <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-gray-900 font-semibold text-sm">The Mall</h2>
-          <p className="text-gray-400 text-xs mt-0.5">Spend your earnings. Items appear in the Vault on your dashboard.</p>
+          <h2 className="text-gray-100 font-semibold text-sm">The Mall</h2>
+          <p className="text-neutral-500 text-xs mt-0.5">Spend your earnings. Items appear in the Vault on your dashboard.</p>
         </div>
         <div className="text-right">
-          <div className="text-gray-400 text-xs">Available</div>
-          <div className={`font-semibold text-lg ${money < 0 ? "text-red-600" : "text-green-700"}`}>{fmt(money)}</div>
+          <div className="text-neutral-500 text-xs">Available</div>
+          <div className={`font-semibold text-lg ${money < 0 ? "text-red-400" : "text-green-700"}`}>{fmt(money)}</div>
         </div>
       </div>
 
@@ -67,8 +67,8 @@ export default function MallPanel() {
             onClick={() => { setActiveCategory(cat.id); setBuyError(null); }}
             className={`flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium whitespace-nowrap transition ${
               activeCategory === cat.id
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                ? "bg-purple-600 text-white"
+                : "bg-neutral-900 text-neutral-400 hover:text-gray-100 hover:bg-neutral-800"
             }`}
           >
             <span>{cat.label}</span>
@@ -77,7 +77,7 @@ export default function MallPanel() {
       </div>
 
       {buyError && (
-        <div className="bg-red-50 border border-red-200 rounded px-4 py-2 text-red-600 text-sm">{buyError}</div>
+        <div className="bg-red-950/50 border border-red-200 rounded px-4 py-2 text-red-400 text-sm">{buyError}</div>
       )}
 
       {/* Item grid */}
@@ -90,27 +90,27 @@ export default function MallPanel() {
           return (
             <div
               key={item.id}
-              className={`bg-white border rounded-md p-4 flex flex-col gap-3 transition ${
-                justBought ? "border-green-400 bg-green-50" : "border-gray-200"
+              className={`bg-neutral-950 border rounded-md p-4 flex flex-col gap-3 transition ${
+                justBought ? "border-green-400 bg-green-50" : "border-neutral-800"
               }`}
             >
               {/* Icon + owned badge */}
               <div className="flex items-start justify-between gap-3">
                 <div className="text-lg select-none leading-none">{item.icon}</div>
                 {owned > 0 && (
-                  <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium shrink-0">
+                  <span className="text-[10px] bg-purple-950/50 text-blue-700 px-2 py-0.5 rounded font-medium shrink-0">
                     Owned x{owned}
                   </span>
                 )}
               </div>
 
               <div className="flex-1">
-                <div className="text-gray-900 font-medium text-sm">{item.name}</div>
-                <div className="text-gray-500 text-xs mt-1 leading-relaxed">{item.description}</div>
+                <div className="text-gray-100 font-medium text-sm">{item.name}</div>
+                <div className="text-neutral-500 text-xs mt-1 leading-relaxed">{item.description}</div>
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <span className={`font-semibold text-sm ${canAfford ? "text-green-700" : "text-red-600"}`}>
+                <span className={`font-semibold text-sm ${canAfford ? "text-green-700" : "text-red-400"}`}>
                   {fmt(item.price)}
                 </span>
                 <button
@@ -119,7 +119,7 @@ export default function MallPanel() {
                   className={`text-xs font-medium px-4 py-1.5 rounded transition disabled:opacity-40 disabled:cursor-not-allowed ${
                     justBought
                       ? "bg-green-600 text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-purple-600 hover:bg-purple-700 text-white"
                   }`}
                 >
                   {justBought ? "Bought!" : "Buy"}

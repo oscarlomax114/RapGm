@@ -7,7 +7,7 @@ import { Producer, Album, TourSize, Song, Artist } from "@/lib/types";
 import { TOUR_DATA, getTourEstimates, ALBUM_MIN_TRACKS, ALBUM_SHORT_MAX, ALBUM_LONG_MIN, ALBUM_CYCLE_TURNS, ALBUM_YEAR_TURNS, HIGH_WORK_ETHIC_THRESHOLD, computeAlbumStrategy, evaluateAlbumApproval } from "@/lib/engine";
 
 const TIER_BADGE: Record<string, string> = {
-  underground: "bg-gray-200 text-gray-600",
+  underground: "bg-neutral-800 text-neutral-400",
   "mid-tier":  "bg-blue-100 text-blue-700",
   elite:       "bg-yellow-100 text-yellow-700",
 };
@@ -60,10 +60,10 @@ export default function StudioPanel() {
   }
   const FIT_SCORE: Record<string, number> = { strong: 3, good: 2, neutral: 1, poor: 0 };
   const FIT_LABEL: Record<string, { text: string; cls: string }> = {
-    strong: { text: "Strong Fit", cls: "text-green-600" },
-    good:   { text: "Good Fit",   cls: "text-blue-600" },
-    neutral:{ text: "Neutral",    cls: "text-gray-400" },
-    poor:   { text: "Poor Fit",   cls: "text-red-500" },
+    strong: { text: "Strong Fit", cls: "text-green-400" },
+    good:   { text: "Good Fit",   cls: "text-purple-400" },
+    neutral:{ text: "Neutral",    cls: "text-neutral-500" },
+    poor:   { text: "Poor Fit",   cls: "text-red-400" },
   };
   const filteredProducers = producers
     .filter((p) => {
@@ -183,12 +183,12 @@ export default function StudioPanel() {
 
       {/* ── Recording Session ── */}
       <section>
-        <h2 className="text-gray-900 font-bold text-sm mb-1">Recording Session</h2>
+        <h2 className="text-gray-100 font-bold text-sm mb-1">Recording Session</h2>
         <div className="flex items-end gap-2 flex-wrap">
           <select
             value={selectedArtist}
             onChange={(e) => setSelectedArtist(e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
+            className="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-gray-100 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
           >
             <option value="">Artist...</option>
             {signedArtists.map((a) => {
@@ -204,7 +204,7 @@ export default function StudioPanel() {
           <select
             value={selectedProducer}
             onChange={(e) => setSelectedProducer(e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[160px]"
+            className="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-gray-100 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[160px]"
           >
             <option value="">Producer...</option>
             {filteredProducers.map((p) => {
@@ -221,7 +221,7 @@ export default function StudioPanel() {
           <button
             onClick={handleRecord}
             disabled={!selectedArtist || !selectedProducer || (addFeature && !featTarget)}
-            className={`${addFeature ? "bg-purple-600 hover:bg-purple-500" : "bg-blue-600 hover:bg-blue-500"} disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-3 py-1 rounded text-xs transition`}
+            className={`${addFeature ? "bg-purple-600 hover:bg-purple-500" : "bg-purple-600 hover:bg-purple-950/500"} disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-3 py-1 rounded text-xs transition`}
           >
             {addFeature ? "Record (feat.)" : "Record"}
           </button>
@@ -229,11 +229,11 @@ export default function StudioPanel() {
 
         {/* Producer genre filter & sort */}
         <div className="flex items-center gap-1.5 mt-1 flex-wrap text-xs">
-          <span className="text-gray-400">Filter:</span>
+          <span className="text-neutral-500">Filter:</span>
           <select
             value={producerGenreFilter}
             onChange={(e) => { setProducerGenreFilter(e.target.value); setSelectedProducer(""); }}
-            className="bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-700 text-xs focus:outline-none focus:border-blue-400"
+            className="bg-neutral-950 border border-neutral-800 rounded px-1.5 py-0.5 text-neutral-300 text-xs focus:outline-none focus:border-blue-400"
           >
             <option value="auto">Auto ({artistGenre ?? "all"})</option>
             <option value="all">All Genres</option>
@@ -244,25 +244,25 @@ export default function StudioPanel() {
             <option value="pop-rap">Pop-Rap</option>
             <option value="experimental">Experimental</option>
           </select>
-          <span className="text-gray-400 ml-1">Sort:</span>
+          <span className="text-neutral-500 ml-1">Sort:</span>
           <select
             value={producerSort}
             onChange={(e) => setProducerSort(e.target.value as "fit" | "quality" | "cost")}
-            className="bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-700 text-xs focus:outline-none focus:border-blue-400"
+            className="bg-neutral-950 border border-neutral-800 rounded px-1.5 py-0.5 text-neutral-300 text-xs focus:outline-none focus:border-blue-400"
           >
             <option value="fit">Best Fit</option>
             <option value="quality">Quality</option>
             <option value="cost">Cheapest</option>
           </select>
-          <span className="text-gray-300 ml-1">({filteredProducers.length} producers)</span>
+          <span className="text-neutral-600 ml-1">({filteredProducers.length} producers)</span>
         </div>
 
         {/* Album status for selected artist — compact inline */}
         {selectedArtist && (
-          <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+          <div className="mt-1 flex items-center gap-2 text-xs text-neutral-500 flex-wrap">
             {activeAlbumForSelected ? (
               <>
-                <span>Album: <span className="text-gray-900 font-medium">&quot;{activeAlbumForSelected.title}&quot;</span> ({activeAlbumForSelected.songIds.length}/{ALBUM_MIN_TRACKS} tracks)</span>
+                <span>Album: <span className="text-gray-100 font-medium">&quot;{activeAlbumForSelected.title}&quot;</span> ({activeAlbumForSelected.songIds.length}/{ALBUM_MIN_TRACKS} tracks)</span>
                 <label className="flex items-center gap-1 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -270,7 +270,7 @@ export default function StudioPanel() {
                     onChange={(e) => setStandaloneMode(e.target.checked)}
                     className="accent-blue-500"
                   />
-                  <span className="text-xs text-gray-400">Standalone single</span>
+                  <span className="text-xs text-neutral-500">Standalone single</span>
                 </label>
               </>
             ) : (
@@ -278,7 +278,7 @@ export default function StudioPanel() {
                 <span>No album — recording standalone.</span>
                 <button
                   onClick={() => { const err = startNewAlbum(selectedArtist); if (err) setError(err); }}
-                  className="text-xs text-blue-600 hover:text-blue-500 underline"
+                  className="text-xs text-purple-400 hover:text-purple-300 underline"
                 >
                   Start Album
                 </button>
@@ -300,7 +300,7 @@ export default function StudioPanel() {
           const weeksLeft = Math.max(weeksUntilCycle, weeksUntilYear);
           if (weeksLeft <= 0) return null;
           return (
-            <div className="mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1 text-xs text-amber-700">
+            <div className="mt-1 bg-amber-950/40 border border-amber-800 rounded px-2 py-1 text-xs text-amber-700">
               Album cooldown: <span className="font-semibold">{weeksLeft} weeks</span> until {a.name} can start a new album
               {weeksUntilCycle > 0 && weeksUntilYear > weeksUntilCycle && (
                 <span className="text-amber-500 ml-1">(cycle: {weeksUntilCycle}wk, yearly: {weeksUntilYear}wk)</span>
@@ -318,10 +318,10 @@ export default function StudioPanel() {
           const fit = getProducerFit(p);
           const fitInfo = FIT_LABEL[fit];
           return (
-            <div className="mt-1 text-xs text-gray-500">
-              {p.name}: <span className="font-medium text-gray-700">{p.specialty}</span>, Q{p.quality}, ${(p.costPerSong / 1000).toFixed(0)}K/song
+            <div className="mt-1 text-xs text-neutral-500">
+              {p.name}: <span className="font-medium text-neutral-300">{p.specialty}</span>, Q{p.quality}, ${(p.costPerSong / 1000).toFixed(0)}K/song
               {artist && <span className={`font-bold ml-1 ${fitInfo.cls}`}>{fitInfo.text}</span>}
-              {!unlocked && <span className="text-red-500 ml-1">LOCKED (Studio Lv{PRODUCER_TIER_MIN_STUDIO[p.studioTierRequired]}+)</span>}
+              {!unlocked && <span className="text-red-400 ml-1">LOCKED (Studio Lv{PRODUCER_TIER_MIN_STUDIO[p.studioTierRequired]}+)</span>}
             </div>
           );
         })()}
@@ -343,35 +343,35 @@ export default function StudioPanel() {
 
         {/* Feature cost preview */}
         {addFeature && featTarget && featTargetObj && featAcceptance && (
-          <div className="mt-1 text-xs text-gray-500 flex items-center gap-3 flex-wrap bg-purple-50 border border-purple-200 rounded px-2 py-1">
-            <span>Fee: <span className="text-gray-900 font-semibold">${featFee.toLocaleString()}</span></span>
-            <span>Acceptance: <span className={`font-semibold ${featAcceptance.accepted ? "text-green-600" : "text-red-500"}`}>
+          <div className="mt-1 text-xs text-neutral-500 flex items-center gap-3 flex-wrap bg-purple-50 border border-purple-200 rounded px-2 py-1">
+            <span>Fee: <span className="text-gray-100 font-semibold">${featFee.toLocaleString()}</span></span>
+            <span>Acceptance: <span className={`font-semibold ${featAcceptance.accepted ? "text-green-400" : "text-red-400"}`}>
               {featAcceptance.accepted ? "Likely" : "Unlikely"} ({Math.round(featAcceptance.chance)}%)
             </span></span>
-            <span>Genre: <span className="text-gray-700">{featTargetObj.genre}</span></span>
-            <span>OVR: <span className="text-gray-700">{featTargetObj.overallRating}</span></span>
+            <span>Genre: <span className="text-neutral-300">{featTargetObj.genre}</span></span>
+            <span>OVR: <span className="text-neutral-300">{featTargetObj.overallRating}</span></span>
           </div>
         )}
 
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
       </section>
 
       {/* ── Feature Artist Browser (shown when Add Feature is on) ── */}
       {addFeature && selectedArtist && (
         <section>
-          <h2 className="text-gray-900 font-bold text-sm mb-1">Select Feature Artist</h2>
+          <h2 className="text-gray-100 font-bold text-sm mb-1">Select Feature Artist</h2>
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1.5">
             <input
               type="text"
               value={featSearch}
               onChange={(e) => setFeatSearch(e.target.value)}
               placeholder="Search name..."
-              className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-purple-400 w-36"
+              className="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-xs text-gray-100 focus:outline-none focus:border-purple-400 w-36"
             />
             <select
               value={featGenreFilter}
               onChange={(e) => setFeatGenreFilter(e.target.value)}
-              className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-purple-400"
+              className="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-xs text-gray-100 focus:outline-none focus:border-purple-400"
             >
               <option value="all">All Genres</option>
               {featGenres.map((g) => <option key={g} value={g}>{g}</option>)}
@@ -379,19 +379,19 @@ export default function StudioPanel() {
             <select
               value={featSort}
               onChange={(e) => setFeatSort(e.target.value as typeof featSort)}
-              className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-purple-400"
+              className="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-xs text-gray-100 focus:outline-none focus:border-purple-400"
             >
               <option value="ovr">Sort: OVR</option>
               <option value="price">Sort: Price</option>
               <option value="pop">Sort: Popularity</option>
               <option value="name">Sort: Name</option>
             </select>
-            <span className="text-gray-400 text-xs ml-auto">{filteredFeats.length} available</span>
+            <span className="text-neutral-500 text-xs ml-auto">{filteredFeats.length} available</span>
           </div>
-          <div className="max-h-48 overflow-y-auto overflow-x-auto border border-gray-200 rounded bg-white">
+          <div className="max-h-48 overflow-y-auto overflow-x-auto border border-neutral-800 rounded bg-neutral-950">
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-left text-gray-400 border-b border-gray-200 sticky top-0 bg-white">
+                <tr className="text-left text-neutral-500 border-b border-neutral-800 sticky top-0 bg-neutral-950">
                   <th className="py-1 px-2 font-medium">Name</th>
                   <th className="py-1 px-2 font-medium">Genre</th>
                   <th className="py-1 px-2 font-medium">OVR</th>
@@ -403,7 +403,7 @@ export default function StudioPanel() {
               </thead>
               <tbody>
                 {filteredFeats.length === 0 ? (
-                  <tr><td colSpan={7} className="py-4 text-center text-gray-400">No feature artists available.</td></tr>
+                  <tr><td colSpan={7} className="py-4 text-center text-neutral-500">No feature artists available.</td></tr>
                 ) : filteredFeats.map(({ artist: a, label }, idx) => {
                   const fee = selectedArtistObj ? computeFeatureFee(a, selectedArtistObj, gameState) : 0;
                   const acceptance = selectedArtistObj ? evaluateFeatureAcceptance(gameState, selectedArtistObj, a, fee) : null;
@@ -411,18 +411,18 @@ export default function StudioPanel() {
                   return (
                     <tr
                       key={a.id}
-                      className={`${isSelected ? "bg-purple-50" : idx % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-purple-50 cursor-pointer transition`}
+                      className={`${isSelected ? "bg-purple-50" : idx % 2 === 0 ? "bg-black" : "bg-neutral-950"} hover:bg-purple-50 cursor-pointer transition`}
                       onClick={() => setFeatTarget(isSelected ? "" : a.id)}
                     >
-                      <td className="py-1 px-2 text-gray-900 font-medium">{a.name}</td>
-                      <td className="py-1 px-2 text-gray-600">{a.genre}</td>
-                      <td className="py-1 px-2 text-gray-700 font-semibold">{a.overallRating}</td>
-                      <td className="py-1 px-2 text-gray-600">{a.popularity}</td>
-                      <td className="py-1 px-2 text-gray-700 font-medium">${(fee / 1000).toFixed(0)}K</td>
-                      <td className="py-1 px-2 text-gray-500">{label}</td>
+                      <td className="py-1 px-2 text-gray-100 font-medium">{a.name}</td>
+                      <td className="py-1 px-2 text-neutral-400">{a.genre}</td>
+                      <td className="py-1 px-2 text-neutral-300 font-semibold">{a.overallRating}</td>
+                      <td className="py-1 px-2 text-neutral-400">{a.popularity}</td>
+                      <td className="py-1 px-2 text-neutral-300 font-medium">${(fee / 1000).toFixed(0)}K</td>
+                      <td className="py-1 px-2 text-neutral-500">{label}</td>
                       <td className="py-1 px-2 text-right">
                         {acceptance && (
-                          <span className={`text-[10px] font-semibold ${acceptance.accepted ? "text-green-600" : "text-red-500"}`}>
+                          <span className={`text-[10px] font-semibold ${acceptance.accepted ? "text-green-400" : "text-red-400"}`}>
                             {Math.round(acceptance.chance)}%
                           </span>
                         )}
@@ -439,11 +439,11 @@ export default function StudioPanel() {
       {/* ── Albums in Progress ── */}
       {inProgressAlbums.length > 0 && (
         <section>
-          <h2 className="text-gray-900 font-bold text-sm mb-1">Albums in Progress</h2>
+          <h2 className="text-gray-100 font-bold text-sm mb-1">Albums in Progress</h2>
           <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-200">
+              <tr className="text-left text-neutral-500 border-b border-neutral-800">
                 <th className="py-1 pr-2 font-medium">Title</th>
                 <th className="py-1 pr-2 font-medium">Artist</th>
                 <th className="py-1 pr-2 font-medium">Tracks</th>
@@ -462,24 +462,24 @@ export default function StudioPanel() {
                   : 0;
                 const ready = trackCount >= ALBUM_MIN_TRACKS;
                 return (
-                  <tr key={al.id} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                  <tr key={al.id} className={idx % 2 === 0 ? "bg-black" : "bg-neutral-950"}>
                     <td className="py-1 pr-2">
-                      <button onClick={() => setAlbumDashboard(al)} className="text-blue-600 hover:text-blue-500 font-medium underline">
+                      <button onClick={() => setAlbumDashboard(al)} className="text-purple-400 hover:text-purple-300 font-medium underline">
                         &quot;{al.title}&quot;
                       </button>
                     </td>
-                    <td className="py-1 pr-2 text-gray-600">{artist?.name}</td>
+                    <td className="py-1 pr-2 text-neutral-400">{artist?.name}</td>
                     <td className="py-1 pr-2">
-                      <span className={ready ? "text-green-600 font-bold" : "text-gray-900"}>{trackCount}/{ALBUM_MIN_TRACKS}</span>
+                      <span className={ready ? "text-green-400 font-bold" : "text-gray-100"}>{trackCount}/{ALBUM_MIN_TRACKS}</span>
                     </td>
-                    <td className="py-1 pr-2 text-gray-600">{avgQuality || "—"}</td>
-                    <td className="py-1 pr-2 text-gray-400">Wk {al.turnStarted}</td>
+                    <td className="py-1 pr-2 text-neutral-400">{avgQuality || "—"}</td>
+                    <td className="py-1 pr-2 text-neutral-500">Wk {al.turnStarted}</td>
                     <td className="py-1 text-right">
                       <button
                         onClick={() => setReleaseModal(al)}
                         disabled={!ready}
                         title={ready ? undefined : `Need ${ALBUM_MIN_TRACKS - trackCount} more track(s)`}
-                        className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-2 py-0.5 rounded transition font-medium"
+                        className="text-xs bg-purple-600 hover:bg-purple-950/500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-2 py-0.5 rounded transition font-medium"
                       >
                         Drop
                       </button>
@@ -496,10 +496,10 @@ export default function StudioPanel() {
             if (albumSongs.length === 0) return null;
             return (
               <div key={al.id} className="mt-1 ml-2 mb-2">
-                <span className="text-[10px] text-gray-400 font-medium">&quot;{al.title}&quot; tracklist:</span>
-                <ol className="list-decimal list-inside text-[10px] text-gray-500 ml-1">
+                <span className="text-[10px] text-neutral-500 font-medium">&quot;{al.title}&quot; tracklist:</span>
+                <ol className="list-decimal list-inside text-[10px] text-neutral-500 ml-1">
                   {albumSongs.map((s) => (
-                    <li key={s.id}>{s.title} <span className="text-gray-400">Q{s.quality} VP{s.viralPotential}</span></li>
+                    <li key={s.id}>{s.title} <span className="text-neutral-500">Q{s.quality} VP{s.viralPotential}</span></li>
                   ))}
                 </ol>
               </div>
@@ -511,11 +511,11 @@ export default function StudioPanel() {
       {/* ── Unreleased Tracks ── */}
       {unreleased.length > 0 && (
         <section>
-          <h2 className="text-gray-900 font-bold text-sm mb-1">Unreleased Tracks</h2>
+          <h2 className="text-gray-100 font-bold text-sm mb-1">Unreleased Tracks</h2>
           <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-200">
+              <tr className="text-left text-neutral-500 border-b border-neutral-800">
                 <th className="py-1 pr-2 font-medium">Title</th>
                 <th className="py-1 pr-2 font-medium">Artist</th>
                 <th className="py-1 pr-2 font-medium">Quality</th>
@@ -527,21 +527,21 @@ export default function StudioPanel() {
               {unreleased.map((s, idx) => {
                 const artist = artists.find((a) => a.id === s.artistId);
                 return (
-                  <tr key={s.id} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                    <td className="py-1 pr-2 text-gray-900 font-medium">{s.title}</td>
-                    <td className="py-1 pr-2 text-gray-500">{artist?.name}</td>
-                    <td className="py-1 pr-2 text-gray-600">{s.quality}</td>
-                    <td className="py-1 pr-2 text-gray-600">{s.viralPotential}</td>
+                  <tr key={s.id} className={idx % 2 === 0 ? "bg-black" : "bg-neutral-950"}>
+                    <td className="py-1 pr-2 text-gray-100 font-medium">{s.title}</td>
+                    <td className="py-1 pr-2 text-neutral-500">{artist?.name}</td>
+                    <td className="py-1 pr-2 text-neutral-400">{s.quality}</td>
+                    <td className="py-1 pr-2 text-neutral-400">{s.viralPotential}</td>
                     <td className="py-1 text-right space-x-1">
                       <button
                         onClick={() => { const err = releaseTrack(s.id); if (err) setError(err); }}
-                        className="text-xs text-green-600 hover:text-green-500 px-1.5 py-0.5 rounded border border-green-200 hover:border-green-400 transition"
+                        className="text-xs text-green-400 hover:text-green-500 px-1.5 py-0.5 rounded border border-green-200 hover:border-green-400 transition"
                       >
                         Release
                       </button>
                       <button
                         onClick={() => { const err = scrapSong(s.id); if (err) setError(err); }}
-                        className="text-xs text-red-500 hover:text-red-400 px-1.5 py-0.5 rounded border border-red-200 hover:border-red-400 transition"
+                        className="text-xs text-red-400 hover:text-red-400 px-1.5 py-0.5 rounded border border-red-200 hover:border-red-400 transition"
                       >
                         Scrap
                       </button>
@@ -557,11 +557,11 @@ export default function StudioPanel() {
 
       {/* ── Producer Roster ── */}
       <section>
-        <h2 className="text-gray-900 font-bold text-sm mb-1">Producer Roster</h2>
+        <h2 className="text-gray-100 font-bold text-sm mb-1">Producer Roster</h2>
         <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-left text-gray-400 border-b border-gray-200">
+            <tr className="text-left text-neutral-500 border-b border-neutral-800">
               <th className="py-1 pr-2 font-medium">Name</th>
               <th className="py-1 pr-2 font-medium">Tier</th>
               <th className="py-1 pr-2 font-medium">Specialty</th>
@@ -576,16 +576,16 @@ export default function StudioPanel() {
               const selArtist = signedArtists.find((a) => a.id === selectedArtist);
               const genreMatch = selArtist && selArtist.genre === p.specialty;
               return (
-                <tr key={p.id} className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} ${!unlocked ? "opacity-50" : ""}`}>
-                  <td className="py-1 pr-2 text-gray-900 font-medium">{p.name}</td>
+                <tr key={p.id} className={`${idx % 2 === 0 ? "bg-black" : "bg-neutral-950"} ${!unlocked ? "opacity-50" : ""}`}>
+                  <td className="py-1 pr-2 text-gray-100 font-medium">{p.name}</td>
                   <td className="py-1 pr-2">
                     <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${TIER_BADGE[p.tier]}`}>{p.tier}</span>
                   </td>
-                  <td className="py-1 pr-2 text-gray-600">{p.specialty}</td>
-                  <td className="py-1 pr-2 text-gray-600">{p.quality}</td>
-                  <td className="py-1 pr-2 text-gray-600">${(p.costPerSong / 1000).toFixed(0)}K</td>
+                  <td className="py-1 pr-2 text-neutral-400">{p.specialty}</td>
+                  <td className="py-1 pr-2 text-neutral-400">{p.quality}</td>
+                  <td className="py-1 pr-2 text-neutral-400">${(p.costPerSong / 1000).toFixed(0)}K</td>
                   <td className="py-1">
-                    {genreMatch && unlocked ? <span className="text-green-600 font-bold">Yes</span> : <span className="text-gray-300">—</span>}
+                    {genreMatch && unlocked ? <span className="text-green-400 font-bold">Yes</span> : <span className="text-neutral-600">—</span>}
                   </td>
                 </tr>
               );
@@ -597,12 +597,12 @@ export default function StudioPanel() {
 
       {/* ── Tour Booking ── */}
       <section>
-        <h2 className="text-gray-900 font-bold text-sm mb-1">Tour Booking</h2>
+        <h2 className="text-gray-100 font-bold text-sm mb-1">Tour Booking</h2>
         <div className="flex items-end gap-2 flex-wrap">
           <select
             value={tourArtist}
             onChange={(e) => setTourArtist(e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
+            className="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-gray-100 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
           >
             <option value="">Artist...</option>
             {signedArtists.filter((a) => !a.onTour).map((a) => (
@@ -614,7 +614,7 @@ export default function StudioPanel() {
           <select
             value={tourSize}
             onChange={(e) => setTourSize(e.target.value as TourSize)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-gray-900 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
+            className="bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-gray-100 text-xs focus:outline-none focus:border-blue-400 min-w-0 w-full sm:w-auto sm:min-w-[140px]"
           >
             {(["club_tour", "regional_tour", "national_tour", "major_tour", "world_tour"] as TourSize[]).map((t) => (
               <option key={t} value={t}>
@@ -629,8 +629,8 @@ export default function StudioPanel() {
             if (!artist) return null;
             const est = getTourEstimates(artist, tourSize);
             return (
-              <span className="text-xs text-gray-500">
-                Net <span className={est.netRevenue >= 0 ? "text-green-600 font-bold" : "text-red-500 font-bold"}>{est.netRevenue >= 0 ? "+" : ""}${(est.netRevenue / 1000).toFixed(0)}K</span>
+              <span className="text-xs text-neutral-500">
+                Net <span className={est.netRevenue >= 0 ? "text-green-400 font-bold" : "text-red-400 font-bold"}>{est.netRevenue >= 0 ? "+" : ""}${(est.netRevenue / 1000).toFixed(0)}K</span>
                 {" · "}+{(est.totalFanGain / 1000).toFixed(1)}K fans
                 {" · "}+{est.totalFatigue} fat
               </span>
@@ -652,7 +652,7 @@ export default function StudioPanel() {
           if (!artist) return null;
           const est = getTourEstimates(artist, tourSize);
           return (
-            <div className="mt-1 flex gap-4 text-[10px] text-gray-400 flex-wrap">
+            <div className="mt-1 flex gap-4 text-[10px] text-neutral-500 flex-wrap">
               <span>Booking: {est.bookingCost > 0 ? `-$${(est.bookingCost / 1000).toFixed(0)}K` : "Free"}</span>
               <span>Gross: ${(est.totalRevenue / 1000).toFixed(0)}K</span>
               <span>Rep: +{est.reputationGain}</span>
@@ -660,7 +660,7 @@ export default function StudioPanel() {
           );
         })()}
 
-        {tourError && <p className="text-red-500 text-xs mt-1">{tourError}</p>}
+        {tourError && <p className="text-red-400 text-xs mt-1">{tourError}</p>}
       </section>
     </div>
   );
@@ -721,20 +721,20 @@ function AlbumReleaseModal({
   const canAfford = money >= marketingBudget;
 
   const CATEGORY_COLORS: Record<string, string> = {
-    Short:  "text-blue-700 bg-blue-50 border-blue-200",
-    Medium: "text-gray-700 bg-gray-50 border-gray-200",
+    Short:  "text-blue-700 bg-purple-950/50 border-blue-200",
+    Medium: "text-neutral-300 bg-black border-neutral-800",
     Long:   "text-orange-700 bg-orange-50 border-orange-200",
   };
 
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
-      <div className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-3 border-b border-gray-200">
+      <div className="bg-neutral-950 border border-neutral-800 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-3 border-b border-neutral-800">
           <div>
-            <h3 className="text-gray-900 font-bold text-sm">Drop &quot;{album.title}&quot;</h3>
-            <div className="text-gray-400 text-xs">{artist?.name} · {albumSongs.length} tracks</div>
+            <h3 className="text-gray-100 font-bold text-sm">Drop &quot;{album.title}&quot;</h3>
+            <div className="text-neutral-500 text-xs">{artist?.name} · {albumSongs.length} tracks</div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-900 transition text-sm">✕</button>
+          <button onClick={onClose} className="text-neutral-500 hover:text-gray-100 transition text-sm">✕</button>
         </div>
 
         <div className="p-3 space-y-3">
@@ -748,59 +748,59 @@ function AlbumReleaseModal({
                   {strategy.category === "Long" && `Long Album (${ALBUM_LONG_MIN}+ tracks)`}
                 </span>
                 <div className="flex gap-2 text-[10px]">
-                  {strategy.qualityBonus > 0 && <span className="text-green-600">+{strategy.qualityBonus} Quality</span>}
-                  {strategy.qualityBonus < 0 && <span className="text-red-500">{strategy.qualityBonus} Quality</span>}
-                  {strategy.repBonus > 0 && <span className="text-blue-600">+{strategy.repBonus} Rep</span>}
-                  {estViralMult > 1 && <span className="text-yellow-600">+{Math.round((estViralMult - 1) * 100)}% Viral</span>}
+                  {strategy.qualityBonus > 0 && <span className="text-green-400">+{strategy.qualityBonus} Quality</span>}
+                  {strategy.qualityBonus < 0 && <span className="text-red-400">{strategy.qualityBonus} Quality</span>}
+                  {strategy.repBonus > 0 && <span className="text-purple-400">+{strategy.repBonus} Rep</span>}
+                  {estViralMult > 1 && <span className="text-yellow-400">+{Math.round((estViralMult - 1) * 100)}% Viral</span>}
                 </div>
               </div>
               {strategy.fits.length > 0 && strategy.fits.map((f, i) => (
-                <div key={i} className="text-green-600 flex items-center gap-1">✓ {f}</div>
+                <div key={i} className="text-green-400 flex items-center gap-1">✓ {f}</div>
               ))}
               {strategy.clashes.length > 0 && strategy.clashes.map((c, i) => (
-                <div key={i} className="text-red-500 flex items-center gap-1">✗ {c}</div>
+                <div key={i} className="text-red-400 flex items-center gap-1">✗ {c}</div>
               ))}
             </div>
           )}
 
           {/* Artist approval panel */}
           {approval && !approval.approved && (
-            <div className="rounded border border-red-200 bg-red-50 px-3 py-2 space-y-1 text-xs">
+            <div className="rounded border border-red-200 bg-red-950/50 px-3 py-2 space-y-1 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-red-600 font-bold">Artist Resistance</span>
+                <span className="text-red-400 font-bold">Artist Resistance</span>
                 {approval.moralePenalty < 0 && (
-                  <span className="text-red-500 font-medium">{approval.moralePenalty} morale</span>
+                  <span className="text-red-400 font-medium">{approval.moralePenalty} morale</span>
                 )}
               </div>
-              <p className="text-red-500">{approval.summary}</p>
+              <p className="text-red-400">{approval.summary}</p>
               {approval.issues.map((issue, i) => (
-                <div key={i} className="text-red-500 flex items-start gap-1">✗ {issue}</div>
+                <div key={i} className="text-red-400 flex items-start gap-1">✗ {issue}</div>
               ))}
             </div>
           )}
           {approval && approval.approved && approval.moralePenalty < 0 && (
             <div className="rounded border border-yellow-200 bg-yellow-50 px-3 py-1.5 flex items-center justify-between text-xs">
               <p className="text-yellow-700">{approval.summary}</p>
-              <span className="text-yellow-600 font-medium shrink-0 ml-2">{approval.moralePenalty} morale</span>
+              <span className="text-yellow-400 font-medium shrink-0 ml-2">{approval.moralePenalty} morale</span>
             </div>
           )}
 
           {/* Track list */}
-          <ol className="list-decimal list-inside text-xs text-gray-600 max-h-28 overflow-y-auto space-y-0.5">
+          <ol className="list-decimal list-inside text-xs text-neutral-400 max-h-28 overflow-y-auto space-y-0.5">
             {albumSongs.map((s) => (
-              <li key={s.id}>{s.title} <span className="text-gray-400">Q{s.quality} VP{s.viralPotential}</span></li>
+              <li key={s.id}>{s.title} <span className="text-neutral-500">Q{s.quality} VP{s.viralPotential}</span></li>
             ))}
           </ol>
 
           {/* Marketing budget */}
           <div>
-            <label className="text-gray-500 text-xs mb-1 block">Marketing Budget</label>
+            <label className="text-neutral-500 text-xs mb-1 block">Marketing Budget</label>
             <div className="flex gap-1.5 flex-wrap">
               {BUDGETS.map((b) => (
                 <button
                   key={b}
                   onClick={() => setMarketingBudget(b)}
-                  className={`text-xs px-2 py-1 rounded border transition ${marketingBudget === b ? "border-blue-500 bg-blue-50 text-blue-700 font-medium" : "border-gray-200 bg-white text-gray-500 hover:border-gray-400"}`}
+                  className={`text-xs px-2 py-1 rounded border transition ${marketingBudget === b ? "border-purple-500 bg-purple-950/50 text-blue-700 font-medium" : "border-neutral-800 bg-neutral-950 text-neutral-500 hover:border-gray-400"}`}
                 >
                   {b === 0 ? "None" : `$${(b / 1000).toFixed(0)}K`}
                 </button>
@@ -809,38 +809,38 @@ function AlbumReleaseModal({
           </div>
 
           {/* Estimates */}
-          <div className="bg-gray-50 border border-gray-200 rounded p-2 space-y-1 text-xs">
-            <div className="text-gray-400 font-medium uppercase tracking-wider text-[10px] mb-1">Estimates</div>
-            <div className="flex justify-between"><span className="text-gray-500">Avg Song Quality</span><span className="text-gray-900">{avgQuality}/100</span></div>
+          <div className="bg-black border border-neutral-800 rounded p-2 space-y-1 text-xs">
+            <div className="text-neutral-500 font-medium uppercase tracking-wider text-[10px] mb-1">Estimates</div>
+            <div className="flex justify-between"><span className="text-neutral-500">Avg Song Quality</span><span className="text-gray-100">{avgQuality}/100</span></div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Projected Score</span>
-              <span className="text-blue-600 font-bold">
+              <span className="text-neutral-500">Projected Score</span>
+              <span className="text-purple-400 font-bold">
                 {estQuality}/100
                 {(strategy?.qualityBonus ?? 0) !== 0 && (
-                  <span className={`ml-1 text-[10px] ${(strategy?.qualityBonus ?? 0) > 0 ? "text-green-600" : "text-red-500"}`}>
+                  <span className={`ml-1 text-[10px] ${(strategy?.qualityBonus ?? 0) > 0 ? "text-green-400" : "text-red-400"}`}>
                     ({(strategy?.qualityBonus ?? 0) > 0 ? "+" : ""}{strategy?.qualityBonus})
                   </span>
                 )}
               </span>
             </div>
-            <div className="flex justify-between"><span className="text-gray-500">Est. Fan Gain</span><span className="text-green-600">+{estFanGain.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-neutral-500">Est. Fan Gain</span><span className="text-green-400">+{estFanGain.toLocaleString()}</span></div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Est. Rep Gain</span>
-              <span className="text-green-600">+{baseRepGain}{estRepBonus > 0 ? ` +${estRepBonus} bonus` : ""}</span>
+              <span className="text-neutral-500">Est. Rep Gain</span>
+              <span className="text-green-400">+{baseRepGain}{estRepBonus > 0 ? ` +${estRepBonus} bonus` : ""}</span>
             </div>
-            <div className="flex justify-between"><span className="text-gray-500">Marketing Cost</span><span className={canAfford ? "text-gray-900" : "text-red-500"}>${marketingBudget.toLocaleString()}</span></div>
-            <div className="text-gray-400 text-[10px] mt-1">All {albumSongs.length} tracks drop simultaneously.</div>
+            <div className="flex justify-between"><span className="text-neutral-500">Marketing Cost</span><span className={canAfford ? "text-gray-100" : "text-red-400"}>${marketingBudget.toLocaleString()}</span></div>
+            <div className="text-neutral-500 text-[10px] mt-1">All {albumSongs.length} tracks drop simultaneously.</div>
           </div>
 
-          {!canAfford && <p className="text-red-500 text-xs">Not enough cash.</p>}
+          {!canAfford && <p className="text-red-400 text-xs">Not enough cash.</p>}
 
           <button
             onClick={() => onRelease(marketingBudget)}
             disabled={!canAfford}
             className={`w-full font-bold py-2 rounded text-sm transition disabled:opacity-40 disabled:cursor-not-allowed text-white ${
               approval && !approval.approved
-                ? "bg-red-600 hover:bg-red-500"
-                : "bg-blue-600 hover:bg-blue-500"
+                ? "bg-red-600 hover:bg-red-950/500"
+                : "bg-purple-600 hover:bg-purple-950/500"
             }`}
           >
             {approval && !approval.approved
@@ -967,8 +967,8 @@ function AlbumDashboardModal({
 
   const STATUS_STYLES: Record<AlbumStatus, string> = {
     confirmed: "bg-green-50 text-green-800 border-green-200",
-    maybe:     "bg-gray-50 text-gray-600 border-gray-200",
-    scrap:     "bg-red-50 text-red-600 border-red-200",
+    maybe:     "bg-black text-neutral-400 border-neutral-800",
+    scrap:     "bg-red-950/50 text-red-400 border-red-200",
   };
 
   function SongRow({ s, i, bucket }: { s: typeof albumSongs[0]; i: number; bucket: AlbumStatus }) {
@@ -977,33 +977,33 @@ function AlbumDashboardModal({
     return (
       <div className={`flex items-center gap-1.5 rounded px-2 py-1 border text-xs ${STATUS_STYLES[bucket]}`}>
         <div className="flex flex-col gap-0 shrink-0">
-          <button onClick={() => moveUp(syncedOrder.indexOf(s.id))} className="text-gray-400 hover:text-gray-700 leading-none text-[10px]">▲</button>
-          <button onClick={() => moveDown(syncedOrder.indexOf(s.id))} className="text-gray-400 hover:text-gray-700 leading-none text-[10px]">▼</button>
+          <button onClick={() => moveUp(syncedOrder.indexOf(s.id))} className="text-neutral-500 hover:text-neutral-300 leading-none text-[10px]">▲</button>
+          <button onClick={() => moveDown(syncedOrder.indexOf(s.id))} className="text-neutral-500 hover:text-neutral-300 leading-none text-[10px]">▼</button>
         </div>
-        <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
+        <span className="text-neutral-500 w-4 shrink-0">{i + 1}.</span>
         <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
-          <span className="font-medium text-gray-900">{s.title}</span>
-          <span className={belowStandard ? "text-red-500 font-medium" : "text-gray-500"}>
+          <span className="font-medium text-gray-100">{s.title}</span>
+          <span className={belowStandard ? "text-red-400 font-medium" : "text-neutral-500"}>
             Q{s.quality}{belowStandard ? ` (min ${minQ})` : ""}
           </span>
-          <span className="text-gray-400">VP{s.viralPotential}</span>
-          {isSingle && <span className="text-blue-600 bg-blue-50 px-1 py-0.5 rounded text-[10px]">single</span>}
-          {s.wasStandalone && !isSingle && <span className="text-yellow-600 text-[10px]">standalone</span>}
+          <span className="text-neutral-500">VP{s.viralPotential}</span>
+          {isSingle && <span className="text-purple-400 bg-purple-950/50 px-1 py-0.5 rounded text-[10px]">single</span>}
+          {s.wasStandalone && !isSingle && <span className="text-yellow-400 text-[10px]">standalone</span>}
         </div>
         <div className="flex gap-0.5 shrink-0">
           {bucket !== "confirmed" && (
-            <button onClick={() => onSetStatus(s.id, "confirmed")} className="text-[10px] px-1 py-0.5 rounded border border-green-200 text-green-600 hover:bg-green-100 transition">Yes</button>
+            <button onClick={() => onSetStatus(s.id, "confirmed")} className="text-[10px] px-1 py-0.5 rounded border border-green-200 text-green-400 hover:bg-green-100 transition">Yes</button>
           )}
           {bucket !== "maybe" && (
-            <button onClick={() => onSetStatus(s.id, "maybe")} className="text-[10px] px-1 py-0.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 transition">Maybe</button>
+            <button onClick={() => onSetStatus(s.id, "maybe")} className="text-[10px] px-1 py-0.5 rounded border border-neutral-800 text-neutral-500 hover:bg-neutral-900 transition">Maybe</button>
           )}
           {bucket !== "scrap" && (
-            <button onClick={() => onSetStatus(s.id, "scrap")} className="text-[10px] px-1 py-0.5 rounded border border-red-200 text-red-500 hover:bg-red-100 transition">Scrap</button>
+            <button onClick={() => onSetStatus(s.id, "scrap")} className="text-[10px] px-1 py-0.5 rounded border border-red-200 text-red-400 hover:bg-red-900/50 transition">Scrap</button>
           )}
           {!isSingle && bucket === "confirmed" && releasedFromAlbum < maxSingles && (
-            <button onClick={() => act(() => onReleaseSingle(s.id))} className="text-[10px] px-1 py-0.5 rounded border border-blue-200 text-blue-600 hover:bg-blue-100 transition" title="Release as single">Single</button>
+            <button onClick={() => act(() => onReleaseSingle(s.id))} className="text-[10px] px-1 py-0.5 rounded border border-blue-200 text-purple-400 hover:bg-blue-100 transition" title="Release as single">Single</button>
           )}
-          <button onClick={() => act(() => onRemove(s.id))} className="text-[10px] px-1 py-0.5 rounded border border-gray-200 text-gray-400 hover:text-gray-700 transition" title="Remove from album">✕</button>
+          <button onClick={() => act(() => onRemove(s.id))} className="text-[10px] px-1 py-0.5 rounded border border-neutral-800 text-neutral-500 hover:text-neutral-300 transition" title="Remove from album">✕</button>
         </div>
       </div>
     );
@@ -1012,56 +1012,56 @@ function AlbumDashboardModal({
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
       <div
-        className="bg-white border border-gray-200 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-2xl h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col"
+        className="bg-neutral-950 border border-neutral-800 sm:rounded-lg rounded-t-xl shadow-lg w-full sm:max-w-2xl h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-3 border-b border-gray-200 shrink-0">
+        <div className="flex items-start justify-between p-3 border-b border-neutral-800 shrink-0">
           <div>
-            <h3 className="text-gray-900 font-bold text-sm">&quot;{album.title}&quot;</h3>
-            <div className="text-gray-400 text-xs">{artist?.name} · Started Week {album.turnStarted}</div>
+            <h3 className="text-gray-100 font-bold text-sm">&quot;{album.title}&quot;</h3>
+            <div className="text-neutral-500 text-xs">{artist?.name} · Started Week {album.turnStarted}</div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-900 transition text-sm leading-none">✕</button>
+          <button onClick={onClose} className="text-neutral-500 hover:text-gray-100 transition text-sm leading-none">✕</button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-3 space-y-3">
           {/* Metrics summary — compact inline */}
           <div className="flex gap-4 text-xs">
             <div className="text-center">
-              <div className={`text-lg font-black ${ready ? "text-green-600" : "text-gray-900"}`}>{confirmedCount}<span className="text-gray-400 text-xs font-normal">/{ALBUM_MIN_TRACKS}</span></div>
-              <div className="text-gray-400">Confirmed</div>
+              <div className={`text-lg font-black ${ready ? "text-green-400" : "text-gray-100"}`}>{confirmedCount}<span className="text-neutral-500 text-xs font-normal">/{ALBUM_MIN_TRACKS}</span></div>
+              <div className="text-neutral-500">Confirmed</div>
             </div>
             <div className="text-center">
-              <div className={`text-lg font-black ${metrics.quality < minQ && metrics.quality > 0 ? "text-red-500" : "text-gray-700"}`}>{metrics.quality}</div>
-              <div className="text-gray-400">Avg Q</div>
+              <div className={`text-lg font-black ${metrics.quality < minQ && metrics.quality > 0 ? "text-red-400" : "text-neutral-300"}`}>{metrics.quality}</div>
+              <div className="text-neutral-500">Avg Q</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-black text-yellow-600">{releasedFromAlbum}<span className="text-gray-400 text-xs font-normal">/{Math.max(maxSingles, 1)}</span></div>
-              <div className="text-gray-400">Singles</div>
+              <div className="text-lg font-black text-yellow-400">{releasedFromAlbum}<span className="text-neutral-500 text-xs font-normal">/{Math.max(maxSingles, 1)}</span></div>
+              <div className="text-neutral-500">Singles</div>
             </div>
           </div>
 
           {/* Artist Wants panel */}
           {artist && (
-            <div className="bg-gray-50 border border-gray-200 rounded p-2 space-y-1 text-xs">
-              <div className="text-gray-400 font-medium uppercase tracking-wider text-[10px]">Artist Standards</div>
+            <div className="bg-black border border-neutral-800 rounded p-2 space-y-1 text-xs">
+              <div className="text-neutral-500 font-medium uppercase tracking-wider text-[10px]">Artist Standards</div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Min Song Q</span>
-                  <span className={`font-bold ${metrics.quality > 0 && metrics.quality < minQ ? "text-red-500" : "text-gray-700"}`}>
+                  <span className="text-neutral-500">Min Song Q</span>
+                  <span className={`font-bold ${metrics.quality > 0 && metrics.quality < minQ ? "text-red-400" : "text-neutral-300"}`}>
                     {minQ > 0 ? minQ : "None"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Pref Length</span>
+                  <span className="text-neutral-500">Pref Length</span>
                   <span className={`font-bold ${
-                    confirmedCount === 0 ? "text-gray-400" :
-                    Math.abs(confirmedCount - artist.preferredAlbumLength) <= 2 ? "text-green-600" :
-                    Math.abs(confirmedCount - artist.preferredAlbumLength) <= 4 ? "text-yellow-600" : "text-red-500"
+                    confirmedCount === 0 ? "text-neutral-500" :
+                    Math.abs(confirmedCount - artist.preferredAlbumLength) <= 2 ? "text-green-400" :
+                    Math.abs(confirmedCount - artist.preferredAlbumLength) <= 4 ? "text-yellow-400" : "text-red-400"
                   }`}>
                     ~{artist.preferredAlbumLength}
                     {confirmedCount > 0 && (
-                      <span className="text-gray-400 font-normal ml-1">
+                      <span className="text-neutral-500 font-normal ml-1">
                         ({confirmedCount < artist.preferredAlbumLength
                           ? `${artist.preferredAlbumLength - confirmedCount} short`
                           : confirmedCount > artist.preferredAlbumLength
@@ -1073,13 +1073,13 @@ function AlbumDashboardModal({
                 </div>
                 {singleQualityThreshold !== null && (
                   <div className="flex items-center justify-between col-span-2">
-                    <span className="text-gray-500">Single Q Min</span>
-                    <span className="font-bold text-purple-600">{singleQualityThreshold}+ <span className="text-gray-400 font-normal">(fame-driven)</span></span>
+                    <span className="text-neutral-500">Single Q Min</span>
+                    <span className="font-bold text-purple-600">{singleQualityThreshold}+ <span className="text-neutral-500 font-normal">(fame-driven)</span></span>
                   </div>
                 )}
                 <div className="flex items-center justify-between col-span-2">
-                  <span className="text-gray-500">Personality</span>
-                  <span className="text-gray-700 text-right">
+                  <span className="text-neutral-500">Personality</span>
+                  <span className="text-neutral-300 text-right">
                     {[
                       artist.traits.moneyMotivation > 65 && "Money",
                       artist.traits.competitiveness > 65 && "Competitive",
@@ -1095,7 +1095,7 @@ function AlbumDashboardModal({
                 const badTracks = confirmed.filter((s) => minQ > 0 && s.quality < minQ);
                 if (badTracks.length === 0) return null;
                 return (
-                  <div className="bg-red-50 border border-red-200 rounded px-2 py-1 text-xs text-red-500">
+                  <div className="bg-red-950/50 border border-red-200 rounded px-2 py-1 text-xs text-red-400">
                     {badTracks.length} track{badTracks.length > 1 ? "s" : ""} below standard ({minQ}). Morale hit on release.
                   </div>
                 );
@@ -1104,16 +1104,16 @@ function AlbumDashboardModal({
           )}
 
           {releasedFromAlbum >= maxSingles && confirmedCount > 0 && (
-            <p className="text-yellow-600 text-xs">Single cap reached ({maxSingles} max for {confirmedCount} tracks).</p>
+            <p className="text-yellow-400 text-xs">Single cap reached ({maxSingles} max for {confirmedCount} tracks).</p>
           )}
 
-          {dashError && <p className="text-red-500 text-xs">{dashError}</p>}
+          {dashError && <p className="text-red-400 text-xs">{dashError}</p>}
 
           {/* Confirmed */}
           <div>
-            <div className="text-green-600 text-xs font-medium uppercase tracking-wider mb-1">Confirmed ({confirmed.length})</div>
+            <div className="text-green-400 text-xs font-medium uppercase tracking-wider mb-1">Confirmed ({confirmed.length})</div>
             {confirmed.length === 0
-              ? <p className="text-gray-400 text-xs">No confirmed tracks yet.</p>
+              ? <p className="text-neutral-500 text-xs">No confirmed tracks yet.</p>
               : <div className="space-y-1">{confirmed.map((s, i) => <SongRow key={s.id} s={s} i={i} bucket="confirmed" />)}</div>
             }
           </div>
@@ -1121,7 +1121,7 @@ function AlbumDashboardModal({
           {/* Maybe */}
           {maybe.length > 0 && (
             <div>
-              <div className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Maybe ({maybe.length})</div>
+              <div className="text-neutral-500 text-xs font-medium uppercase tracking-wider mb-1">Maybe ({maybe.length})</div>
               <div className="space-y-1">{maybe.map((s, i) => <SongRow key={s.id} s={s} i={confirmed.length + i} bucket="maybe" />)}</div>
             </div>
           )}
@@ -1129,7 +1129,7 @@ function AlbumDashboardModal({
           {/* Scrapped */}
           {scrapped.length > 0 && (
             <div>
-              <div className="text-red-500 text-xs font-medium uppercase tracking-wider mb-1">Scrap ({scrapped.length})</div>
+              <div className="text-red-400 text-xs font-medium uppercase tracking-wider mb-1">Scrap ({scrapped.length})</div>
               <div className="space-y-1">{scrapped.map((s, i) => <SongRow key={s.id} s={s} i={confirmed.length + maybe.length + i} bucket="scrap" />)}</div>
             </div>
           )}
@@ -1146,8 +1146,8 @@ function AlbumDashboardModal({
                   return (
                     <div key={s.id} className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 rounded px-2 py-1 text-xs">
                       <div className="flex-1 min-w-0">
-                        <span className="text-gray-700 font-medium">{s.title}</span>
-                        <span className={`ml-1 ${belowStandard ? "text-red-500" : "text-gray-400"}`}>
+                        <span className="text-neutral-300 font-medium">{s.title}</span>
+                        <span className={`ml-1 ${belowStandard ? "text-red-400" : "text-neutral-500"}`}>
                           Q{s.quality}{belowStandard ? " !" : ""} VP{s.viralPotential}
                         </span>
                       </div>
@@ -1168,11 +1168,11 @@ function AlbumDashboardModal({
           {standaloneAvailable.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <div className="text-yellow-600 text-xs font-medium uppercase tracking-wider">
+                <div className="text-yellow-400 text-xs font-medium uppercase tracking-wider">
                   Standalone Singles ({standaloneSlotsUsed}/{STANDALONE_MAX} slots)
                 </div>
                 {standaloneSlotsUsed >= STANDALONE_MAX && (
-                  <span className="text-red-500 text-[10px]">Limit reached</span>
+                  <span className="text-red-400 text-[10px]">Limit reached</span>
                 )}
               </div>
               <div className="space-y-1">
@@ -1180,18 +1180,18 @@ function AlbumDashboardModal({
                   const belowStandard = minQ > 0 && s.quality < minQ;
                   const atLimit = standaloneSlotsUsed >= STANDALONE_MAX;
                   return (
-                    <div key={s.id} className="flex items-center gap-1.5 bg-gray-50 border border-yellow-200 rounded px-2 py-1 text-xs">
+                    <div key={s.id} className="flex items-center gap-1.5 bg-black border border-yellow-200 rounded px-2 py-1 text-xs">
                       <div className="flex-1 min-w-0">
-                        <span className="text-gray-700">{s.title}</span>
-                        <span className={`ml-1 ${belowStandard ? "text-red-500" : "text-gray-400"}`}>
+                        <span className="text-neutral-300">{s.title}</span>
+                        <span className={`ml-1 ${belowStandard ? "text-red-400" : "text-neutral-500"}`}>
                           Q{s.quality}{belowStandard ? " !" : ""} VP{s.viralPotential}
                         </span>
-                        {s.released && <span className="text-blue-600 ml-1">(released)</span>}
+                        {s.released && <span className="text-purple-400 ml-1">(released)</span>}
                       </div>
                       <button
                         onClick={() => act(() => onAdd(s.id))}
                         disabled={atLimit}
-                        className="text-[10px] text-yellow-600 hover:text-yellow-500 disabled:opacity-40 disabled:cursor-not-allowed border border-yellow-300 hover:border-yellow-500 px-1.5 py-0.5 rounded transition shrink-0"
+                        className="text-[10px] text-yellow-400 hover:text-yellow-500 disabled:opacity-40 disabled:cursor-not-allowed border border-yellow-300 hover:border-yellow-500 px-1.5 py-0.5 rounded transition shrink-0"
                       >
                         + Add
                       </button>
@@ -1205,7 +1205,7 @@ function AlbumDashboardModal({
           {/* Eligible released singles */}
           {eligibleReleasedSingles.length > 0 && (
             <div>
-              <div className="text-blue-600 text-xs font-medium uppercase tracking-wider mb-1">
+              <div className="text-purple-400 text-xs font-medium uppercase tracking-wider mb-1">
                 Eligible Released Singles ({eligibleReleasedSingles.length})
               </div>
               <div className="space-y-1">
@@ -1215,16 +1215,16 @@ function AlbumDashboardModal({
                   const maxSingles = Math.min(4, Math.floor(currentTrackCount * 0.4));
                   const atSinglesCap = currentSinglesOnAlbum >= maxSingles;
                   return (
-                    <div key={s.id} className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded px-2 py-1 text-xs">
+                    <div key={s.id} className="flex items-center gap-1.5 bg-purple-950/50 border border-blue-200 rounded px-2 py-1 text-xs">
                       <div className="flex-1 min-w-0">
-                        <span className="text-gray-700 font-medium">{s.title}</span>
-                        <span className="text-gray-400 ml-1">Q{s.quality} VP{s.viralPotential}</span>
-                        <span className="text-blue-600 ml-1">{(s.streamsTotal / 1000).toFixed(0)}K streams</span>
+                        <span className="text-neutral-300 font-medium">{s.title}</span>
+                        <span className="text-neutral-500 ml-1">Q{s.quality} VP{s.viralPotential}</span>
+                        <span className="text-purple-400 ml-1">{(s.streamsTotal / 1000).toFixed(0)}K streams</span>
                       </div>
                       <button
                         onClick={() => act(() => onAdd(s.id))}
                         disabled={atSinglesCap}
-                        className="text-[10px] text-blue-600 hover:text-blue-500 disabled:opacity-40 disabled:cursor-not-allowed border border-blue-300 hover:border-blue-500 px-1.5 py-0.5 rounded transition shrink-0"
+                        className="text-[10px] text-purple-400 hover:text-purple-300 disabled:opacity-40 disabled:cursor-not-allowed border border-blue-300 hover:border-purple-500 px-1.5 py-0.5 rounded transition shrink-0"
                         title={atSinglesCap ? "Singles cap reached for this album" : undefined}
                       >
                         + Add Single
@@ -1239,18 +1239,18 @@ function AlbumDashboardModal({
           {/* Songs from other albums available to move */}
           {otherAlbumAvailable.length > 0 && (
             <div>
-              <div className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Move from Another Album</div>
+              <div className="text-neutral-500 text-xs font-medium uppercase tracking-wider mb-1">Move from Another Album</div>
               <div className="space-y-1">
                 {otherAlbumAvailable.map((s) => (
-                  <div key={s.id} className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs">
+                  <div key={s.id} className="flex items-center gap-1.5 bg-black border border-neutral-800 rounded px-2 py-1 text-xs">
                     <div className="flex-1 min-w-0">
-                      <span className="text-gray-700">{s.title}</span>
-                      <span className="text-gray-400 ml-1">Q{s.quality} VP{s.viralPotential}</span>
-                      <span className="text-yellow-600 ml-1">(from other album)</span>
+                      <span className="text-neutral-300">{s.title}</span>
+                      <span className="text-neutral-500 ml-1">Q{s.quality} VP{s.viralPotential}</span>
+                      <span className="text-yellow-400 ml-1">(from other album)</span>
                     </div>
                     <button
                       onClick={() => act(() => onAdd(s.id))}
-                      className="text-[10px] text-blue-600 hover:text-blue-500 border border-blue-200 hover:border-blue-400 px-1.5 py-0.5 rounded transition shrink-0"
+                      className="text-[10px] text-purple-400 hover:text-purple-300 border border-blue-200 hover:border-blue-400 px-1.5 py-0.5 rounded transition shrink-0"
                     >
                       + Move
                     </button>
@@ -1262,13 +1262,13 @@ function AlbumDashboardModal({
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-gray-200 flex items-center justify-between gap-2 shrink-0">
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-xs transition">Close</button>
+        <div className="p-3 border-t border-neutral-800 flex items-center justify-between gap-2 shrink-0">
+          <button onClick={onClose} className="text-neutral-500 hover:text-gray-100 text-xs transition">Close</button>
           <button
             onClick={onDropAlbum}
             disabled={!ready}
             title={ready ? undefined : `Need ${ALBUM_MIN_TRACKS - confirmedCount} more confirmed tracks`}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-3 py-1.5 rounded text-xs transition"
+            className="bg-purple-600 hover:bg-purple-950/500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-3 py-1.5 rounded text-xs transition"
           >
             {ready ? "Drop Album" : `${confirmedCount}/${ALBUM_MIN_TRACKS} — Not ready`}
           </button>

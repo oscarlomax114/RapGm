@@ -30,19 +30,19 @@ export default function AwardsPanel() {
     <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
 
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-md p-5">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-md p-5">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-gray-900 font-semibold text-sm">Annual Awards</h2>
-            <p className="text-gray-400 text-xs mt-1">
+            <h2 className="text-gray-100 font-semibold text-sm">Annual Awards</h2>
+            <p className="text-neutral-500 text-xs mt-1">
               {weeksUntil > 0
                 ? `Next ceremony in ${weeksUntil} week${weeksUntil !== 1 ? "s" : ""} (Week ${nextCeremonyTurn})`
                 : "Ceremony happening now!"}
             </p>
           </div>
           <div className="text-right">
-            <div className="text-gray-400 text-xs">Total Wins</div>
-            <div className="text-blue-600 font-semibold text-2xl">
+            <div className="text-neutral-500 text-xs">Total Wins</div>
+            <div className="text-purple-400 font-semibold text-2xl">
               {awardHistory.reduce((sum, c) => sum + c.playerWins.length, 0)}
             </div>
           </div>
@@ -51,9 +51,9 @@ export default function AwardsPanel() {
 
       {/* Award history */}
       {awardHistory.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-md p-8 text-center">
-          <p className="text-gray-500 text-sm">No ceremonies yet. First ceremony at Week 48.</p>
-          <p className="text-gray-400 text-xs mt-1">Eligible songs are those released in the past 52 weeks.</p>
+        <div className="bg-neutral-950 border border-neutral-800 rounded-md p-8 text-center">
+          <p className="text-neutral-500 text-sm">No ceremonies yet. First ceremony at Week 48.</p>
+          <p className="text-neutral-500 text-xs mt-1">Eligible songs are those released in the past 52 weeks.</p>
         </div>
       ) : (
         awardHistory.map((ceremony) => (
@@ -67,20 +67,20 @@ export default function AwardsPanel() {
 function CeremonyCard({ ceremony, labelName }: { ceremony: AwardCeremony; labelName: string }) {
   const categories: AwardCategory[] = ["song_of_year", "album_of_year", "artist_of_year", "best_new_artist", "label_of_year"];
   return (
-    <div className="bg-white border border-gray-200 rounded-md p-5">
+    <div className="bg-neutral-950 border border-neutral-800 rounded-md p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-gray-900 font-semibold text-sm">Year {ceremony.year} Ceremony</h3>
-          <span className="text-gray-400 text-xs">Week {ceremony.turn}</span>
+          <h3 className="text-gray-100 font-semibold text-sm">Year {ceremony.year} Ceremony</h3>
+          <span className="text-neutral-500 text-xs">Week {ceremony.turn}</span>
         </div>
         {ceremony.playerWins.length > 0 ? (
           <div className="flex items-center gap-2">
-            <span className="text-blue-600 font-semibold text-lg">{ceremony.playerWins.length}</span>
-            <span className="text-gray-500 text-xs">win{ceremony.playerWins.length !== 1 ? "s" : ""}</span>
+            <span className="text-purple-400 font-semibold text-lg">{ceremony.playerWins.length}</span>
+            <span className="text-neutral-500 text-xs">win{ceremony.playerWins.length !== 1 ? "s" : ""}</span>
             {ceremony.moneyReward > 0 && <span className="text-green-700 text-xs">+{fmt(ceremony.moneyReward)}</span>}
           </div>
         ) : (
-          <span className="text-gray-400 text-xs">No wins</span>
+          <span className="text-neutral-500 text-xs">No wins</span>
         )}
       </div>
       <div className="space-y-1.5">
@@ -92,18 +92,18 @@ function CeremonyCard({ ceremony, labelName }: { ceremony: AwardCeremony; labelN
             <div
               key={cat}
               className={`flex items-center justify-between px-3 py-2 rounded ${
-                isPlayerWin ? "bg-blue-50 border border-blue-200" : "bg-gray-50"
+                isPlayerWin ? "bg-purple-950/50 border border-blue-200" : "bg-black"
               }`}
             >
               <div>
-                <div className="text-gray-500 text-xs">{CATEGORY_LABELS[cat]}</div>
-                <div className={`text-sm font-medium ${isPlayerWin ? "text-blue-700" : "text-gray-900"}`}>
+                <div className="text-neutral-500 text-xs">{CATEGORY_LABELS[cat]}</div>
+                <div className={`text-sm font-medium ${isPlayerWin ? "text-blue-700" : "text-gray-100"}`}>
                   {winner.name}
-                  {winner.artistName && <span className="text-gray-500 font-normal"> — {winner.artistName}</span>}
+                  {winner.artistName && <span className="text-neutral-500 font-normal"> — {winner.artistName}</span>}
                 </div>
               </div>
               {isPlayerWin && (
-                <span className="text-blue-600 text-xs font-semibold shrink-0 ml-2">Winner</span>
+                <span className="text-purple-400 text-xs font-semibold shrink-0 ml-2">Winner</span>
               )}
             </div>
           );
@@ -118,20 +118,20 @@ export function CeremonyModal({ ceremony, labelName, onClose }: { ceremony: Awar
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
       <div
-        className="bg-white border border-gray-200 sm:rounded-md rounded-t-xl shadow-lg w-full sm:max-w-lg h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto"
+        className="bg-neutral-950 border border-neutral-800 sm:rounded-md rounded-t-xl shadow-lg w-full sm:max-w-lg h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-3 sm:p-5">
+        <div className="sticky top-0 bg-neutral-950 border-b border-neutral-800 p-3 sm:p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-gray-900 font-semibold text-lg">Year {ceremony.year} Awards</h2>
-              <p className="text-gray-500 text-sm mt-0.5">
+              <h2 className="text-gray-100 font-semibold text-lg">Year {ceremony.year} Awards</h2>
+              <p className="text-neutral-500 text-sm mt-0.5">
                 {ceremony.playerWins.length > 0
                   ? `${labelName} won ${ceremony.playerWins.length} award${ceremony.playerWins.length !== 1 ? "s" : ""}!`
                   : `${labelName} was shut out this year.`}
               </p>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl px-2">&#x2715;</button>
+            <button onClick={onClose} className="text-neutral-500 hover:text-neutral-300 text-xl px-2">&#x2715;</button>
           </div>
           {ceremony.playerWins.length > 0 && (
             <div className="flex gap-3 mt-3">
@@ -141,7 +141,7 @@ export function CeremonyModal({ ceremony, labelName, onClose }: { ceremony: Awar
                 </span>
               )}
               {ceremony.reputationReward > 0 && (
-                <span className="text-xs bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1 rounded font-medium">
+                <span className="text-xs bg-purple-950/50 border border-blue-200 text-blue-700 px-3 py-1 rounded font-medium">
                   +{ceremony.reputationReward} reputation
                 </span>
               )}
@@ -158,21 +158,21 @@ export function CeremonyModal({ ceremony, labelName, onClose }: { ceremony: Awar
             if (!winner) return null;
             const isPlayerWin = winner.isPlayer;
             return (
-              <div key={cat} className={`rounded-md p-4 ${isPlayerWin ? "bg-blue-50 border border-blue-200" : "bg-gray-50 border border-gray-200"}`}>
-                <div className="text-gray-500 text-xs font-medium mb-2">{CATEGORY_LABELS[cat]}</div>
-                <div className={`font-semibold text-sm mb-3 ${isPlayerWin ? "text-blue-700" : "text-gray-900"}`}>
+              <div key={cat} className={`rounded-md p-4 ${isPlayerWin ? "bg-purple-950/50 border border-blue-200" : "bg-black border border-neutral-800"}`}>
+                <div className="text-neutral-500 text-xs font-medium mb-2">{CATEGORY_LABELS[cat]}</div>
+                <div className={`font-semibold text-sm mb-3 ${isPlayerWin ? "text-blue-700" : "text-gray-100"}`}>
                   {isPlayerWin ? "Winner: " : ""}{winner.name}
-                  {winner.artistName && <span className="text-gray-500 font-normal text-sm"> — {winner.artistName}</span>}
+                  {winner.artistName && <span className="text-neutral-500 font-normal text-sm"> — {winner.artistName}</span>}
                 </div>
                 <div className="space-y-1">
                   {catNominees.map((n, idx) => (
                     <div key={idx} className="flex items-center justify-between text-xs">
-                      <span className={n.isPlayer ? "text-blue-700" : "text-gray-500"}>
+                      <span className={n.isPlayer ? "text-blue-700" : "text-neutral-500"}>
                         {n.isPlayer ? "* " : ""}{n.name}{n.artistName ? ` — ${n.artistName}` : ""}
                       </span>
-                      <div className="w-24 bg-gray-200 rounded-full h-1.5 ml-3">
+                      <div className="w-24 bg-neutral-800 rounded-full h-1.5 ml-3">
                         <div
-                          className={`h-1.5 rounded-full ${n.isPlayer ? "bg-blue-600" : "bg-gray-400"}`}
+                          className={`h-1.5 rounded-full ${n.isPlayer ? "bg-purple-600" : "bg-gray-400"}`}
                           style={{ width: `${Math.min(100, (n.score / 120) * 100)}%` }}
                         />
                       </div>
@@ -184,10 +184,10 @@ export function CeremonyModal({ ceremony, labelName, onClose }: { ceremony: Awar
           })}
         </div>
 
-        <div className="p-5 border-t border-gray-200">
+        <div className="p-5 border-t border-neutral-800">
           <button
             onClick={onClose}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded transition"
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded transition"
           >
             Continue
           </button>
